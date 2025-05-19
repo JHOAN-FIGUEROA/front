@@ -5,7 +5,10 @@ import Navbar from './components/Navbar';
 import ImageCarousel from './components/ImageCarousel';
 import LoginForm from './components/LoginForm';
 import Footer from './components/Footer';
+import DashboardLayout from './components/DashboardLayout';
 import DashBoard from './components/DashBoard';
+import Usuarios from './page/Usuarios';
+import Roles from './page/Roles';
 import { AuthProvider } from './context/AuthContext';
 
 const MainContent = styled(Box)({
@@ -42,7 +45,9 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashBoard />} />
+          <Route path="/dashboard" element={<DashboardLayout><DashBoard /></DashboardLayout>} />
+          <Route path="/config/usuarios" element={<DashboardLayout><Usuarios /></DashboardLayout>} />
+          <Route path="/config/roles" element={<DashboardLayout><Roles /></DashboardLayout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

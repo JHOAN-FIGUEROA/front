@@ -6,6 +6,11 @@ const StyledFooter = styled(Box)(({ theme }) => ({
   color: '#ffffff',
   padding: theme.spacing(3, 0),
   marginTop: 'auto',
+  width: '100%',
+  boxShadow: '0 -2px 8px rgba(0,0,0,0.04)',
+  position: 'relative',
+  left: 0,
+  bottom: 0,
 }));
 
 const Footer = () => {
