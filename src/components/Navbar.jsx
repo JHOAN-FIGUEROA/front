@@ -22,11 +22,13 @@ const LogoutButton = styled(Button)({
 });
 
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+  // Removed isAuthenticated and logout as the logout is now handled in the sidebar
+  // const { isAuthenticated, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-  };
+  // Removed handleLogout as the logout is now handled in the sidebar
+  // const handleLogout = () => {
+  //   logout();
+  // };
 
   return (
     <StyledAppBar position="static">
@@ -35,11 +37,12 @@ const Navbar = () => {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           PostWare
         </Typography>
-        {isAuthenticated && (
+        {/* Removed logout button */}
+        {/* {isAuthenticated && (
           <LogoutButton variant="contained" onClick={handleLogout}>
             Cerrar Sesión
           </LogoutButton>
-        )}
+        )} */}
       </Toolbar>
     </StyledAppBar>
   );

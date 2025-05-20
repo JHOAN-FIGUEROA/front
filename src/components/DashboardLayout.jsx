@@ -1,9 +1,10 @@
 import { Box } from '@mui/material';
 import { useState } from 'react';
 import SideBar from './SideBar';
-import Footer from './Footer';
+import Navbar from './Navbar';
 
 const drawerWidth = 240;
+const closedDrawerWidth = 64; // Asegúrate de que este valor coincida con el de SideBar.jsx
 
 const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -13,17 +14,15 @@ const DashboardLayout = ({ children }) => {
       <SideBar open={sidebarOpen} onToggle={setSidebarOpen} />
       <Box
         sx={{
-          flex: 1,
+          flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          transition: 'margin 0.3s',
-          marginLeft: sidebarOpen ? `${drawerWidth}px` : '64px',
-          width: `calc(100% - ${sidebarOpen ? drawerWidth : 64}px)`
+          transition: 'padding-left 0.3s ease-in-out',
         }}
       >
-        <Box sx={{ flex: 1, width: '100%' }}>{children}</Box>
-        <Footer />
+        <Navbar />
+        <Box sx={{ flex: 1, width: '100%', padding: '16px' }}>{children}</Box>
       </Box>
     </Box>
   );
