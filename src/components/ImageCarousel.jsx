@@ -7,10 +7,10 @@ import supermercado3 from "../img/supermercado3.jpg"
 
 const CarouselContainer = styled('div')({
   width: '60%',
-  margin: '20px 0',
+  margin: '10px 0 10px 40px',
   '& .carousel-img': {
-    width: '100%',
-    height: '400px',
+    width: '99%',
+    height: '350px',
     objectFit: 'cover',
   }
 });

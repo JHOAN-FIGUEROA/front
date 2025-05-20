@@ -25,18 +25,14 @@ const MainContent = styled(Box)({
 });
 
 const HomePage = () => (
-  <>
+  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
     <Navbar />
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Box component="main" sx={{ flexGrow: 1 }}>
-        <MainContent>
-          <ImageCarousel />
-          <LoginForm />
-        </MainContent>
-      </Box>
-      <Footer />
-    </Box>
-  </>
+    <MainContent>
+      <ImageCarousel />
+      <LoginForm />
+    </MainContent>
+    <Footer />
+  </Box>
 );
 
 function App() {
