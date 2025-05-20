@@ -6,16 +6,28 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const drawerWidth = 240;
+const closedDrawerWidth = 64; // Ancho cuando el sidebar está cerrado
 
-const StyledDrawer = styled(Drawer)(({ theme }) => ({
-  width: drawerWidth,
+const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
+  width: open ? drawerWidth : closedDrawerWidth,
   flexShrink: 0,
+  whiteSpace: 'nowrap', // Evita que el contenido se envuelva
+  boxSizing: 'border-box',
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  }),
+  overflowX: 'hidden', // Oculta el contenido que excede el ancho
   '& .MuiDrawer-paper': {
-    width: drawerWidth,
+    width: open ? drawerWidth : closedDrawerWidth,
     boxSizing: 'border-box',
     background: '#4169E1',
-    borderRight: '1px solid #e0e0e0',
     color: '#fff',
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    overflowX: 'hidden', // Oculta el contenido que excede el ancho
   },
 }));
 
@@ -31,7 +43,9 @@ const SideBar = ({ open, onToggle }) => {
 
   const handleNavigate = (path) => {
     navigate(path);
-    if (onToggle) onToggle(false);
+    // Removed the automatic closing on navigate as per your previous request.
+    // If you still want it to close on navigate, let me know.
+    // if (onToggle) onToggle(false);
   };
 
   return (
@@ -43,13 +57,13 @@ const SideBar = ({ open, onToggle }) => {
       </Box>
       <Divider />
       <List>
-        <ListItem button selected={location.pathname === '/dashboard'} onClick={() => handleNavigate('/dashboard')}>
+        <ListItem {...({ button: 'true' })} selected={location.pathname === '/dashboard'} onClick={() => handleNavigate('/dashboard')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Dashboard />
           </ListItemIcon>
           {open && <ListItemText primary="DashBoard" />}
         </ListItem>
-        <ListItem button onClick={handleConfigClick}>
+        <ListItem {...({ button: 'true' })} onClick={handleConfigClick}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Settings />
           </ListItemIcon>
@@ -58,32 +72,41 @@ const SideBar = ({ open, onToggle }) => {
         </ListItem>
         <Collapse in={openConfig && open} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <ListItem button sx={{ pl: 4 }} selected={location.pathname === '/config/usuarios'} onClick={() => handleNavigate('/config/usuarios')}>
-              <ListItemIcon sx={{ color: '#fff', pl: 1 }}>
+            <ListItem {...({ button: 'true' })} sx={{ pl: openConfig && open ? 4 : 0 }} selected={location.pathname === '/config/usuarios'} onClick={() => handleNavigate('/config/usuarios')}>
+              <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
                 <People />
               </ListItemIcon>
-              <ListItemText primary="Usuarios" />
+              {open && <ListItemText primary="Usuarios" />}
             </ListItem>
-            <ListItem button sx={{ pl: 4 }} selected={location.pathname === '/config/roles'} onClick={() => handleNavigate('/config/roles')}>
-              <ListItemIcon sx={{ color: '#fff', pl: 1 }}>
+            <ListItem {...({ button: 'true' })} sx={{ pl: openConfig && open ? 4 : 0 }} selected={location.pathname === '/config/roles'} onClick={() => handleNavigate('/config/roles')}>
+              <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
                 <Security />
               </ListItemIcon>
-              <ListItemText primary="Roles" />
+              {open && <ListItemText primary="Roles" />}
             </ListItem>
           </List>
         </Collapse>
       </List>
       <Box sx={{ flexGrow: 1 }} />
-      <Box sx={{ p: 2 }}>
-        <Button
-          variant="contained"
-          fullWidth
-          startIcon={<Logout />}
-          sx={{ backgroundColor: '#dc3545', color: 'white', '&:hover': { backgroundColor: '#c82333' } }}
-          onClick={logout}
-        >
-          {open && 'Cerrar Sesión'}
-        </Button>
+      <Box sx={{ p: open ? 2 : '16px 8px', display: 'flex', justifyContent: open ? 'flex-start' : 'center' }}> {/* Mantén el padding y alineación ajustados */}
+        {open ? (
+          <Button
+            variant="contained"
+            fullWidth
+            startIcon={<Logout />}
+            sx={{ backgroundColor: '#dc3545', color: 'white', '&:hover': { backgroundColor: '#c82333' } }}
+            onClick={logout}
+          >
+            Cerrar Sesión
+          </Button>
+        ) : (
+          <IconButton
+            onClick={logout}
+            sx={{ color: 'white', backgroundColor: '#dc3545', '&:hover': { backgroundColor: '#c82333' } }}
+          >
+            <Logout />
+          </IconButton>
+        )}
       </Box>
     </StyledDrawer>
   );

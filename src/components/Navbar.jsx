@@ -5,12 +5,11 @@ import { useAuth } from '../context/AuthContext';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#4169E1', // Azul real
-  minHeight: '80px', // Aumenta la altura mínima del navbar
 }));
 
 const Logo = styled('img')({
   height: '72px',
-  marginRight: '15px',
+  marginRight: '10px',
 });
 
 const LogoutButton = styled(Button)({
@@ -22,32 +21,31 @@ const LogoutButton = styled(Button)({
   marginLeft: 'auto', // Empuja el botón hacia la derecha
 });
 
-const StyledToolbar = styled(Toolbar)({
-  minHeight: '80px', // Aumenta la altura del toolbar
-  display: 'flex',
-  alignItems: 'center'
-});
-
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+  // Removed isAuthenticated and logout as the logout is now handled in the sidebar
+  // const { isAuthenticated, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-  };
+  // Removed handleLogout as the logout is now handled in the sidebar
+  // const handleLogout = () => {
+  //   logout();
+  // };
 
   return (
     <StyledAppBar position="static">
-      <StyledToolbar>
+      <Toolbar>
         <Logo src={PostWareLogo} alt="PostWare Logo" />
-        
-        {isAuthenticated && (
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          PostWare
+        </Typography>
+        {/* Removed logout button */}
+        {/* {isAuthenticated && (
           <LogoutButton variant="contained" onClick={handleLogout}>
             Cerrar Sesión
           </LogoutButton>
-        )}
-      </StyledToolbar>
+        )} */}
+      </Toolbar>
     </StyledAppBar>
   );
 };
 
-export default Navbar; 
+export default Navbar;
