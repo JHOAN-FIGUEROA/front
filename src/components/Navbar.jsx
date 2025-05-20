@@ -5,11 +5,12 @@ import { useAuth } from '../context/AuthContext';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#4169E1', // Azul real
+  minHeight: '80px', // Aumenta la altura mínima del navbar
 }));
 
 const Logo = styled('img')({
   height: '72px',
-  marginRight: '10px',
+  marginRight: '15px',
 });
 
 const LogoutButton = styled(Button)({
@@ -21,6 +22,12 @@ const LogoutButton = styled(Button)({
   marginLeft: 'auto', // Empuja el botón hacia la derecha
 });
 
+const StyledToolbar = styled(Toolbar)({
+  minHeight: '80px', // Aumenta la altura del toolbar
+  display: 'flex',
+  alignItems: 'center'
+});
+
 const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
 
@@ -30,17 +37,15 @@ const Navbar = () => {
 
   return (
     <StyledAppBar position="static">
-      <Toolbar>
+      <StyledToolbar>
         <Logo src={PostWareLogo} alt="PostWare Logo" />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          PostWare
-        </Typography>
+        
         {isAuthenticated && (
           <LogoutButton variant="contained" onClick={handleLogout}>
             Cerrar Sesión
           </LogoutButton>
         )}
-      </Toolbar>
+      </StyledToolbar>
     </StyledAppBar>
   );
 };

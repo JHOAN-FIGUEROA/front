@@ -88,7 +88,7 @@ const LoginForm = () => {
         <Box sx={{ '& > :not(style)': { mb: 2 } }}>
           <TextField
             fullWidth
-            label="Email"
+            label="corre@ejemplo.com"
             name="email"
             type="email"
             value={formData.email}
@@ -98,7 +98,7 @@ const LoginForm = () => {
           />
           <TextField
             fullWidth
-            label="Contraseña"
+            label="Tu contraseña"
             name="password"
             type="password"
             value={formData.password}
