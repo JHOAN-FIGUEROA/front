@@ -12,6 +12,7 @@ const CarouselContainer = styled('div')({
     width: '99%',
     height: '350px',
     objectFit: 'cover',
+    borderRadius: '15px',
   }
 });
 
