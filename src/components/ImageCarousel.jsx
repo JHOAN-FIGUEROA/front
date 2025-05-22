@@ -1,20 +1,26 @@
 import { Carousel } from 'react-responsive-carousel';
-import "react-responsive-carousel/lib/styles/carousel.min.css";
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import { styled } from '@mui/material/styles';
-import pasillo from "../img/pasillo.jpg"
-import supermercado2 from "../img/supermercado2.jpg"
-import supermercado3 from "../img/supermercado3.jpg"
+import pasillo from '../img/pasillo.jpg';
+import supermercado2 from '../img/supermercado2.jpg';
+import supermercado3 from '../img/supermercado3.jpg';
 
-const CarouselContainer = styled('div')({
-  width: '60%',
-  margin: '10px 0 10px 40px',
+const CarouselContainer = styled('div')(({ theme }) => ({
+  flex: 1,
+  minWidth: '300px',
+  maxWidth: '600px',
+  width: '100%',
   '& .carousel-img': {
-    width: '99%',
+    width: '100%',
     height: '350px',
     objectFit: 'cover',
     borderRadius: '15px',
-  }
-});
+  },
+
+  [theme.breakpoints.down('md')]: {
+    marginBottom: theme.spacing(2),
+  },
+}));
 
 const ImageCarousel = () => {
   return (
@@ -34,4 +40,5 @@ const ImageCarousel = () => {
   );
 };
 
-export default ImageCarousel; 
+export default ImageCarousel;
+

@@ -7,8 +7,11 @@ import { loginUser } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  width: '300px',
+  flex: 1,
+  minWidth: '300px',
+  maxWidth: '400px',
+  width: '100%',
+  padding: theme.spacing(4),
   backgroundColor: '#ffffff',
   borderRadius: '10px',
 }));
@@ -51,7 +54,7 @@ const LoginForm = () => {
       };
 
       const response = await loginUser(credentials);
-      
+
       // Actualizar el estado de autenticación
       login();
 
@@ -61,12 +64,11 @@ const LoginForm = () => {
         title: '¡Bienvenido!',
         text: 'Inicio de sesión exitoso',
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
 
       // Redirigir al dashboard
       navigate('/dashboard');
-      
     } catch (error) {
       setError(error.message);
     } finally {
@@ -107,11 +109,7 @@ const LoginForm = () => {
             required
           />
         </Box>
-        <StyledButton 
-          type="submit" 
-          variant="contained"
-          disabled={loading}
-        >
+        <StyledButton type="submit" variant="contained" disabled={loading}>
           {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
         </StyledButton>
       </form>
@@ -119,4 +117,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm; 
+export default LoginForm;

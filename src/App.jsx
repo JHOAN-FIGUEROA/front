@@ -11,18 +11,30 @@ import Usuarios from './page/Usuarios';
 import Roles from './page/Roles';
 import { AuthProvider } from './context/AuthContext';
 
-const MainContent = styled(Box)({
+const MainContent = styled(Box)(({ theme }) => ({
   display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '2rem',
-  padding: '2rem 0',
-  minHeight: 'calc(100vh - 64px - 80px)', // Altura total - navbar - footer
-  '& > :last-child': {
-    marginTop: '20px', // Mueve el formulario hacia abajo
-    marginRight: '80px' // Ajusta la posición hacia la izquierda
-  }
-});
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  gap: theme.spacing(4),
+  padding: theme.spacing(10, 2, 8),
+  minHeight: 'calc(100vh - 64px - 80px)',
+  width: '100%',
+  maxWidth: '1200px',
+  margin: '0 auto',
+
+  // Cuando están en columna, todos los hijos tendrán el mismo ancho
+  [`@media (max-width: 1000px)`]: {
+    flexDirection: 'column',
+    alignItems: 'center',
+
+    '& > *': {
+      width: '100%',
+      maxWidth: '400px', // Hace que carrusel y login coincidan
+    },
+  },
+}));
 
 const HomePage = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column' }}>

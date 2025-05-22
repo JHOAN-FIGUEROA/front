@@ -1,11 +1,11 @@
 import { AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import PostWareLogo from "../img/PostWareLogo.png";
+import PostWareLogo from "../img/logotipo.png";
 import { useAuth } from '../context/AuthContext';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#4169E1', // Azul real
-  minHeight: '68px', // Ajusta la altura mínima del AppBar
+  minHeight: '72px', // Ajusta la altura mínima del AppBar
 }));
 
 const Logo = styled('img')({
@@ -14,7 +14,7 @@ const Logo = styled('img')({
 });
 
 const StyledToolbar = styled(Toolbar)({
-  minHeight: '68px', // Ajusta la altura mínima del Toolbar para el logo
+  minHeight: '72px', // Ajusta la altura mínima del Toolbar para el logo
   display: 'flex',
   alignItems: 'center',
 });
@@ -41,6 +41,10 @@ const Navbar = () => {
     <StyledAppBar position="static">
       <StyledToolbar>
         <Logo src={PostWareLogo} alt="PostWare Logo" />
+        <Typography variant="h4" component="div" sx={{ flexGrow: 3, textAlign: '' }}>
+          POSTWARE
+        </Typography>
+      
         
         {/* Removed logout button */}
         {/* {isAuthenticated && (
