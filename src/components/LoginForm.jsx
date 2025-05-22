@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Paper, Typography, Alert } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Swal from 'sweetalert2';
 import { loginUser } from '../api';
@@ -32,19 +32,83 @@ const LoginForm = () => {
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const validateForm = () => {
+    // Validar campos vacíos
+    if (!formData.email.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo Requerido',
+        text: 'Por favor, ingrese su correo electrónico',
+        confirmButtonColor: '#2E8B57',
+      });
+      return false;
+    }
+
+    if (!formData.password.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo Requerido',
+        text: 'Por favor, ingrese su contraseña',
+        confirmButtonColor: '#2E8B57',
+      });
+      return false;
+    }
+
+    // Validar espacios en el correo
+    if (formData.email.includes(' ')) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato Incorrecto',
+        text: 'El correo electrónico no debe contener espacios',
+        confirmButtonColor: '#2E8B57',
+      });
+      return false;
+    }
+
+    // Validar espacios en la contraseña
+    if (formData.password.includes(' ')) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato Incorrecto',
+        text: 'La contraseña no debe contener espacios',
+        confirmButtonColor: '#2E8B57',
+      });
+      return false;
+    }
+
+    // Validar formato de correo electrónico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato Incorrecto',
+        text: 'Por favor, ingrese un correo electrónico válido (ejemplo: usuario@dominio.com)',
+        confirmButtonColor: '#2E8B57',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    // Validar el formulario antes de enviar
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -65,12 +129,28 @@ const LoginForm = () => {
         text: 'Inicio de sesión exitoso',
         timer: 1500,
         showConfirmButton: false,
+        confirmButtonColor: '#2E8B57',
       });
 
       // Redirigir al dashboard
       navigate('/dashboard');
     } catch (error) {
-      setError(error.message);
+      // Manejar específicamente el error de credenciales incorrectas
+      if (error.message.includes('credenciales')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de Autenticación',
+          text: 'Las credenciales proporcionadas son incorrectas. Por favor, verifique su correo y contraseña.',
+          confirmButtonColor: '#2E8B57',
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error del Sistema',
+          text: 'Ha ocurrido un error al intentar iniciar sesión. Por favor, intente nuevamente.',
+          confirmButtonColor: '#2E8B57',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -81,11 +161,6 @@ const LoginForm = () => {
       <Typography variant="h6" gutterBottom>
         Iniciar Sesión
       </Typography>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
       <form onSubmit={handleSubmit}>
         <Box sx={{ '& > :not(style)': { mb: 2 } }}>
           <TextField
@@ -96,7 +171,6 @@ const LoginForm = () => {
             value={formData.email}
             onChange={handleChange}
             variant="outlined"
-            required
           />
           <TextField
             fullWidth
@@ -106,7 +180,6 @@ const LoginForm = () => {
             value={formData.password}
             onChange={handleChange}
             variant="outlined"
-            required
           />
         </Box>
         <StyledButton type="submit" variant="contained" disabled={loading}>
