@@ -25,7 +25,7 @@ const MainContent = styled(Box)(({ theme }) => ({
   margin: '0 auto',
 
   // Cuando están en columna, todos los hijos tendrán el mismo ancho
-  [`@media (max-width: 1000px)`]: {
+  [theme.breakpoints.down('md')]: {
     flexDirection: 'column',
     alignItems: 'center',
 
