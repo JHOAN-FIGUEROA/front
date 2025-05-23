@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, IconButton, Stack, Pagination, Switch, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, Snackbar, MenuItem
 } from '@mui/material';
-import { getUsuarios, getUsuarioById, updateUsuario } from '../api';
+import { getUsuarios, getUsuarioById, updateUsuario, getRoles } from '../api';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -39,7 +39,7 @@ const CAMPOS_CREAR = [
   { name: 'complemento', label: 'Complemento', required: false },
   { name: 'barrio', label: 'Barrio' },
   { name: 'dirrecion', label: 'Dirección' },
-  { name: 'rol_idrol', label: 'Rol', type: 'number' },
+  { name: 'rol_idrol', label: 'Rol', select: true, options: [] },
 ];
 
 const Usuarios = () => {
@@ -47,6 +47,7 @@ const Usuarios = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [roles, setRoles] = useState([]);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -68,6 +69,25 @@ const Usuarios = () => {
   const [usuarioEliminar, setUsuarioEliminar] = useState(null);
   const [crearOpen, setCrearOpen] = useState(false);
   const [crearSuccess, setCrearSuccess] = useState(false);
+
+  useEffect(() => {
+    const cargarRoles = async () => {
+      try {
+        const response = await getRoles();
+        if (response.roles) {
+          setRoles(response.roles);
+          const rolOptions = response.roles.map(rol => ({
+            value: rol.idrol,
+            label: rol.nombre
+          }));
+          CAMPOS_CREAR.find(campo => campo.name === 'rol_idrol').options = rolOptions;
+        }
+      } catch (err) {
+        console.error('Error al cargar roles:', err);
+      }
+    };
+    cargarRoles();
+  }, []);
 
   useEffect(() => {
     const fetchUsuarios = async () => {
@@ -245,6 +265,7 @@ const Usuarios = () => {
         <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
+              <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
               <TableCell><b>Email</b></TableCell>
               <TableCell align="center"><b>Estado</b></TableCell>
@@ -253,10 +274,11 @@ const Usuarios = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} align="center"><CircularProgress size={24} /></TableCell></TableRow>
             ) : usuariosPagina.length > 0 ? (
               usuariosPagina.map((usuario, idx) => (
                 <TableRow key={usuario.idusuario || idx}>
+                  <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
                   <TableCell>{usuario.email}</TableCell>
                   <TableCell align="center">
@@ -277,7 +299,7 @@ const Usuarios = () => {
               ))
             ) : (error ? null : (
               <TableRow>
-                <TableCell colSpan={4} align="center">No se encontraron usuarios.</TableCell>
+                <TableCell colSpan={5} align="center">No se encontraron usuarios.</TableCell>
               </TableRow>
             ))
             }

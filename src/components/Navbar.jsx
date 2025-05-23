@@ -38,11 +38,16 @@ const Navbar = ({ onMenuToggle, navbarHeight, desktopDrawerWidth, isMobile }) =>
       position="fixed"
       sx={{
          // ZIndex más alto que el sidebar
-         zIndex: theme.zIndex.drawer + 1,
+         zIndex: theme.zIndex.drawer + 2, // Un zIndex mayor que el sidebar
          // Ancho y margen ajustados en desktop
-         width: isMobile ? '100%' : `calc(100% - ${desktopDrawerWidth}px)`, // Ancho correcto junto al sidebar
-         ml: isMobile ? 0 : `${desktopDrawerWidth}px`, // Margen para dejar espacio al sidebar
+         width: isMobile ? '100%' : `calc(100% - ${desktopDrawerWidth}px)`,
+         marginLeft: isMobile ? 0 : `${desktopDrawerWidth}px`, // Usar marginLeft en lugar de ml
          height: navbarHeight,
+         // Añadir transición para width y marginLeft para sincronizar con sidebar
+         transition: theme.transitions.create(['width', 'margin-left'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+         }),
       }}
     >
       <StyledToolbar>

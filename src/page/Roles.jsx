@@ -13,6 +13,7 @@ import Eliminar from '../components/Eliminar';
 import Crear from '../components/Crear';
 import VerDetalle from '../components/VerDetalle';
 import AddIcon from '@mui/icons-material/Add';
+import { useSearchParams } from 'react-router-dom';
 
 const ROLES_POR_PAGINA = 5;
 const CAMPOS_EDITABLES = [
@@ -41,7 +42,11 @@ const Roles = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [pagina, setPagina] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialPage = parseInt(searchParams.get('page')) || 1;
+  const [pagina, setPagina] = useState(initialPage);
+  const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [editOpen, setEditOpen] = useState(false);
   const [editRol, setEditRol] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -67,48 +72,79 @@ const Roles = () => {
 
   useEffect(() => {
     const fetchRoles = async () => {
+      setLoading(true);
+      setError('');
+      setRoles([]);
       try {
-        const data = await getRoles();
-        let lista = [];
-        if (Array.isArray(data)) {
-          lista = data;
-        } else if (Array.isArray(data.roles)) {
-          lista = data.roles;
-        } else if (Array.isArray(data.data)) {
-          lista = data.data;
+        // Usar getRoles con paginación y búsqueda
+        const result = await getRoles(pagina, ROLES_POR_PAGINA, busqueda);
+
+        if (result.error) {
+          let errorMessage = result.detalles || 'Error al cargar roles.';
+          let errorTitle = 'Error de Carga';
+
+          if (result.status) {
+            switch (result.status) {
+              case 404:
+                errorMessage = 'No se encontraron roles.';
+                errorTitle = 'No Encontrado';
+                break;
+              default:
+                errorTitle = `Error ${result.status}`;
+            }
+          }
+          setError(errorMessage);
+          setTotalPaginasAPI(1);
+        } else if (result.success && result.data) {
+          setRoles(result.data.roles || []);
+          setTotalPaginasAPI(result.data.totalPaginas || 1);
         }
-        setRoles(lista);
       } catch (err) {
-        setError(err.message);
+        setError('Error inesperado al cargar roles.' + err.message);
+        setTotalPaginasAPI(1);
       } finally {
         setLoading(false);
       }
     };
     fetchRoles();
-  }, []);
+  }, [pagina, busqueda]); // Dependencias: pagina y busqueda
 
-  // Filtrado por búsqueda
-  const rolesFiltrados = roles.filter((rol) => {
-    const texto = `${rol.nombre}`.toLowerCase();
-    const busq = busqueda.trim().toLowerCase();
-    let estadoBool = false;
-    if (rol.estado === true || rol.estado === 'true' || rol.estado === 1 || rol.estado === '1') {
-      estadoBool = true;
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    if (pageFromUrl !== pagina) {
+      setPagina(pageFromUrl);
     }
-    if (busq === 'activo') return estadoBool === true;
-    if (busq === 'inactivo') return estadoBool === false;
-    return texto.includes(busq);
-  });
+    const searchFromUrl = searchParams.get('search') || '';
+    if (searchFromUrl !== busqueda) {
+       setBusqueda(searchFromUrl);
+    }
+  }, [searchParams]);
 
-  // Paginación
-  const totalPaginas = Math.ceil(rolesFiltrados.length / ROLES_POR_PAGINA);
-  const rolesPagina = rolesFiltrados.slice(
-    (pagina - 1) * ROLES_POR_PAGINA,
-    pagina * ROLES_POR_PAGINA
-  );
+  // Filtrado por búsqueda (Esta lógica ya no es necesaria aquí, la maneja la API)
+  // const rolesFiltrados = roles.filter((rol) => { ... });
+
+  // Paginación (Esta lógica ya no es necesaria aquí, la maneja la API)
+  // const totalPaginas = Math.ceil(rolesFiltrados.length / ROLES_POR_PAGINA);
+  const rolesPagina = roles; // roles ahora contiene los datos paginados de la API
 
   const handleChangePagina = (event, value) => {
-    setPagina(value);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', value.toString());
+    setSearchParams(newSearchParams);
+  };
+
+  // Manejar cambio en el buscador (Actualiza URL y dispara useEffect)
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    // setBusqueda(newSearchTerm); // Ya no actualizamos el estado local directamente
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newSearchTerm) {
+       newSearchParams.set('search', newSearchTerm);
+    } else {
+       newSearchParams.delete('search');
+    }
+    newSearchParams.set('page', '1'); // Reiniciar a la página 1 en nueva búsqueda
+    setSearchParams(newSearchParams);
   };
 
   // Editar rol (ABRIR MODAL PERSONALIZADO)
@@ -218,18 +254,17 @@ const Roles = () => {
         setCrearLoading(false);
         return;
       }
-      const rolCreado = await createRol(nuevoRol); // Usar la respuesta de la API
+      await createRol(nuevoRol);
       setCrearOpen(false);
       setCrearSuccess(true);
-      // Asegurarse de que el rol creado tenga la estructura completa esperada
-      const rolConEstadoYPermisos = { 
-         ...rolCreado,
-         // Asignar estado por defecto si no viene de la API (ajustar si la API sí lo devuelve)
-         estado: rolCreado.estado !== undefined ? rolCreado.estado : true,
-         // Asegurarse de que permisos_asociados sea un array incluso si está vacío
-         permisos_asociados: rolCreado.permisos_asociados || []
-      };
-      setRoles(prev => [rolConEstadoYPermisos, ...prev]); // Usar el rol real devuelto por la API con estructura ajustada
+
+      // Después de crear, recargar los datos de la primera página con la búsqueda actual
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('page', '1');
+      // La búsqueda se mantiene si ya existía en la URL
+      setSearchParams(newSearchParams);
+      // El useEffect dependiente de searchParams (y por lo tanto de pagina y busqueda) se encargará de recargar los datos
+
       setNuevoRol({ nombre: '', descripcion: '', permisos_ids: [] });
     } catch (err) {
       setCrearError(err.message);
@@ -254,41 +289,47 @@ const Roles = () => {
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Roles Registrados</Typography>
-      <Box mb={2} height={4} display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          {loading && <CircularProgress size={28} />}
-          {error && <Alert severity="error">{error}</Alert>}
+      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
+        <Box sx={{ flexGrow: 1 }}>
+          <Buscador
+            value={busqueda}
+            onChange={handleSearchChange}
+            placeholder="Buscar rol..."
+          />
         </Box>
+        
         <Button
           variant="contained"
           color="success"
           onClick={() => setCrearOpen(true)}
-          sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
+          sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
           startIcon={<AddIcon />}
         >
           Registrar
         </Button>
       </Box>
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <Buscador
-          value={busqueda}
-          onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
-          placeholder="Buscar rol..."
-        />
-      </Stack>
-      <TableContainer component={Paper} sx={{ maxWidth: 1000, margin: '0 auto', boxShadow: 2 }}>
+      {/* Box para indicadores de carga y error, fuera del flex container principal */}
+      <Box mb={2} height={4}>
+         {loading && <CircularProgress size={28} />}
+         {error && <Alert severity="error" sx={{ width: 'fit-content' }}>{error}</Alert>}
+      </Box>
+      <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
               <TableCell><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {rolesPagina.length > 0 ? (
+            {loading ? (
+               <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+            ) : rolesPagina.length > 0 ? (
               rolesPagina.map((rol, idx) => (
-                <TableRow key={idx}>
+                <TableRow key={rol.idrol || idx}>
+                  <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{rol.nombre}</TableCell>
                   <TableCell align="center">
                     <CambiarEstado
@@ -307,22 +348,21 @@ const Roles = () => {
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
+            ) : (error ? null : (
               <TableRow>
-                <TableCell colSpan={3} align="center">No hay roles registrados.</TableCell>
+                <TableCell colSpan={4} align="center">No hay roles registrados.</TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
-      {totalPaginas > 1 && (
+      {!loading && totalPaginasAPI > 1 && (
         <Stack direction="row" justifyContent="center" alignItems="center" mt={3}>
           <Pagination
-            count={totalPaginas}
+            count={totalPaginasAPI}
             page={pagina}
             onChange={handleChangePagina}
             color="primary"
-            shape="rounded"
           />
         </Stack>
       )}

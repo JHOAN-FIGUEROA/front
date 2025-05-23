@@ -80,8 +80,8 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
       {variant === 'permanent' && (
         <Box sx={{ display: 'flex', alignItems: 'center', p: 2, height: navbarHeight, justifyContent: open ? 'flex-end' : 'center', 
              position: 'absolute', top: 0, left: 0, right: 0,
-             backgroundColor: theme.palette.primary.main,
-             zIndex: theme.zIndex.drawer + 2
+             backgroundColor: '#4169E1',
+             zIndex: theme.zIndex.drawer
         }}>
            <IconButton onClick={onToggleDesktop} sx={{ color: 'white' }}>
               <Menu />
@@ -90,7 +90,15 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
       )}
       <Divider />
       <List sx={{ paddingTop: navbarHeight }}>
-        <ListItem {...({ button: 'true' })} selected={location.pathname === '/dashboard'} onClick={() => handleNavigate('/dashboard')}>
+        <ListItem
+          {...({ button: 'true' })}
+          selected={location.pathname === '/dashboard'}
+          onClick={() => handleNavigate('/dashboard')}
+          sx={{
+             '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+             '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+          }}
+        >
           <ListItemIcon sx={{ color: '#fff' }}>
             <Dashboard />
           </ListItemIcon>
@@ -105,13 +113,31 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
         </ListItem>
         <Collapse in={openConfig && open} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <ListItem {...({ button: 'true' })} sx={{ pl: openConfig && open ? 4 : 0 }} selected={location.pathname === '/config/usuarios'} onClick={() => handleNavigate('/config/usuarios')}>
+            <ListItem
+              {...({ button: 'true' })}
+              selected={location.pathname === '/config/usuarios'}
+              onClick={() => handleNavigate('/config/usuarios')}
+              sx={{
+                pl: openConfig && open ? 4 : 0,
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+              }}
+            >
               <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
                 <People />
               </ListItemIcon>
               {open && <ListItemText primary="Usuarios" />}
             </ListItem>
-            <ListItem {...({ button: 'true' })} sx={{ pl: openConfig && open ? 4 : 0 }} selected={location.pathname === '/config/roles'} onClick={() => handleNavigate('/config/roles')}>
+            <ListItem
+              {...({ button: 'true' })}
+              selected={location.pathname === '/config/roles'}
+              onClick={() => handleNavigate('/config/roles')}
+              sx={{
+                pl: openConfig && open ? 4 : 0,
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+              }}
+            >
               <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
                 <Security />
               </ListItemIcon>
