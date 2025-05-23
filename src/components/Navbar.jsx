@@ -1,11 +1,14 @@
-import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import PostWareLogo from "../img/logotipo.png";
 import { useAuth } from '../context/AuthContext';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#4169E1', // Azul real
   minHeight: '72px', // Ajusta la altura mínima del AppBar
+  boxShadow: theme.shadows[3], // Añadir sombra para distinción
 }));
 
 const Logo = styled('img')({
@@ -19,16 +22,7 @@ const StyledToolbar = styled(Toolbar)({
   alignItems: 'center',
 });
 
-const LogoutButton = styled(Button)({
-  backgroundColor: '#dc3545', // Rojo
-  color: 'white',
-  '&:hover': {
-    backgroundColor: '#c82333', // Rojo más oscuro
-  },
-  marginLeft: 'auto', // Empuja el botón hacia la derecha
-});
-
-const Navbar = () => {
+const Navbar = ({ onMenuToggle, navbarHeight, desktopDrawerWidth, isMobile }) => {
   // Removed isAuthenticated and logout as the logout is now handled in the sidebar
   // const { isAuthenticated, logout } = useAuth();
 
@@ -37,21 +31,38 @@ const Navbar = () => {
   //   logout();
   // };
 
+  const theme = useTheme();
+
   return (
-    <StyledAppBar position="static">
+    <StyledAppBar
+      position="fixed"
+      sx={{
+         // ZIndex más alto que el sidebar
+         zIndex: theme.zIndex.drawer + 1,
+         // Ancho y margen ajustados en desktop
+         width: isMobile ? '100%' : `calc(100% - ${desktopDrawerWidth}px)`, // Ancho correcto junto al sidebar
+         ml: isMobile ? 0 : `${desktopDrawerWidth}px`, // Margen para dejar espacio al sidebar
+         height: navbarHeight,
+      }}
+    >
       <StyledToolbar>
+        {/* Mostrar ícono de menú SOLO en mobile, usa onMenuToggle (handler de mobile) */}
+        {isMobile && (
+           <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={onMenuToggle}
+            sx={{ mr: 2, color: 'white' }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
+        {/* Eliminar ícono de menú para desktop de aquí */}
         <Logo src={PostWareLogo} alt="PostWare Logo" />
-        <Typography variant="h4" component="div" sx={{ flexGrow: 3, textAlign: '' }}>
+        <Typography variant="h4" component="div" sx={{ flexGrow: 3, textAlign: 'start', color: 'white' }}>
           POSTWARE
         </Typography>
-      
-        
-        {/* Removed logout button */}
-        {/* {isAuthenticated && (
-          <LogoutButton variant="contained" onClick={handleLogout}>
-            Cerrar Sesión
-          </LogoutButton>
-        )} */}
       </StyledToolbar>
     </StyledAppBar>
   );

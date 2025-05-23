@@ -1,6 +1,17 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Grid, CircularProgress, Alert, TextField, MenuItem } from '@mui/material';
 
-const Editar = ({ open, onClose, usuario, loading, error, form, onFormChange, onSave, camposEditables, loadingSave }) => (
+const Editar = ({ 
+  open, 
+  onClose, 
+  usuario, 
+  loading, 
+  error, 
+  form, 
+  onFormChange, 
+  onSave, 
+  camposEditables = [], // Valor por defecto como array vacío
+  loadingSave 
+}) => (
   <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
     <DialogTitle>Editar Usuario</DialogTitle>
     <DialogContent dividers>
@@ -9,19 +20,19 @@ const Editar = ({ open, onClose, usuario, loading, error, form, onFormChange, on
       {usuario && !loading && !error && (
         <Box mt={2}>
           <Grid container spacing={2}>
-            {camposEditables.map(({ name, label, select, options }) => (
-              <Grid item xs={12} sm={6} key={name}>
+            {Array.isArray(camposEditables) && camposEditables.map(({ name, label, select, options = [], type }) => (
+              <Grid xs={12} sm={6} key={name}>
                 {select ? (
                   <TextField
                     select
                     label={label}
                     name={name}
-                    value={form[name] || ''}
+                    value={form?.[name] || ''}
                     onChange={onFormChange}
                     fullWidth
                     margin="normal"
                   >
-                    {options.map(opt => (
+                    {Array.isArray(options) && options.map(opt => (
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </TextField>
@@ -29,7 +40,7 @@ const Editar = ({ open, onClose, usuario, loading, error, form, onFormChange, on
                   <TextField
                     label={label}
                     name={name}
-                    value={form[name] || ''}
+                    value={form?.[name] || ''}
                     onChange={onFormChange}
                     fullWidth
                     margin="normal"
@@ -48,4 +59,4 @@ const Editar = ({ open, onClose, usuario, loading, error, form, onFormChange, on
   </Dialog>
 );
 
-export default Editar; 
+export default Editar;

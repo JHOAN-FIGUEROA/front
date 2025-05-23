@@ -33,64 +33,42 @@ const LoginForm = () => {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const validateForm = () => {
-    // Validar campos vacíos
-    if (!formData.email.trim()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campo Requerido',
-        text: 'Por favor, ingrese su correo electrónico',
-        confirmButtonColor: '#2E8B57',
-      });
-      return false;
+    const newErrors = {};
+    const emailStr = formData.email.trim();
+    const passwordStr = formData.password.trim();
+
+    // Validación de campos requeridos
+    if (!emailStr) {
+      newErrors.email = 'El email es requerido';
+    }
+    if (!passwordStr) {
+      newErrors.password = 'La contraseña es requerida';
     }
 
-    if (!formData.password.trim()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campo Requerido',
-        text: 'Por favor, ingrese su contraseña',
-        confirmButtonColor: '#2E8B57',
-      });
-      return false;
-    }
-
-    // Validar espacios en el correo
-    if (formData.email.includes(' ')) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Formato Incorrecto',
-        text: 'El correo electrónico no debe contener espacios',
-        confirmButtonColor: '#2E8B57',
-      });
-      return false;
-    }
-
-    // Validar espacios en la contraseña
-    if (formData.password.includes(' ')) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Formato Incorrecto',
-        text: 'La contraseña no debe contener espacios',
-        confirmButtonColor: '#2E8B57',
-      });
-      return false;
-    }
-
-    // Validar formato de correo electrónico
+    // Validación de formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Formato Incorrecto',
-        text: 'Por favor, ingrese un correo electrónico válido (ejemplo: usuario@dominio.com)',
-        confirmButtonColor: '#2E8B57',
-      });
-      return false;
+    if (emailStr && !emailRegex.test(emailStr)) {
+      newErrors.email = 'El formato del email no es válido';
     }
 
-    return true;
+    // Validación de caracteres especiales en email
+    if (emailStr && /[<>()[\]\\,;:\s"]+/.test(emailStr)) {
+      newErrors.email = 'El email contiene caracteres no permitidos';
+    }
+
+    // Validación de longitud máxima
+    if (emailStr.length > 100) {
+      newErrors.email = 'El email excede la longitud máxima permitida';
+    }
+    if (passwordStr.length > 100) {
+      newErrors.password = 'La contraseña excede la longitud máxima permitida';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
@@ -99,12 +77,18 @@ const LoginForm = () => {
       ...formData,
       [name]: value,
     });
+    // Limpiar el error del campo cuando el usuario comienza a escribir
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: '',
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validar el formulario antes de enviar
     if (!validateForm()) {
       return;
     }
@@ -113,16 +97,16 @@ const LoginForm = () => {
 
     try {
       const credentials = {
-        ...formData,
-        password: Number(formData.password),
+        email: formData.email.trim(),
+        password: formData.password.trim(),
       };
 
       const response = await loginUser(credentials);
 
-      // Actualizar el estado de autenticación
-      login();
+      // Si loginUser no lanzó un error (response.ok fue true)
+      // Actualizar el estado de autenticación y redirigir
+      login(response.token);
 
-      // Mostrar alerta de éxito
       await Swal.fire({
         icon: 'success',
         title: '¡Bienvenido!',
@@ -132,25 +116,63 @@ const LoginForm = () => {
         confirmButtonColor: '#2E8B57',
       });
 
-      // Redirigir al dashboard
       navigate('/dashboard');
+
     } catch (error) {
-      // Manejar específicamente el error de credenciales incorrectas
-      if (error.message.includes('credenciales')) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error de Autenticación',
-          text: 'Las credenciales proporcionadas son incorrectas. Por favor, verifique su correo y contraseña.',
-          confirmButtonColor: '#2E8B57',
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error del Sistema',
-          text: 'Ha ocurrido un error al intentar iniciar sesión. Por favor, intente nuevamente.',
-          confirmButtonColor: '#2E8B57',
-        });
+      let errorMessage = 'Ha ocurrido un error inesperado. Por favor, intente más tarde.';
+      let errorTitle = 'Error del Sistema';
+      let statusCode = null;
+
+      // Si el error es una instancia de Response (un error HTTP de fetch)
+      if (error instanceof Response) {
+        statusCode = error.status;
+        // Intentar leer el cuerpo del error para obtener detalles si están disponibles
+        try {
+          const errorData = await error.json();
+          if (errorData && errorData.detalles) {
+             errorMessage = errorData.detalles;
+          } else if (errorData && errorData.error) {
+             errorMessage = errorData.error;
+          } else if (error.statusText) {
+             errorMessage = error.statusText;
+          }
+        } catch (jsonError) {
+          // Si no se puede parsear como JSON, usar el statusText o un mensaje genérico
+           errorMessage = error.statusText || 'Error en la respuesta del servidor';
+        }
+
+        switch (statusCode) {
+          case 400:
+            errorTitle = 'Error de Validación';
+            break;
+          case 401:
+            errorTitle = 'Error de Autenticación';
+             errorMessage = errorMessage.includes('Credenciales incorrectas') ? errorMessage : 'El email o la contraseña son incorrectos';
+            break;
+          case 403:
+            errorTitle = 'Cuenta Inactiva';
+             errorMessage = errorMessage.includes('Cuenta inactiva') ? errorMessage : 'Tu cuenta está inactiva. Por favor, contacta al administrador';
+            break;
+          case 503:
+            errorTitle = 'Error de Conexión';
+             errorMessage = errorMessage.includes('conexión') ? errorMessage : 'No se pudo conectar con el servidor. Por favor, intente más tarde';
+            break;
+          default:
+            errorTitle = 'Error del Sistema';
+        }
+
+      } else if (error.message) {
+        // Manejar otros tipos de errores (por ejemplo, errores de red antes de obtener respuesta)
+         errorMessage = error.message;
+         errorTitle = 'Error de Red o Desconocido';
       }
+
+      Swal.fire({
+        icon: 'error',
+        title: errorTitle,
+        text: errorMessage,
+        confirmButtonColor: '#2E8B57',
+      });
     } finally {
       setLoading(false);
     }
@@ -171,6 +193,8 @@ const LoginForm = () => {
             value={formData.email}
             onChange={handleChange}
             variant="outlined"
+            error={!!errors.email}
+            helperText={errors.email}
           />
           <TextField
             fullWidth
@@ -180,6 +204,8 @@ const LoginForm = () => {
             value={formData.password}
             onChange={handleChange}
             variant="outlined"
+            error={!!errors.password}
+            helperText={errors.password}
           />
         </Box>
         <StyledButton type="submit" variant="contained" disabled={loading}>

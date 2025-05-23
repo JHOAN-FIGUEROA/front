@@ -37,7 +37,7 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
           <DialogContent dividers>
             <Grid container spacing={2}>
               {campos.map(({ name, label, select, options, type = 'text', required = true }) => (
-                <Grid item xs={12} sm={6} key={name}>
+                <Grid xs={12} sm={6} key={name}>
                   {select ? (
                     <TextField
                       select

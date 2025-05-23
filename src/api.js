@@ -11,27 +11,36 @@ export const loginUser = async (credentials) => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al iniciar sesión');
+      throw response;
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    throw error;
   }
 };
 
-export const getUsuarios = async () => {
+export const getUsuarios = async (page = 1, limit = 5, searchTerm = '') => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios`);
+    let url = `${API_URL}/api/usuarios?page=${page}&limit=${limit}`;
+    if (searchTerm) {
+      url += `&search=${encodeURIComponent(searchTerm)}`;
+    }
+    url += `&_t=${Date.now()}`;
+
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new Error('Error al obtener los usuarios');
+      throw response;
     }
     const data = await response.json();
-    return data;
+    return { success: true, data: data };
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    if (error instanceof Response) {
+      throw error;
+    } else {
+      return { error: true, status: 500, detalles: error.message || 'Error al conectar con el servidor' };
+    }
   }
 };
 

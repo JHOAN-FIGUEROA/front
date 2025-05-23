@@ -13,14 +13,15 @@ import CambiarEstado from '../components/CambiarEstado';
 import Eliminar from '../components/Eliminar';
 import Crear from '../components/Crear';
 import AddIcon from '@mui/icons-material/Add';
+import { useSearchParams } from 'react-router-dom';
 
 const USUARIOS_POR_PAGINA = 5;
 const CAMPOS_EDITABLES = [
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI', 'NIT'] },
+  { name: 'documento', label: 'Documento' },
   { name: 'nombre', label: 'Nombre' },
   { name: 'apellido', label: 'Apellido' },
   { name: 'email', label: 'Email' },
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI', 'NIT'] },
-  { name: 'documento', label: 'Documento' },
   { name: 'municipio', label: 'Municipio' },
   { name: 'barrio', label: 'Barrio' },
   { name: 'dirrecion', label: 'Dirección' },
@@ -46,7 +47,13 @@ const Usuarios = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [pagina, setPagina] = useState(1);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialPage = parseInt(searchParams.get('page')) || 1;
+  const [pagina, setPagina] = useState(initialPage);
+
+  const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [usuarioDetalle, setUsuarioDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
@@ -64,51 +71,71 @@ const Usuarios = () => {
 
   useEffect(() => {
     const fetchUsuarios = async () => {
+      setLoading(true);
+      setError('');
       try {
-        const data = await getUsuarios();
-        let lista = [];
-        if (Array.isArray(data)) {
-          lista = data;
-        } else if (Array.isArray(data.usuarios)) {
-          lista = data.usuarios;
-        } else if (Array.isArray(data.data)) {
-          lista = data.data;
+        const result = await getUsuarios(pagina, USUARIOS_POR_PAGINA, busqueda);
+
+        if (result.error) {
+          let errorMessage = result.detalles || 'Error al cargar usuarios.';
+          let errorTitle = 'Error de Carga';
+
+          if (result.status) {
+            switch (result.status) {
+              case 404:
+                errorMessage = 'No se encontraron usuarios.';
+                errorTitle = 'No Encontrado';
+                break;
+              default:
+                errorTitle = `Error ${result.status}`;
+            }
+          }
+          setError(errorMessage);
+          setUsuarios([]);
+          setTotalPaginasAPI(1);
+        } else if (result.success && result.data) {
+          setUsuarios(result.data.usuarios || []);
+          setTotalPaginasAPI(result.data.paginacion?.totalPaginas || 1);
         }
-        setUsuarios(lista);
       } catch (err) {
-        setError(err.message);
+        setError('Error inesperado al cargar usuarios.' + err.message);
+        setUsuarios([]);
+        setTotalPaginasAPI(1);
       } finally {
         setLoading(false);
       }
     };
     fetchUsuarios();
-  }, []);
+  }, [pagina, busqueda]);
 
-  // Filtrado por búsqueda
-  const usuariosFiltrados = usuarios.filter((usuario) => {
-    const texto = `${usuario.nombre} ${usuario.apellido} ${usuario.email}`.toLowerCase();
-    const busq = busqueda.trim().toLowerCase();
-    let estadoBool = false;
-    if (usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1') {
-      estadoBool = true;
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    if (pageFromUrl !== pagina) {
+      setPagina(pageFromUrl);
     }
-    if (busq === 'activo') return estadoBool === true;
-    if (busq === 'inactivo') return estadoBool === false;
-    return texto.includes(busq);
-  });
+  }, [searchParams]);
 
-  // Paginación
-  const totalPaginas = Math.ceil(usuariosFiltrados.length / USUARIOS_POR_PAGINA);
-  const usuariosPagina = usuariosFiltrados.slice(
-    (pagina - 1) * USUARIOS_POR_PAGINA,
-    pagina * USUARIOS_POR_PAGINA
-  );
+  const usuariosPagina = usuarios;
 
   const handleChangePagina = (event, value) => {
-    setPagina(value);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', value.toString());
+    setSearchParams(newSearchParams);
   };
 
-  // Ver detalle de usuario
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setBusqueda(newSearchTerm);
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newSearchTerm) {
+       newSearchParams.set('search', newSearchTerm);
+    } else {
+       newSearchParams.delete('search');
+    }
+    newSearchParams.set('page', '1');
+    setSearchParams(newSearchParams);
+  };
+
   const handleVerDetalle = async (id) => {
     setDetalleOpen(true);
     setUsuarioDetalle(null);
@@ -130,7 +157,6 @@ const Usuarios = () => {
     setDetalleError('');
   };
 
-  // Editar usuario
   const handleEditarUsuario = async (id) => {
     setEditOpen(true);
     setEditUsuario(null);
@@ -158,9 +184,11 @@ const Usuarios = () => {
     setEditLoading(true);
     setEditError('');
     try {
-      // Solo enviar los campos que cambiaron
       const dataToSend = {};
       CAMPOS_EDITABLES.forEach(({ name }) => {
+        if (name === 'password' && editForm[name] === editUsuario[name]) {
+          return;
+        }
         if (editForm[name] !== editUsuario[name]) {
           dataToSend[name] = editForm[name];
         }
@@ -172,7 +200,6 @@ const Usuarios = () => {
       }
       await updateUsuario(editUsuario.idusuario, dataToSend);
       setSuccessMsg('Usuario actualizado correctamente');
-      // Actualizar la tabla localmente
       setUsuarios((prev) => prev.map(u => u.idusuario === editUsuario.idusuario ? { ...u, ...dataToSend } : u));
       setEditOpen(false);
     } catch (err) {
@@ -192,30 +219,30 @@ const Usuarios = () => {
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Usuarios Registrados</Typography>
-      <Box mb={2} height={4} display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          {loading && <CircularProgress size={28} />}
-          {error && <Alert severity="error">{error}</Alert>}
+      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
+        <Box sx={{ flexGrow: 1 }}>
+          <Buscador
+            value={busqueda}
+            onChange={handleSearchChange}
+            placeholder="Buscar usuario..."
+          />
         </Box>
         <Button
           variant="contained"
           color="success"
           onClick={() => setCrearOpen(true)}
-          sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
+          sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
           startIcon={<AddIcon />}
         >
           Registrar
         </Button>
       </Box>
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <Buscador
-          value={busqueda}
-          onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
-          placeholder="Buscar usuario..."
-        />
-      </Stack>
-      <TableContainer component={Paper} sx={{ maxWidth: 1000, margin: '0 auto', boxShadow: 2 }}>
-        <Table>
+      <Box mb={2} height={4}>
+        {loading && <CircularProgress size={28} />}
+        {error && <Alert severity="error">{error}</Alert>}
+      </Box>
+      <TableContainer component={Paper} sx={{ margin: '0 auto', boxShadow: 2, overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell><b>Nombre</b></TableCell>
@@ -225,9 +252,11 @@ const Usuarios = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {usuariosPagina.length > 0 ? (
+            {loading ? (
+              <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+            ) : usuariosPagina.length > 0 ? (
               usuariosPagina.map((usuario, idx) => (
-                <TableRow key={idx}>
+                <TableRow key={usuario.idusuario || idx}>
                   <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
                   <TableCell>{usuario.email}</TableCell>
                   <TableCell align="center">
@@ -246,27 +275,27 @@ const Usuarios = () => {
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
+            ) : (error ? null : (
               <TableRow>
-                <TableCell colSpan={4} align="center">No hay usuarios registrados.</TableCell>
+                <TableCell colSpan={4} align="center">No se encontraron usuarios.</TableCell>
               </TableRow>
-            )}
+            ))
+            }
           </TableBody>
         </Table>
       </TableContainer>
-      {totalPaginas > 1 && (
-        <Stack direction="row" justifyContent="center" alignItems="center" mt={3}>
-          <Pagination
-            count={totalPaginas}
-            page={pagina}
-            onChange={handleChangePagina}
-            color="primary"
-            shape="rounded"
-          />
-        </Stack>
+
+      {!loading && totalPaginasAPI > 1 && (
+         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination
+               count={totalPaginasAPI}
+               page={pagina}
+               onChange={handleChangePagina}
+               color="primary"
+            />
+         </Box>
       )}
 
-      {/* Modal de detalle de usuario */}
       <VerDetalle
         open={detalleOpen}
         onClose={handleCerrarDetalle}
@@ -275,21 +304,18 @@ const Usuarios = () => {
         error={detalleError}
       />
 
-      {/* Modal de edición de usuario */}
       <Editar
         open={editOpen}
         onClose={handleCerrarEdicion}
         usuario={editUsuario}
-        loading={editLoading}
-        error={editError}
         form={editForm}
         onFormChange={handleEditFormChange}
         onSave={handleGuardarEdicion}
+        loading={editLoading}
+        error={editError}
         camposEditables={CAMPOS_EDITABLES}
-        loadingSave={editLoading}
       />
 
-      {/* Snackbar de éxito */}
       <Snackbar
         open={!!successMsg}
         autoHideDuration={3000}
@@ -298,31 +324,95 @@ const Usuarios = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
 
-      {/* Diálogo de eliminar usuario */}
       <Eliminar
         id={usuarioEliminar?.idusuario}
         open={eliminarOpen}
         onClose={() => setEliminarOpen(false)}
         onEliminado={() => {
           setEliminarOpen(false);
-          setUsuarios((prev) => prev.filter(u => u.idusuario !== usuarioEliminar?.idusuario));
+          const fetchUsuariosAfterDelete = async () => {
+             setLoading(true);
+             setError('');
+             try {
+               let currentPage = pagina;
+               let result = await getUsuarios(currentPage, USUARIOS_POR_PAGINA, busqueda);
+
+               if (result.success && result.data && result.data.usuarios.length === 0 && currentPage > 1) {
+                  currentPage = currentPage - 1;
+                  const newSearchParams = new URLSearchParams(searchParams);
+                  newSearchParams.set('page', currentPage.toString());
+                  setSearchParams(newSearchParams);
+                  result = await getUsuarios(currentPage, USUARIOS_POR_PAGINA, busqueda);
+               }
+
+               if (result.error) {
+                 let errorMessage = result.detalles || 'Error al recargar usuarios después de eliminar.';
+                 let errorTitle = 'Error de Carga';
+                 if (result.status) {
+                    errorTitle = `Error ${result.status}`;
+                 }
+                 setError(errorMessage);
+                 setUsuarios([]);
+                 setTotalPaginasAPI(1);
+               } else if (result.success && result.data) {
+                 setUsuarios(result.data.usuarios || []);
+                 setTotalPaginasAPI(result.data.paginacion?.totalPaginas || 1);
+               }
+             } catch (err) {
+               setError('Error inesperado al recargar usuarios después de eliminar.' + err.message);
+               setUsuarios([]);
+               setTotalPaginasAPI(1);
+             } finally {
+               setLoading(false);
+             }
+          };
+          fetchUsuariosAfterDelete();
         }}
         nombre={usuarioEliminar ? `${usuarioEliminar.nombre} ${usuarioEliminar.apellido}` : ''}
         tipoEntidad="usuario"
       />
 
-      {/* Modal de crear usuario */}
       <Crear
         open={crearOpen}
         onClose={() => setCrearOpen(false)}
         onCreado={nuevoUsuario => {
           setCrearOpen(false);
-          // Asegurarse de que el campo estado sea booleano
           const usuarioConEstado = {
             ...nuevoUsuario,
             estado: nuevoUsuario.estado === true || nuevoUsuario.estado === 'true' || nuevoUsuario.estado === 1 || nuevoUsuario.estado === '1',
           };
-          setUsuarios(prev => [usuarioConEstado, ...prev]);
+          const fetchUsuariosAfterCreate = async () => {
+             setLoading(true);
+             setError('');
+             try {
+               const result = await getUsuarios(1, USUARIOS_POR_PAGINA, busqueda);
+
+               if (result.error) {
+                 let errorMessage = result.detalles || 'Error al recargar usuarios después de crear.';
+                 let errorTitle = 'Error de Carga';
+                 if (result.status) {
+                    errorTitle = `Error ${result.status}`;
+                 }
+                 setError(errorMessage);
+                 setUsuarios([]);
+                 setTotalPaginasAPI(1);
+               } else if (result.success && result.data) {
+                 setUsuarios(result.data.usuarios || []);
+                 setTotalPaginasAPI(result.data.paginacion?.totalPaginas || 1);
+                 setPagina(1);
+                 const newSearchParams = new URLSearchParams(searchParams);
+                 newSearchParams.set('page', '1');
+                 setSearchParams(newSearchParams);
+               }
+             } catch (err) {
+               setError('Error inesperado al recargar usuarios después de crear.' + err.message);
+               setUsuarios([]);
+               setTotalPaginasAPI(1);
+             } finally {
+               setLoading(false);
+             }
+          };
+          fetchUsuariosAfterCreate();
           setCrearSuccess(true);
         }}
         campos={CAMPOS_CREAR}

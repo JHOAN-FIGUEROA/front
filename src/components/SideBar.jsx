@@ -1,41 +1,56 @@
 import React, { useState } from 'react';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Box, Divider, Button } from '@mui/material';
 import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useMediaQuery } from '@mui/material';
 
 const drawerWidth = 240;
 const closedDrawerWidth = 64; // Ancho cuando el sidebar está cerrado
+const breakpoint = 'md';
 
-const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
-  width: open ? drawerWidth : closedDrawerWidth,
+const StyledDrawer = styled(Drawer)(({ theme, open, variant, navbarHeight }) => ({
+  width: drawerWidth,
   flexShrink: 0,
-  whiteSpace: 'nowrap', // Evita que el contenido se envuelva
+  whiteSpace: 'nowrap',
   boxSizing: 'border-box',
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
-  }),
-  overflowX: 'hidden', // Oculta el contenido que excede el ancho
-  '& .MuiDrawer-paper': {
-    width: open ? drawerWidth : closedDrawerWidth,
-    boxSizing: 'border-box',
-    background: '#4169E1',
-    color: '#fff',
+  ...(variant === 'permanent' && {
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    overflowX: 'hidden', // Oculta el contenido que excede el ancho
+    overflowX: 'hidden',
+    width: open ? drawerWidth : closedDrawerWidth,
+    position: 'fixed',
+    height: '100vh',
+    zIndex: theme.zIndex.drawer,
+  }),
+  '& .MuiDrawer-paper': {
+    width: drawerWidth,
+    boxSizing: 'border-box',
+    background: '#4169E1',
+    color: '#fff',
+    ...(variant === 'permanent' && {
+      transition: theme.transitions.create('width', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      overflowX: 'hidden',
+      width: open ? drawerWidth : closedDrawerWidth,
+    }),
+    ...(variant === 'temporary' && {
+    }),
   },
 }));
 
-const SideBar = ({ open, onToggle }) => {
+const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
   const [openConfig, setOpenConfig] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down(breakpoint));
 
   const handleConfigClick = () => {
     setOpenConfig(!openConfig);
@@ -43,20 +58,38 @@ const SideBar = ({ open, onToggle }) => {
 
   const handleNavigate = (path) => {
     navigate(path);
-    // Removed the automatic closing on navigate as per your previous request.
-    // If you still want it to close on navigate, let me know.
-    // if (onToggle) onToggle(false);
+    if (variant === 'temporary' && onClose) {
+       onClose();
+    }
   };
 
   return (
-    <StyledDrawer variant="permanent" open={open}>
-      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, justifyContent: open ? 'flex-end' : 'center' }}>
-        <IconButton onClick={() => onToggle(!open)}>
-          <Menu />
-        </IconButton>
-      </Box>
+    <StyledDrawer
+      variant={variant}
+      open={open}
+      onClose={onClose}
+      ModalProps={{
+        keepMounted: true,
+      }}
+      sx={{
+         display: { xs: variant === 'permanent' ? 'none' : 'block', md: 'block' },
+         zIndex: isMobile ? theme.zIndex.drawer : theme.zIndex.drawer,
+         navbarHeight: navbarHeight,
+      }}
+    >
+      {variant === 'permanent' && (
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 2, height: navbarHeight, justifyContent: open ? 'flex-end' : 'center', 
+             position: 'absolute', top: 0, left: 0, right: 0,
+             backgroundColor: theme.palette.primary.main,
+             zIndex: theme.zIndex.drawer + 2
+        }}>
+           <IconButton onClick={onToggleDesktop} sx={{ color: 'white' }}>
+              <Menu />
+           </IconButton>
+        </Box>
+      )}
       <Divider />
-      <List>
+      <List sx={{ paddingTop: navbarHeight }}>
         <ListItem {...({ button: 'true' })} selected={location.pathname === '/dashboard'} onClick={() => handleNavigate('/dashboard')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Dashboard />
@@ -88,7 +121,7 @@ const SideBar = ({ open, onToggle }) => {
         </Collapse>
       </List>
       <Box sx={{ flexGrow: 1 }} />
-      <Box sx={{ p: open ? 2 : '16px 8px', display: 'flex', justifyContent: open ? 'flex-start' : 'center' }}> {/* Mantén el padding y alineación ajustados */}
+      <Box sx={{ p: open ? 2 : '16px 8px', display: 'flex', justifyContent: open ? 'flex-start' : 'center' }}>
         {open ? (
           <Button
             variant="contained"
@@ -112,4 +145,4 @@ const SideBar = ({ open, onToggle }) => {
   );
 };
 
-export default SideBar; 
+export default SideBar;
