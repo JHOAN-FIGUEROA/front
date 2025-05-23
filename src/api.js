@@ -132,7 +132,7 @@ export const createUsuario = async (data) => {
 // Obtener roles
 export const getRoles = async (page = 1, limit = 5, searchTerm = '') => {
   try {
-    let url = `${API_URL}/api/rol?page=${page}&limit=${limit}`;
+    let url = `${API_URL}/api/rol?pagina=${page}&limit=${limit}`;
     if (searchTerm) {
       url += `&search=${encodeURIComponent(searchTerm)}`;
     }

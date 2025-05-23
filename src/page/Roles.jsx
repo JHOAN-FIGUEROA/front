@@ -96,6 +96,7 @@ const Roles = () => {
           setError(errorMessage);
           setTotalPaginasAPI(1);
         } else if (result.success && result.data) {
+          console.log('Datos de roles recibidos de la API:', result.data.roles);
           setRoles(result.data.roles || []);
           setTotalPaginasAPI(result.data.totalPaginas || 1);
         }
@@ -323,7 +324,7 @@ const Roles = () => {
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody key={pagina}>
             {loading ? (
                <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
             ) : rolesPagina.length > 0 ? (
