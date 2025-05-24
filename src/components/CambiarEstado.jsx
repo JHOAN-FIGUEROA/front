@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Switch, CircularProgress, Snackbar, Alert } from '@mui/material';
-import { updateEstadoUsuario } from '../api';
+import { Switch, CircularProgress, Snackbar, Alert, Box } from '@mui/material';
 
-const CambiarEstado = ({ id, estadoActual, onEstadoCambiado, loading: loadingProp = false, disabled = false }) => {
+const CambiarEstado = ({ id, estadoActual, onEstadoCambiado, loading: loadingProp = false, disabled = false, updateEstadoApi }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -12,7 +11,7 @@ const CambiarEstado = ({ id, estadoActual, onEstadoCambiado, loading: loadingPro
     setLoading(true);
     setError('');
     try {
-      await updateEstadoUsuario(id, nuevoEstado);
+      await updateEstadoApi(id, nuevoEstado);
       setSuccess(true);
       if (onEstadoCambiado) onEstadoCambiado(nuevoEstado);
     } catch (err) {
@@ -23,7 +22,7 @@ const CambiarEstado = ({ id, estadoActual, onEstadoCambiado, loading: loadingPro
   };
 
   return (
-    <>
+    <Box display="flex" alignItems="center" justifyContent="center" height="100%">
       <Switch
         checked={!!estadoActual}
         onChange={handleChange}
@@ -37,7 +36,7 @@ const CambiarEstado = ({ id, estadoActual, onEstadoCambiado, loading: loadingPro
       <Snackbar open={success} autoHideDuration={2000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert severity="success" onClose={() => setSuccess(false)}>Estado actualizado</Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 };
 

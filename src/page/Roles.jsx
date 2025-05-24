@@ -96,7 +96,6 @@ const Roles = () => {
           setError(errorMessage);
           setTotalPaginasAPI(1);
         } else if (result.success && result.data) {
-          console.log('Datos de roles recibidos de la API:', result.data.roles);
           setRoles(result.data.roles || []);
           setTotalPaginasAPI(result.data.totalPaginas || 1);
         }
@@ -320,7 +319,7 @@ const Roles = () => {
             <TableRow>
               <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
-              <TableCell><b>Estado</b></TableCell>
+              <TableCell align="center"><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
@@ -332,7 +331,7 @@ const Roles = () => {
                 <TableRow key={rol.idrol || idx}>
                   <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{rol.nombre}</TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={{ justifyContent: 'center' }}>
                     <CambiarEstado
                       id={rol.idrol}
                       estadoActual={rol.estado === true || rol.estado === 'true' || rol.estado === 1 || rol.estado === '1'}
