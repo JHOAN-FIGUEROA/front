@@ -50,7 +50,9 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                       required={required}
                     >
                       {options.map(opt => (
-                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                        <MenuItem key={opt.value || opt} value={opt.value || opt}>
+                          {opt.label || opt}
+                        </MenuItem>
                       ))}
                     </TextField>
                   ) : (
@@ -87,4 +89,4 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
   );
 };
 
-export default Crear; 
+export default Crear;

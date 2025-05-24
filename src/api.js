@@ -130,15 +130,47 @@ export const createUsuario = async (data) => {
 };
 
 // Obtener roles
-export const getRoles = async () => {
+export const getRoles = async (page = 1, limit = 5, searchTerm = '') => {
   try {
-    const response = await fetch(`${API_URL}/api/rol`);
-    if (!response.ok) {
-      throw new Error('Error al obtener los roles');
+    let url = `${API_URL}/api/rol?pagina=${page}&limit=${limit}`;
+    if (searchTerm) {
+      url += `&search=${encodeURIComponent(searchTerm)}`;
     }
-    return await response.json();
+    // Opcional: agregar un parámetro para evitar caché si es necesario
+    // url += `&_t=${Date.now()}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      // Intentar leer el error del cuerpo de la respuesta si está disponible
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al obtener los roles');
+    }
+    const data = await response.json();
+    // Asumiendo que la API devuelve la estructura con { success: true, data: { roles: [], totalPaginas: N, ...} }
+    // o directamente { roles: [], totalPaginas: N, ... }
+    // Ajustar según la respuesta real de la API de roles si es diferente a la de usuarios
+    // Basándome en tu descripción anterior, parece devolver { roles: [...], totalPaginas: N, ...}
+    // Voy a devolver un formato similar al de usuarios para consistencia en el frontend
+     return { success: true, data: data };
+
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error en getRoles API call:', error);
+     if (error instanceof Response) {
+       // Si es un error de respuesta HTTP, intentar obtener más detalles
+       try {
+         const errorBody = await error.json();
+         return { error: true, status: error.status, detalles: errorBody.message || `Error HTTP ${error.status}` };
+       } catch (jsonError) {
+         // Si no se puede parsear JSON, devolver un error genérico con el status
+         return { error: true, status: error.status, detalles: `Error HTTP ${error.status}` };
+       }
+     } else if (error.message.includes('Failed to fetch')) {
+        // Error de red o servidor no disponible
+        return { error: true, status: 500, detalles: 'Error de conexión con el servidor. Por favor, verifica que el backend esté funcionando.' };
+     } else {
+       // Otros errores
+       return { error: true, status: 500, detalles: error.message || 'Error desconocido al obtener roles' };
+     }
   }
 };
 

@@ -61,7 +61,6 @@ const DashboardLayout = ({ children }) => {
           paddingLeft: isMobile ? 0 : `${desktopDrawerWidth}px`,
           // Padding superior para no quedar debajo del Navbar fijo
           paddingTop: navbarHeight,
-          width: '100%',
           boxSizing: 'border-box',
           overflowX: 'hidden',
           overflowY: 'auto', // Permitir scroll vertical en este contenedor
@@ -72,16 +71,16 @@ const DashboardLayout = ({ children }) => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
           }),
+          zIndex: theme.zIndex.drawer -1, // Asegurar que el contenido principal esté debajo del sidebar
         }}
       >
         {/* Contenedor interno para limitar el ancho, centrar y manejar su propio scroll si es necesario */}
         <Box sx={{
-           maxWidth: 'lg', // Limitar el ancho máximo en pantallas grandes
-           margin: '0 auto', // Centrar el contenido
-           padding: '16px', // Añadir padding interno
-           boxSizing: 'border-box',
-           height: '100%', // Ocupar la altura completa del padre (main)
-           overflowY: 'auto', // Permitir scroll vertical DENTRO de este Box si su contenido se desborda
+          width: '100%', // Ocupar el 100% del ancho del padre
+          padding: '16px', // Añadir padding interno
+          boxSizing: 'border-box',
+          height: '100%', // Ocupar la altura completa del padre (main)
+          overflowY: 'auto', // Permitir scroll vertical DENTRO de este Box si su contenido se desborda
         }}>{children}</Box>
       </Box>
     </Box>
