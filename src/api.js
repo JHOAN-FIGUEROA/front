@@ -234,7 +234,7 @@ export const deleteRol = async (id) => {
 export const updateEstadoRol = async (id, estado) => {
   try {
     const response = await fetch(`${API_URL}/api/rol/estado/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -242,9 +242,10 @@ export const updateEstadoRol = async (id, estado) => {
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al cambiar el estado del rol');
+      throw new Error(errorData.error || 'Error al cambiar el estado del rol');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     throw new Error(error.message || 'Error al conectar con el servidor');
   }
