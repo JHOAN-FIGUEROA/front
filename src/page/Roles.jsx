@@ -76,23 +76,9 @@ const Roles = () => {
       setError('');
       setRoles([]);
       try {
-        // Usar getRoles con paginación y búsqueda
         const result = await getRoles(pagina, ROLES_POR_PAGINA, busqueda);
-
         if (result.error) {
           let errorMessage = result.detalles || 'Error al cargar roles.';
-          let errorTitle = 'Error de Carga';
-
-          if (result.status) {
-            switch (result.status) {
-              case 404:
-                errorMessage = 'No se encontraron roles.';
-                errorTitle = 'No Encontrado';
-                break;
-              default:
-                errorTitle = `Error ${result.status}`;
-            }
-          }
           setError(errorMessage);
           setTotalPaginasAPI(1);
         } else if (result.success && result.data) {
@@ -107,7 +93,7 @@ const Roles = () => {
       }
     };
     fetchRoles();
-  }, [pagina, busqueda]); // Dependencias: pagina y busqueda
+  }, [pagina, busqueda]);
 
   useEffect(() => {
     const pageFromUrl = parseInt(searchParams.get('page')) || 1;
@@ -116,16 +102,11 @@ const Roles = () => {
     }
     const searchFromUrl = searchParams.get('search') || '';
     if (searchFromUrl !== busqueda) {
-       setBusqueda(searchFromUrl);
+      setBusqueda(searchFromUrl);
     }
   }, [searchParams]);
 
-  // Filtrado por búsqueda (Esta lógica ya no es necesaria aquí, la maneja la API)
-  // const rolesFiltrados = roles.filter((rol) => { ... });
-
-  // Paginación (Esta lógica ya no es necesaria aquí, la maneja la API)
-  // const totalPaginas = Math.ceil(rolesFiltrados.length / ROLES_POR_PAGINA);
-  const rolesPagina = roles; // roles ahora contiene los datos paginados de la API
+  const rolesPagina = roles;
 
   const handleChangePagina = (event, value) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -133,31 +114,26 @@ const Roles = () => {
     setSearchParams(newSearchParams);
   };
 
-  // Manejar cambio en el buscador (Actualiza URL y dispara useEffect)
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
-    // setBusqueda(newSearchTerm); // Ya no actualizamos el estado local directamente
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSearchTerm) {
-       newSearchParams.set('search', newSearchTerm);
+      newSearchParams.set('search', newSearchTerm);
     } else {
-       newSearchParams.delete('search');
+      newSearchParams.delete('search');
     }
-    newSearchParams.set('page', '1'); // Reiniciar a la página 1 en nueva búsqueda
+    newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
   };
 
-  // Editar rol (ABRIR MODAL PERSONALIZADO)
   const handleEditarRol = async (rol) => {
-    setRolAEditar(rol); // Guardamos el rol original para referencia
+    setRolAEditar(rol);
     setEditRolOpen(true);
     setEditRolLoading(true);
     setEditRolError('');
     try {
       const data = await getRolById(rol.idrol);
-      // Asignar descripción si existe, o cadena vacía
       const descripcion = data.descripcion || '';
-      // Mapear los permisos_asociados a un array de IDs
       const permisos_ids = data.permisos_asociados ? data.permisos_asociados.map(p => p.permisos_idpermisos) : [];
       setEditRolData({ nombre: data.nombre, descripcion: descripcion, permisos_ids: permisos_ids });
     } catch (err) {
@@ -190,34 +166,30 @@ const Roles = () => {
     setEditRolLoading(true);
     setEditRolError('');
     try {
-      // Validar campos - Solo nombre es obligatorio
-       if (!editRolData.nombre || editRolData.permisos_ids.length === 0) {
+      if (!editRolData.nombre || editRolData.permisos_ids.length === 0) {
         setEditRolError('El nombre y la selección de al menos un permiso son obligatorios.');
         setEditRolLoading(false);
         return;
       }
 
-      // Preparar los datos en el formato que espera el backend
       const datosParaEnviar = {
         nombre: editRolData.nombre,
         permisos: editRolData.permisos_ids
       };
 
-      // Solo agregar descripción si tiene valor
       if (editRolData.descripcion && editRolData.descripcion.trim() !== '') {
         datosParaEnviar.descripcion = editRolData.descripcion;
       }
 
-      await updateRol(rolAEditar.idrol, datosParaEnviar); // Enviar datos en el formato correcto
+      await updateRol(rolAEditar.idrol, datosParaEnviar);
       setSuccessMsg('Rol actualizado correctamente');
       
-      // Cargar datos actualizados después de la edición
       const rolActualizado = await getRolById(rolAEditar.idrol);
       setRoles(prev => prev.map(r => r.idrol === rolAEditar.idrol ? rolActualizado : r));
 
       setEditRolOpen(false);
       setRolAEditar(null);
-      setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] }); // Resetear estado
+      setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] });
     } catch (err) {
       setEditRolError(err.message);
     } finally {
@@ -228,7 +200,7 @@ const Roles = () => {
   const handleCerrarEdicionRol = () => {
     setEditRolOpen(false);
     setRolAEditar(null);
-    setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] }); // Resetear estado
+    setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] });
     setEditRolError('');
   };
 
@@ -246,13 +218,11 @@ const Roles = () => {
     }
   };
 
-  // Lógica para crear rol
   const handleCrearRol = async (e) => {
     e.preventDefault();
     setCrearLoading(true);
     setCrearError('');
     try {
-      // Validar campos - Solo nombre es obligatorio
       if (!nuevoRol.nombre || nuevoRol.permisos_ids.length === 0) {
         setCrearError('El nombre y la selección de al menos un permiso son obligatorios.');
         setCrearLoading(false);
@@ -262,12 +232,9 @@ const Roles = () => {
       setCrearOpen(false);
       setCrearSuccess(true);
 
-      // Después de crear, recargar los datos de la primera página con la búsqueda actual
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.set('page', '1');
-      // La búsqueda se mantiene si ya existía en la URL
       setSearchParams(newSearchParams);
-      // El useEffect dependiente de searchParams (y por lo tanto de pagina y busqueda) se encargará de recargar los datos
 
       setNuevoRol({ nombre: '', descripcion: '', permisos_ids: [] });
     } catch (err) {
@@ -277,7 +244,6 @@ const Roles = () => {
     }
   };
 
-  // Lógica para seleccionar permisos (Modal CREAR)
   const handlePermisoToggle = (id) => {
     setNuevoRol(prev => {
       const yaSeleccionado = prev.permisos_ids.includes(id);
@@ -312,7 +278,6 @@ const Roles = () => {
           Registrar
         </Button>
       </Box>
-      {/* Box para indicadores de carga y error, fuera del flex container principal */}
       <Box mb={2} height={4}>
          {loading && <CircularProgress size={28} />}
          {error && <Alert severity="error" sx={{ width: 'fit-content' }}>{error}</Alert>}
@@ -327,7 +292,7 @@ const Roles = () => {
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody key={pagina}>
+          <TableBody>
             {loading ? (
                <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
             ) : rolesPagina.length > 0 ? (
@@ -370,7 +335,6 @@ const Roles = () => {
           />
         </Stack>
       )}
-      {/* Snackbar de éxito */}
       <Snackbar
         open={!!successMsg}
         autoHideDuration={3000}
@@ -378,7 +342,6 @@ const Roles = () => {
         message={successMsg}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
-      {/* Diálogo de eliminar rol */}
       <Eliminar
         id={rolEliminar?.idrol}
         open={eliminarOpen}
@@ -391,7 +354,6 @@ const Roles = () => {
         tipoEntidad="rol"
         deleteApi={deleteRol}
       />
-      {/* Modal de crear rol personalizado */}
       <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleCrearRol} autoComplete="off">
           <DialogTitle>Registrar Rol</DialogTitle>
@@ -462,7 +424,6 @@ const Roles = () => {
           Rol creado correctamente
         </Alert>
       </Snackbar>
-      {/* Modal de ver detalle de rol */}
       <VerDetalle
         open={verDetalleOpen}
         onClose={() => {
@@ -473,7 +434,6 @@ const Roles = () => {
         loading={detalleLoading}
         error={detalleError}
       />
-      {/* Modal de edición de rol personalizado */}
       <Dialog open={editRolOpen} onClose={handleCerrarEdicionRol} maxWidth="sm" fullWidth>
         <form onSubmit={handleGuardarEdicionRol} autoComplete="off">
           <DialogTitle>Editar Rol: {rolAEditar?.nombre}</DialogTitle>

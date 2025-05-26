@@ -274,3 +274,15 @@ export const getProveedores = async (page = 1, limit = 5) => {
     }
   }
 };
+
+export const getProveedorByNit = async (nit) => {
+  try {
+    const response = await fetch(`${API_URL}/api/proveedores/nit/${nit}`);
+    if (!response.ok) {
+      throw new Error('Error al obtener el detalle del proveedor');
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message || 'Error al conectar con el servidor');
+  }
+};
