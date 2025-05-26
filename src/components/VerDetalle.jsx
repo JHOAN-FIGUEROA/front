@@ -30,6 +30,11 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error }) => {
                            <b>Estado:</b> {usuarioDetalle.estado === true || usuarioDetalle.estado === 'true' || usuarioDetalle.estado === 1 || usuarioDetalle.estado === '1' ? 'Activo' : 'Inactivo'}
                          </Typography>
                       </Grid>
+                      <Grid item xs={12}> {/* Descripción */}
+                         <Typography variant="body1">
+                           <b>Descripción:</b> {usuarioDetalle.descripcion || 'Sin descripción'}
+                         </Typography>
+                      </Grid>
                     </Grid>
                   </Grid>
                 </Grid>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, Checkbox
 } from '@mui/material';
@@ -7,12 +7,23 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import Buscador from '../components/Buscador';
+import Editar from '../components/Editar';
 import CambiarEstado from '../components/CambiarEstado';
 import Eliminar from '../components/Eliminar';
+import Crear from '../components/Crear';
+import VerDetalle from '../components/VerDetalle';
 import AddIcon from '@mui/icons-material/Add';
 import { useSearchParams } from 'react-router-dom';
 
 const ROLES_POR_PAGINA = 5;
+const CAMPOS_EDITABLES = [
+  { name: 'nombre', label: 'Nombre' },
+  { name: 'permisos_ids', label: 'Permisos (IDs separados por coma)', type: 'text', required: false },
+];
+const CAMPOS_CREAR = [
+  { name: 'nombre', label: 'Nombre' },
+  { name: 'permisos_ids', label: 'Permisos (IDs separados por coma)', type: 'text', required: false },
+];
 
 const PERMISOS_DISPONIBLES = [
   { id: 1, nombre: "Dashboard" },
@@ -27,85 +38,94 @@ const PERMISOS_DISPONIBLES = [
 ];
 
 const Roles = () => {
-  const [roles, setRoles] = useState([]); 
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+  const [busqueda, setBusqueda] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
-  const [pagina, setPagina] = useState(parseInt(searchParams.get('page')) || 1);
-  const [busqueda, setBusqueda] = useState(searchParams.get('search') || ''); 
 
+  const initialPage = parseInt(searchParams.get('page')) || 1;
+  const [pagina, setPagina] = useState(initialPage);
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
-  
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRol, setEditRol] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [rolEliminar, setRolEliminar] = useState(null);
-  
   const [crearOpen, setCrearOpen] = useState(false);
-  const [nuevoRol, setNuevoRol] = useState({ nombre: '', permisos_ids: [] }); // Removido descripcion
-  const [crearLoading, setCrearLoading] = useState(false);
-  const [crearError, setCrearError] = useState('');
-  const [crearSuccess, setCrearSuccess] = useState(false); 
-
-  const [editRolOpen, setEditRolOpen] = useState(false);
-  const [rolAEditar, setRolAEditar] = useState(null);
-  const [editRolData, setEditRolData] = useState({ nombre: '', permisos_ids: [] }); // Removido descripcion
-  const [editRolLoading, setEditRolLoading] = useState(false);
-  const [editRolError, setEditRolError] = useState('');
-
+  const [crearSuccess, setCrearSuccess] = useState(false);
   const [verDetalleOpen, setVerDetalleOpen] = useState(false);
   const [rolDetalle, setRolDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [detalleError, setDetalleError] = useState('');
-  
-  const [errorAlCargarRoles, setErrorAlCargarRoles] = useState('');
+  const [nuevoRol, setNuevoRol] = useState({ nombre: '', descripcion: '', permisos_ids: [] });
+  const [crearLoading, setCrearLoading] = useState(false);
+  const [crearError, setCrearError] = useState('');
+  const [editRolOpen, setEditRolOpen] = useState(false);
+  const [rolAEditar, setRolAEditar] = useState(null);
+  const [editRolData, setEditRolData] = useState({ nombre: '', descripcion: '', permisos_ids: [] });
+  const [editRolLoading, setEditRolLoading] = useState(false);
+  const [editRolError, setEditRolError] = useState('');
 
-
-  const fetchRoles = useCallback(async (currentPage, currentSearch) => {
-    setLoading(true);
-    setError('');
-    setErrorAlCargarRoles('');
-    try {
-      const result = await getRoles(currentPage, ROLES_POR_PAGINA, currentSearch);
-      if (result.error) {
-        setError(result.detalles || 'Error al cargar roles.');
-        setRoles([]);
-        setTotalPaginasAPI(1);
-      } else if (result.success && result.data) {
-        setRoles(result.data.roles || []);
-        setTotalPaginasAPI(result.data.totalPaginas || result.data.paginacion?.totalPaginas || 1);
-         if (currentPage > (result.data.totalPaginas || result.data.paginacion?.totalPaginas || 1) && (result.data.totalPaginas || result.data.paginacion?.totalPaginas || 1) > 0) {
-            const newPage = result.data.totalPaginas || result.data.paginacion.totalPaginas;
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.set('page', newPage.toString());
-            setSearchParams(newSearchParams, { replace: true });
-        }
-      } else {
-        setRoles([]);
-        setTotalPaginasAPI(1);
-      }
-    } catch (err) {
-      setError('Error inesperado al cargar roles: ' + (err.message || ''));
-      setErrorAlCargarRoles('Error inesperado al cargar roles: ' + (err.message || ''));
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setLoading(true);
+      setError('');
       setRoles([]);
-      setTotalPaginasAPI(1);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams, setSearchParams]); 
+      try {
+        // Usar getRoles con paginación y búsqueda
+        const result = await getRoles(pagina, ROLES_POR_PAGINA, busqueda);
+
+        if (result.error) {
+          let errorMessage = result.detalles || 'Error al cargar roles.';
+          let errorTitle = 'Error de Carga';
+
+          if (result.status) {
+            switch (result.status) {
+              case 404:
+                errorMessage = 'No se encontraron roles.';
+                errorTitle = 'No Encontrado';
+                break;
+              default:
+                errorTitle = `Error ${result.status}`;
+            }
+          }
+          setError(errorMessage);
+          setTotalPaginasAPI(1);
+        } else if (result.success && result.data) {
+          setRoles(result.data.roles || []);
+          setTotalPaginasAPI(result.data.totalPaginas || 1);
+        }
+      } catch (err) {
+        setError('Error inesperado al cargar roles.' + err.message);
+        setTotalPaginasAPI(1);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoles();
+  }, [pagina, busqueda]); // Dependencias: pagina y busqueda
 
   useEffect(() => {
     const pageFromUrl = parseInt(searchParams.get('page')) || 1;
-    const searchFromUrl = searchParams.get('search') || '';
-
     if (pageFromUrl !== pagina) {
       setPagina(pageFromUrl);
     }
+    const searchFromUrl = searchParams.get('search') || '';
     if (searchFromUrl !== busqueda) {
-      setBusqueda(searchFromUrl);
+       setBusqueda(searchFromUrl);
     }
-    fetchRoles(pageFromUrl, searchFromUrl);
-  }, [searchParams, fetchRoles]); 
+  }, [searchParams]);
+
+  // Filtrado por búsqueda (Esta lógica ya no es necesaria aquí, la maneja la API)
+  // const rolesFiltrados = roles.filter((rol) => { ... });
+
+  // Paginación (Esta lógica ya no es necesaria aquí, la maneja la API)
+  // const totalPaginas = Math.ceil(rolesFiltrados.length / ROLES_POR_PAGINA);
+  const rolesPagina = roles; // roles ahora contiene los datos paginados de la API
 
   const handleChangePagina = (event, value) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -113,54 +133,35 @@ const Roles = () => {
     setSearchParams(newSearchParams);
   };
 
+  // Manejar cambio en el buscador (Actualiza URL y dispara useEffect)
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
-    setBusqueda(newSearchTerm); 
-
+    // setBusqueda(newSearchTerm); // Ya no actualizamos el estado local directamente
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSearchTerm) {
-      newSearchParams.set('search', newSearchTerm);
+       newSearchParams.set('search', newSearchTerm);
     } else {
-      newSearchParams.delete('search');
+       newSearchParams.delete('search');
     }
-    newSearchParams.set('page', '1');
+    newSearchParams.set('page', '1'); // Reiniciar a la página 1 en nueva búsqueda
     setSearchParams(newSearchParams);
   };
 
-  const rolesFiltrados = roles.filter((rol) => {
-    if (!busqueda) return true;
-    const terminoBusquedaLower = busqueda.toLowerCase().trim();
-
-    if (terminoBusquedaLower === "activo") {
-      return rol.estado === true || rol.estado === 1 || rol.estado === 'true';
-    }
-    if (terminoBusquedaLower === "inactivo") {
-      return !(rol.estado === true || rol.estado === 1 || rol.estado === 'true');
-    }
-    // No buscar por descripción ya que se eliminó
-    return (
-      rol.nombre?.toLowerCase().includes(terminoBusquedaLower)
-    );
-  });
-
+  // Editar rol (ABRIR MODAL PERSONALIZADO)
   const handleEditarRol = async (rol) => {
-    setRolAEditar(rol);
+    setRolAEditar(rol); // Guardamos el rol original para referencia
     setEditRolOpen(true);
     setEditRolLoading(true);
     setEditRolError('');
     try {
-      const rolId = parseInt(rol.idrol, 10);
-      if (isNaN(rolId)) {
-          throw new Error("ID de rol inválido para editar.");
-      }
-      const data = await getRolById(rolId);
-      setEditRolData({
-        nombre: data.nombre || '',
-        // descripcion: data.descripcion || '', // Removido
-        permisos_ids: data.permisos_asociados ? data.permisos_asociados.map(p => parseInt(p.permisos_idpermisos || p.id, 10)).filter(id => !isNaN(id)) : []
-      });
+      const data = await getRolById(rol.idrol);
+      // Asignar descripción si existe, o cadena vacía
+      const descripcion = data.descripcion || '';
+      // Mapear los permisos_asociados a un array de IDs
+      const permisos_ids = data.permisos_asociados ? data.permisos_asociados.map(p => p.permisos_idpermisos) : [];
+      setEditRolData({ nombre: data.nombre, descripcion: descripcion, permisos_ids: permisos_ids });
     } catch (err) {
-      setEditRolError('Error al cargar los datos del rol para editar: ' + (err.message || ''));
+      setEditRolError('Error al cargar los datos del rol para editar.');
     } finally {
       setEditRolLoading(false);
     }
@@ -189,28 +190,36 @@ const Roles = () => {
     setEditRolLoading(true);
     setEditRolError('');
     try {
-      if (!editRolData.nombre) { 
-        setEditRolError('El nombre del rol es obligatorio.');
+      // Validar campos - Solo nombre es obligatorio
+       if (!editRolData.nombre || editRolData.permisos_ids.length === 0) {
+        setEditRolError('El nombre y la selección de al menos un permiso son obligatorios.');
         setEditRolLoading(false);
         return;
       }
-      const rolId = parseInt(rolAEditar.idrol, 10);
-       if (isNaN(rolId)) {
-          throw new Error("ID de rol inválido para guardar.");
-      }
-      // Estandarizar a permisos_ids, asumiendo que es lo que el backend espera (como en createRol)
+
+      // Preparar los datos en el formato que espera el backend
       const datosParaEnviar = {
         nombre: editRolData.nombre,
-        // descripcion: editRolData.descripcion, // Removido
-        permisos_ids: editRolData.permisos_ids 
+        permisos: editRolData.permisos_ids
       };
-      await updateRol(rolId, datosParaEnviar); // Llamada a updateRol
+
+      // Solo agregar descripción si tiene valor
+      if (editRolData.descripcion && editRolData.descripcion.trim() !== '') {
+        datosParaEnviar.descripcion = editRolData.descripcion;
+      }
+
+      await updateRol(rolAEditar.idrol, datosParaEnviar); // Enviar datos en el formato correcto
       setSuccessMsg('Rol actualizado correctamente');
+      
+      // Cargar datos actualizados después de la edición
+      const rolActualizado = await getRolById(rolAEditar.idrol);
+      setRoles(prev => prev.map(r => r.idrol === rolAEditar.idrol ? rolActualizado : r));
+
       setEditRolOpen(false);
       setRolAEditar(null);
-      fetchRoles(pagina, busqueda); 
+      setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] }); // Resetear estado
     } catch (err) {
-      setEditRolError(err.message || 'Error al guardar el rol.');
+      setEditRolError(err.message);
     } finally {
       setEditRolLoading(false);
     }
@@ -219,7 +228,7 @@ const Roles = () => {
   const handleCerrarEdicionRol = () => {
     setEditRolOpen(false);
     setRolAEditar(null);
-    setEditRolData({ nombre: '', permisos_ids: [] }); // Removido descripcion
+    setEditRolData({ nombre: '', descripcion: '', permisos_ids: [] }); // Resetear estado
     setEditRolError('');
   };
 
@@ -228,49 +237,47 @@ const Roles = () => {
     setDetalleLoading(true);
     setDetalleError('');
     try {
-      const rolId = parseInt(rol.idrol, 10);
-      if (isNaN(rolId)) {
-          throw new Error("ID de rol inválido para ver detalle.");
-      }
-      const data = await getRolById(rolId);
+      const data = await getRolById(rol.idrol);
       setRolDetalle(data);
     } catch (err) {
-      setDetalleError(err.message || 'Error al cargar detalle del rol.');
+      setDetalleError(err.message);
     } finally {
       setDetalleLoading(false);
     }
   };
 
+  // Lógica para crear rol
   const handleCrearRol = async (e) => {
     e.preventDefault();
     setCrearLoading(true);
     setCrearError('');
     try {
-      if (!nuevoRol.nombre) { 
-        setCrearError('El nombre del rol es obligatorio.');
+      // Validar campos - Solo nombre es obligatorio
+      if (!nuevoRol.nombre || nuevoRol.permisos_ids.length === 0) {
+        setCrearError('El nombre y la selección de al menos un permiso son obligatorios.');
         setCrearLoading(false);
         return;
       }
-      const payload = {
-          nombre: nuevoRol.nombre,
-          // descripcion: nuevoRol.descripcion, // Removido
-          permisos_ids: nuevoRol.permisos_ids
-      };
-      await createRol(payload); // Llamada a createRol
+      await createRol(nuevoRol);
       setCrearOpen(false);
-      setCrearSuccess(true); 
-      setNuevoRol({ nombre: '', permisos_ids: [] }); // Removido descripcion
-      
+      setCrearSuccess(true);
+
+      // Después de crear, recargar los datos de la primera página con la búsqueda actual
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.set('page', '1');
+      // La búsqueda se mantiene si ya existía en la URL
       setSearchParams(newSearchParams);
+      // El useEffect dependiente de searchParams (y por lo tanto de pagina y busqueda) se encargará de recargar los datos
+
+      setNuevoRol({ nombre: '', descripcion: '', permisos_ids: [] });
     } catch (err) {
-      setCrearError(err.message || 'Error al crear el rol.');
+      setCrearError(err.message);
     } finally {
       setCrearLoading(false);
     }
   };
 
+  // Lógica para seleccionar permisos (Modal CREAR)
   const handlePermisoToggle = (id) => {
     setNuevoRol(prev => {
       const yaSeleccionado = prev.permisos_ids.includes(id);
@@ -283,57 +290,32 @@ const Roles = () => {
     });
   };
 
-  const handleEliminadoExitoso = () => {
-    setEliminarOpen(false);
-    setSuccessMsg('Rol eliminado correctamente');
-    const fetchCurrentPageOrPrevious = async () => {
-        setLoading(true);
-        const currentSearchFromUrl = searchParams.get('search') || '';
-        let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
-
-        const result = await getRoles(currentPageFromUrl, ROLES_POR_PAGINA, currentSearchFromUrl);
-        if (result.success && result.data && (result.data.roles || []).length === 0 && currentPageFromUrl > 1) {
-            const newPage = currentPageFromUrl - 1;
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.set('page', newPage.toString());
-            setSearchParams(newSearchParams); 
-        } else {
-            fetchRoles(currentPageFromUrl, currentSearchFromUrl); 
-        }
-        setLoading(false);
-    };
-    fetchCurrentPageOrPrevious();
-  };
-
-
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Roles Registrados</Typography>
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
-        <Box sx={{ flexGrow: 1, width: {xs: '100%', sm: 350} }}>
+        <Box sx={{ flexGrow: 1 }}>
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar rol (Nombre, Activo...)"
+            placeholder="Buscar rol..."
           />
         </Box>
+        
         <Button
           variant="contained"
           color="success"
-          onClick={() => { 
-            setNuevoRol({ nombre: '', permisos_ids: [] }); // Removido descripcion
-            setCrearOpen(true);
-          }}
+          onClick={() => setCrearOpen(true)}
           sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
           startIcon={<AddIcon />}
         >
-          Registrar Rol
+          Registrar
         </Button>
       </Box>
-      <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={28} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-        {errorAlCargarRoles && !loading && <Alert severity="warning" sx={{ width: '100%' }}>{errorAlCargarRoles}</Alert>}
+      {/* Box para indicadores de carga y error, fuera del flex container principal */}
+      <Box mb={2} height={4}>
+         {loading && <CircularProgress size={28} />}
+         {error && <Alert severity="error" sx={{ width: 'fit-content' }}>{error}</Alert>}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -341,41 +323,38 @@ const Roles = () => {
             <TableRow>
               <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
-              {/* <TableCell><b>Descripción</b></TableCell> Removido */}
               <TableCell align="center"><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {!loading && rolesFiltrados.length === 0 && !error && (
+          <TableBody key={pagina}>
+            {loading ? (
+               <TableRow><TableCell colSpan={4} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+            ) : rolesPagina.length > 0 ? (
+              rolesPagina.map((rol, idx) => (
+                <TableRow key={rol.idrol || idx}>
+                  <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>{rol.nombre}</TableCell>
+                  <TableCell align="center" sx={{ justifyContent: 'center' }}>
+                    <CambiarEstado
+                      id={rol.idrol}
+                      estadoActual={rol.estado === true || rol.estado === 'true' || rol.estado === 1 || rol.estado === '1'}
+                      onEstadoCambiado={(nuevoEstado) => {
+                        setRoles((prev) => prev.map(r => r.idrol === rol.idrol ? { ...r, estado: nuevoEstado } : r));
+                      }}
+                      updateEstadoApi={updateEstadoRol}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
+                    <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
+                    <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (error ? null : (
               <TableRow>
-                {/* Ajustar colSpan ya que se eliminó una columna */}
-                <TableCell colSpan={4} align="center"> 
-                  {busqueda ? 'No se encontraron roles que coincidan con la búsqueda.' : 'No hay roles registrados.'}
-                </TableCell>
-              </TableRow>
-            )}
-            {rolesFiltrados.map((rol, idx) => (
-              <TableRow key={rol.idrol || idx}>
-                <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
-                <TableCell>{rol.nombre}</TableCell>
-                {/* <TableCell>{rol.descripcion || '-'}</TableCell> Removido */}
-                <TableCell align="center">
-                  <CambiarEstado
-                    id={rol.idrol}
-                    estadoActual={rol.estado === true || rol.estado === 1 || rol.estado === 'true'}
-                    onEstadoCambiado={(idRol, nuevoEstado) => {
-                      setRoles((prev) => prev.map(r => r.idrol === idRol ? { ...r, estado: nuevoEstado } : r));
-                      setSuccessMsg('Estado del rol cambiado.');
-                    }}
-                    updateEstadoApi={updateEstadoRol} 
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
-                  <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
-                  <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
-                </TableCell>
+                <TableCell colSpan={4} align="center">No hay roles registrados.</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -388,73 +367,84 @@ const Roles = () => {
             page={pagina}
             onChange={handleChangePagina}
             color="primary"
-            showFirstButton 
-            showLastButton
           />
         </Stack>
       )}
+      {/* Snackbar de éxito */}
       <Snackbar
-        open={!!successMsg || crearSuccess}
+        open={!!successMsg}
         autoHideDuration={3000}
-        onClose={() => { setSuccessMsg(''); setCrearSuccess(false); }}
+        onClose={() => setSuccessMsg('')}
+        message={successMsg}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-            severity="success" 
-            onClose={() => { setSuccessMsg(''); setCrearSuccess(false); }} 
-            sx={{ width: '100%' }}
-        >
-            {crearSuccess ? "Rol creado correctamente" : successMsg}
-        </Alert>
-      </Snackbar>
+      />
+      {/* Diálogo de eliminar rol */}
       <Eliminar
         id={rolEliminar?.idrol}
         open={eliminarOpen}
         onClose={() => setEliminarOpen(false)}
-        onEliminado={handleEliminadoExitoso}
+        onEliminado={() => {
+          setEliminarOpen(false);
+          setRoles((prev) => prev.filter(r => r.idrol !== rolEliminar?.idrol));
+        }}
         nombre={rolEliminar ? rolEliminar.nombre : ''}
         tipoEntidad="rol"
         deleteApi={deleteRol}
       />
+      {/* Modal de crear rol personalizado */}
       <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleCrearRol} autoComplete="off">
-          <DialogTitle>Registrar Nuevo Rol</DialogTitle>
+          <DialogTitle>Registrar Rol</DialogTitle>
           <DialogContent dividers>
-            <Grid container spacing={2} sx={{mt:1}}>
-              <Grid item xs={12}> {/* Nombre ocupa todo el ancho si descripción se elimina */}
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Nombre del Rol"
+                  label="Nombre"
                   name="nombre"
                   value={nuevoRol.nombre}
                   onChange={e => setNuevoRol(prev => ({ ...prev, nombre: e.target.value }))}
                   fullWidth
                   required
-                  autoFocus
                 />
               </Grid>
-              {/* Removido Grid item para descripción */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Descripción"
+                  name="descripcion"
+                  value={nuevoRol.descripcion}
+                  onChange={e => setNuevoRol(prev => ({ ...prev, descripcion: e.target.value }))}
+                  fullWidth
+                  required={false}
+                />
+              </Grid>
               <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>Permisos Asignados:</Typography>
-                <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', p:1 }}>
-                  <Grid container spacing={1}>
-                  {PERMISOS_DISPONIBLES.map(permiso => (
-                    <Grid item xs={12} sm={6} md={4} key={permiso.id}>
-                       <Box display="flex" alignItems="center">
-                        <Checkbox
-                          checked={nuevoRol.permisos_ids.includes(permiso.id)}
-                          onChange={() => handlePermisoToggle(permiso.id)}
-                          color="primary"
-                          size="small"
-                          id={`permiso-crear-${permiso.id}`}
-                        />
-                        <Typography component="label" htmlFor={`permiso-crear-${permiso.id}`} sx={{cursor: 'pointer', userSelect: 'none'}}>
-                            {permiso.nombre} (ID: {permiso.id})
-                        </Typography>
-                       </Box>
-                    </Grid>
-                  ))}
-                  </Grid>
-                </Paper>
+                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Selecciona los permisos:</Typography>
+                <TableContainer component={Paper}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><b>ID</b></TableCell>
+                        <TableCell><b>Nombre</b></TableCell>
+                        <TableCell align="center"><b>Seleccionar</b></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {PERMISOS_DISPONIBLES.map(permiso => (
+                        <TableRow key={permiso.id}>
+                          <TableCell>{permiso.id}</TableCell>
+                          <TableCell>{permiso.nombre}</TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={nuevoRol.permisos_ids.includes(permiso.id)}
+                              onChange={() => handlePermisoToggle(permiso.id)}
+                              color="primary"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Grid>
             </Grid>
             {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
@@ -462,86 +452,87 @@ const Roles = () => {
           <DialogActions>
             <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading}>Cancelar</Button>
             <Button type="submit" color="primary" disabled={crearLoading}>
-              {crearLoading ? <CircularProgress size={18} /> : 'Registrar Rol'}
+              {crearLoading ? <CircularProgress size={18} /> : 'Registrar'}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
-      
-       {rolDetalle && (
-        <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Detalle del Rol: {rolDetalle.nombre}</DialogTitle>
-            <DialogContent dividers>
-                {detalleLoading && <CircularProgress />}
-                {detalleError && <Alert severity="error">{detalleError}</Alert>}
-                {!detalleLoading && !detalleError && rolDetalle && (
-                    <Box>
-                        <Typography variant="subtitle1">ID: {rolDetalle.idrol}</Typography>
-                        <Typography variant="subtitle1">Nombre: {rolDetalle.nombre}</Typography>
-                        {/* <Typography variant="subtitle1">Descripción: {rolDetalle.descripcion || 'N/A'}</Typography> Removido */}
-                        <Typography variant="subtitle1">Estado: {rolDetalle.estado ? 'Activo' : 'Inactivo'}</Typography>
-                        <Typography variant="subtitle1" sx={{mt: 1}}>Permisos Asociados:</Typography>
-                        {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (
-                            <ul>
-                                {rolDetalle.permisos_asociados.map(p => (
-                                    <li key={p.permisos_idpermisos || p.id}>{p.permiso?.nombre || `ID: ${p.permisos_idpermisos || p.id}`}</li>
-                                ))}
-                            </ul>
-                        ) : <Typography>Ninguno</Typography>}
-                    </Box>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => setVerDetalleOpen(false)}>Cerrar</Button>
-            </DialogActions>
-        </Dialog>
-       )}
-
+      <Snackbar open={crearSuccess} autoHideDuration={2000} onClose={() => setCrearSuccess(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert severity="success" onClose={() => setCrearSuccess(false)}>
+          Rol creado correctamente
+        </Alert>
+      </Snackbar>
+      {/* Modal de ver detalle de rol */}
+      <VerDetalle
+        open={verDetalleOpen}
+        onClose={() => {
+          setVerDetalleOpen(false);
+          setRolDetalle(null);
+        }}
+        usuarioDetalle={rolDetalle}
+        loading={detalleLoading}
+        error={detalleError}
+      />
+      {/* Modal de edición de rol personalizado */}
       <Dialog open={editRolOpen} onClose={handleCerrarEdicionRol} maxWidth="sm" fullWidth>
         <form onSubmit={handleGuardarEdicionRol} autoComplete="off">
           <DialogTitle>Editar Rol: {rolAEditar?.nombre}</DialogTitle>
           <DialogContent dividers>
-            {editRolLoading && <Box sx={{display: 'flex', justifyContent: 'center', my: 2}}><CircularProgress /></Box>}
-            {editRolError && <Alert severity="error" sx={{mb:2}}>{editRolError}</Alert>}
-            {!editRolLoading && !editRolError && rolAEditar && (
-              <Grid container spacing={2} sx={{mt:1}}>
-                <Grid item xs={12}> {/* Nombre ocupa todo el ancho si descripción se elimina */}
-                  <TextField
-                    label="Nombre del Rol"
-                    name="nombre"
-                    value={editRolData.nombre}
-                    onChange={handleEditRolFormChange}
-                    fullWidth
-                    required
-                    autoFocus
-                  />
+             {editRolLoading && <CircularProgress />}
+             {editRolError && <Alert severity="error">{editRolError}</Alert>}
+             {!editRolLoading && !editRolError && rolAEditar && (
+                <Grid container spacing={2}>
+                   <Grid item xs={12} sm={6}>
+                      <TextField
+                         label="Nombre"
+                         name="nombre"
+                         value={editRolData.nombre}
+                         onChange={handleEditRolFormChange}
+                         fullWidth
+                         required
+                      />
+                   </Grid>
+                   <Grid item xs={12} sm={6}>
+                      <TextField
+                         label="Descripción"
+                         name="descripcion"
+                         value={editRolData.descripcion}
+                         onChange={handleEditRolFormChange}
+                         fullWidth
+                         required={false}
+                      />
+                   </Grid>
+                   <Grid item xs={12}>
+                      <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Selecciona los permisos:</Typography>
+                      <TableContainer component={Paper}>
+                         <Table size="small">
+                            <TableHead>
+                               <TableRow>
+                                  <TableCell><b>ID</b></TableCell>
+                                  <TableCell><b>Nombre</b></TableCell>
+                                  <TableCell align="center"><b>Seleccionar</b></TableCell>
+                               </TableRow>
+                            </TableHead>
+                            <TableBody>
+                               {PERMISOS_DISPONIBLES.map(permiso => (
+                                  <TableRow key={permiso.id}>
+                                     <TableCell>{permiso.id}</TableCell>
+                                     <TableCell>{permiso.nombre}</TableCell>
+                                     <TableCell align="center">
+                                        <Checkbox
+                                          checked={editRolData.permisos_ids.includes(permiso.id)}
+                                          onChange={() => handleEditRolPermisoToggle(permiso.id)}
+                                          color="primary"
+                                        />
+                                     </TableCell>
+                                  </TableRow>
+                               ))}
+                            </TableBody>
+                         </Table>
+                      </TableContainer>
+                   </Grid>
                 </Grid>
-                {/* Removido Grid item para descripción */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>Permisos Asignados:</Typography>
-                  <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', p:1 }}>
-                    <Grid container spacing={1}>
-                    {PERMISOS_DISPONIBLES.map(permiso => (
-                        <Grid item xs={12} sm={6} md={4} key={permiso.id}>
-                        <Box display="flex" alignItems="center">
-                            <Checkbox
-                                checked={editRolData.permisos_ids.includes(permiso.id)}
-                                onChange={() => handleEditRolPermisoToggle(permiso.id)}
-                                color="primary"
-                                size="small"
-                                id={`permiso-editar-${permiso.id}`}
-                            />
-                            <Typography component="label" htmlFor={`permiso-editar-${permiso.id}`} sx={{cursor: 'pointer', userSelect: 'none'}}>
-                                {permiso.nombre} (ID: {permiso.id})
-                            </Typography>
-                        </Box>
-                        </Grid>
-                    ))}
-                    </Grid>
-                  </Paper>
-                </Grid>
-              </Grid>
-            )}
+             )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCerrarEdicionRol} color="secondary" disabled={editRolLoading}>Cancelar</Button>
