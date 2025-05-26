@@ -27,6 +27,7 @@ const CAMPOS_EDITABLES = [
   { name: 'barrio', label: 'Barrio', required: false },
   { name: 'dirrecion', label: 'Dirección', required: false },
   { name: 'complemento', label: 'Complemento', required: false },
+  { name: 'rol_idrol', label: 'Rol', select: true, options: [], required: true },
 ];
 
 const CAMPOS_CREAR_ORIGINAL = [
@@ -233,26 +234,38 @@ const Usuarios = () => {
     setDetalleError('');
   };
 
-  const handleEditarUsuario = async (id) => {
-    const usuarioId = parseInt(id, 10);
-     if (isNaN(usuarioId)) {
-        setEditError("ID de usuario inválido."); 
-        openSnackbar("ID de usuario inválido para editar.", 'error');
-        return;
-    }
+  const handleEditarUsuario = async (usuario) => {
     setEditOpen(true);
-    setEditUsuario(null);
-    setEditForm({});
+    setEditUsuario(usuario);
     setEditLoading(true);
     setEditError('');
     setEditValidationErrors({});
     try {
-      const data = await getUsuarioById(usuarioId);
-      setEditUsuario(data);
+      const data = await getUsuarioById(usuario.idusuario);
       const initialForm = {};
       CAMPOS_EDITABLES.forEach(campo => {
-          initialForm[campo.name] = data[campo.name] !== null && data[campo.name] !== undefined ? data[campo.name] : '';
+        initialForm[campo.name] = data[campo.name] || '';
       });
+
+      // Cargar roles para el selector
+      const rolesResult = await getRoles(1, 100); // Obtener todos los roles
+      if (rolesResult.success && rolesResult.data) {
+        const rolesOptions = rolesResult.data.roles.map(rol => ({
+          value: rol.idrol,
+          label: rol.nombre
+        }));
+        setRolSelectOptions(rolesOptions);
+        
+        // Actualizar las opciones en CAMPOS_EDITABLES
+        const camposActualizados = CAMPOS_EDITABLES.map(campo => {
+          if (campo.name === 'rol_idrol') {
+            return { ...campo, options: rolesOptions };
+          }
+          return campo;
+        });
+        setCamposCrear(camposActualizados);
+      }
+
       setEditForm(initialForm);
     } catch (err) {
       const errorMsg = err.message || 'Error al cargar datos del usuario para editar.';
@@ -495,7 +508,7 @@ const Usuarios = () => {
                 <TableCell align="center">
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
-                    <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario.idusuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
+                    <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
                     <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
                   </Stack>
                 </TableCell>
@@ -544,16 +557,19 @@ const Usuarios = () => {
       <Editar
         open={editOpen}
         onClose={handleCerrarEdicion}
+        onSave={handleGuardarEdicion}
         usuario={editUsuario}
         form={editForm}
         onFormChange={handleEditFormChange}
-        onSave={handleGuardarEdicion}
         loading={editLoading}
+        error={editError}
         validationErrors={editValidationErrors}
-        camposEditables={CAMPOS_EDITABLES}
-        titulo="Editar Usuario"
-        apiError={editError}
-        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
+        camposEditables={CAMPOS_EDITABLES.map(campo => {
+          if (campo.name === 'rol_idrol') {
+            return { ...campo, options: rolSelectOptions };
+          }
+          return campo;
+        })}
       />
 
       <Eliminar

@@ -34,7 +34,7 @@ const Editar = ({
         <Box component="form" onSubmit={(e) => { e.preventDefault(); onSave(); }} noValidate sx={{ mt: 1 }}>
           <Grid container spacing={2}>
             {Array.isArray(camposEditables) && camposEditables.map(({ name, label, select, options = [], type = 'text', required = true }) => (
-              <Grid xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
+              <Grid xs={12} sm={6} key={name}>
                 {select ? (
                   <TextField
                     select
