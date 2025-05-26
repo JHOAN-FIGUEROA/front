@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Box, Divider, Button } from '@mui/material';
-import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout } from '@mui/icons-material';
+import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout, ShoppingCart } from '@mui/icons-material';
 import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +46,7 @@ const StyledDrawer = styled(Drawer)(({ theme, open, variant, navbarHeight }) => 
 
 const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
   const [openConfig, setOpenConfig] = useState(false);
+  const [openCompras, setOpenCompras] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -54,6 +55,10 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
 
   const handleConfigClick = () => {
     setOpenConfig(!openConfig);
+  };
+
+  const handleComprasClick = () => {
+    setOpenCompras(!openCompras);
   };
 
   const handleNavigate = (path) => {
@@ -142,6 +147,32 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
                 <Security />
               </ListItemIcon>
               {open && <ListItemText primary="Roles" />}
+            </ListItem>
+          </List>
+        </Collapse>
+        <ListItem {...({ button: 'true' })} onClick={handleComprasClick}>
+          <ListItemIcon sx={{ color: '#fff' }}>
+            <ShoppingCart />
+          </ListItemIcon>
+          {open && <ListItemText primary="Compras" />}
+          {open ? (openCompras ? <ExpandLess /> : <ExpandMore />) : null}
+        </ListItem>
+        <Collapse in={openCompras && open} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem
+              {...({ button: 'true' })}
+              selected={location.pathname === '/compras/proveedores'}
+              onClick={() => handleNavigate('/compras/proveedores')}
+              sx={{
+                pl: openCompras && open ? 4 : 0,
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+              }}
+            >
+              <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                <People />
+              </ListItemIcon>
+              {open && <ListItemText primary="Proveedores" />}
             </ListItem>
           </List>
         </Collapse>

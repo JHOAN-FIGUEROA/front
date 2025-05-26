@@ -248,3 +248,29 @@ export const getRolById = async (id) => {
     throw new Error(error.message || 'Error al conectar con el servidor');
   }
 };
+
+// Obtener proveedores
+export const getProveedores = async (page = 1, limit = 5) => {
+  try {
+    let url = `${API_URL}/api/proveedores?pagina=${page}&limit=${limit}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al obtener los proveedores');
+    }
+    const data = await response.json();
+    return { success: true, data: data };
+  } catch (error) {
+    console.error('Error en getProveedores API call:', error);
+    if (error instanceof Response) {
+      try {
+        const errorBody = await error.json();
+        return { error: true, status: error.status, detalles: errorBody.message || `Error HTTP ${error.status}` };
+      } catch (jsonError) {
+        return { error: true, status: error.status, detalles: `Error HTTP ${error.status}` };
+      }
+    } else {
+      return { error: true, status: 500, detalles: error.message || 'Error desconocido al obtener proveedores' };
+    }
+  }
+};

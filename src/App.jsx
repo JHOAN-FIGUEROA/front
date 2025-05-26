@@ -9,6 +9,7 @@ import DashboardLayout from './components/DashboardLayout';
 import DashBoard from './components/DashBoard';
 import Usuarios from './page/Usuarios';
 import Roles from './page/Roles';
+import Proveedores from './page/Proveedores';
 import { AuthProvider } from './context/AuthContext';
 
 const MainContent = styled(Box)(({ theme }) => ({
@@ -56,6 +57,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardLayout><DashBoard /></DashboardLayout>} />
           <Route path="/config/usuarios" element={<DashboardLayout><Usuarios /></DashboardLayout>} />
           <Route path="/config/roles" element={<DashboardLayout><Roles /></DashboardLayout>} />
+          <Route path="/compras/proveedores" element={<DashboardLayout><Proveedores /></DashboardLayout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
