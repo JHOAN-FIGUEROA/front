@@ -1,14 +1,15 @@
 import { TextField, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 
-const Buscador = ({ value, onChange, placeholder = 'Buscar...' }) => (
+const Buscador = ({ value, onChange, placeholder = 'Buscar...', sx = {} }) => (
   <TextField
     label={placeholder}
     variant="outlined"
     size="small"
     value={value}
     onChange={onChange}
-    sx={{ width: 300 }}
+    fullWidth // Hacer que ocupe todo el ancho disponible
+    sx={{ ...sx }} // Permitir estilos adicionales
     InputProps={{
       startAdornment: (
         <InputAdornment position="start">
