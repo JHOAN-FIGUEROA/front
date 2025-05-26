@@ -2,12 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, IconButton, Stack, Pagination, Switch, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, Snackbar, MenuItem
 } from '@mui/material';
-import { getUsuarios, getUsuarioById, updateUsuario, getRoles } from '../api';
+import { getUsuarios, getUsuarioById, updateUsuario, getRoles, updateEstadoUsuario, deleteUsuario } from '../api';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import Buscador from '../components/Buscador';
 import VerDetalle from '../components/VerDetalle';
@@ -44,53 +44,59 @@ const CAMPOS_CREAR_ORIGINAL = [
 ];
 
 const Usuarios = () => {
-  const [usuarios, setUsuarios] = useState([]); // Usuarios de la página actual, tal como vienen del backend
+  const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); 
   const [roles, setRoles] = useState([]);
   const [camposCrear, setCamposCrear] = useState(CAMPOS_CREAR_ORIGINAL);
   const [rolSelectOptions, setRolSelectOptions] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
-  const [errorCargandoRoles, setErrorCargandoRoles] = useState('');
+  const [errorCargandoRoles, setErrorCargandoRoles] = useState(''); 
 
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [pagina, setPagina] = useState(parseInt(searchParams.get('page')) || 1);
-  // 'busqueda' es el término actual en el input, usado para filtrar en el frontend
   const [busqueda, setBusqueda] = useState(searchParams.get('search') || '');
 
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [usuarioDetalle, setUsuarioDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
-  const [detalleError, setDetalleError] = useState('');
+  const [detalleError, setDetalleError] = useState(''); 
+
   const [editOpen, setEditOpen] = useState(false);
   const [editUsuario, setEditUsuario] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState('');
+  const [editError, setEditError] = useState(''); 
   const [editValidationErrors, setEditValidationErrors] = useState({});
-  const [successMsg, setSuccessMsg] = useState('');
+  
+  // Nuevo estado unificado para el Snackbar
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [usuarioEliminar, setUsuarioEliminar] = useState(null);
+  
   const [crearOpen, setCrearOpen] = useState(false);
-  const [crearSuccess, setCrearSuccess] = useState(false);
+  const [crearErrorInterno, setCrearErrorInterno] = useState(''); // Para Alert dentro del diálogo Crear
 
+
+  // Función helper para mostrar el Snackbar
+  const openSnackbar = (message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const fetchUsuariosCallback = useCallback(async (currentPage, currentSearchTermFromUrl) => {
-    // console.log(`DEBUG: Fetching usuarios - Página: ${currentPage}, Término de búsqueda URL: '${currentSearchTermFromUrl}'`);
     setLoading(true);
     setError('');
     try {
       const result = await getUsuarios(currentPage, USUARIOS_POR_PAGINA, currentSearchTermFromUrl);
-
       if (result.error) {
-        let errorMessage = result.detalles || 'Error al cargar usuarios.';
-        setError(errorMessage);
+        setError(result.detalles || 'Error al cargar usuarios.');
         setUsuarios([]);
         setTotalPaginasAPI(1);
       } else if (result.success && result.data) {
-        setUsuarios(result.data.usuarios || []); // Almacena los usuarios de la página actual
+        setUsuarios(result.data.usuarios || []);
         setTotalPaginasAPI(result.data.paginacion?.totalPaginas || 1);
         if (currentPage > (result.data.paginacion?.totalPaginas || 1) && (result.data.paginacion?.totalPaginas || 1) > 0) {
             const newPage = result.data.paginacion.totalPaginas;
@@ -99,17 +105,18 @@ const Usuarios = () => {
             setSearchParams(newSearchParams, { replace: true });
         }
       } else {
+         setError('No se recibieron datos de usuarios o el formato es incorrecto.');
          setUsuarios([]);
          setTotalPaginasAPI(1);
       }
     } catch (err) {
-      setError('Error inesperado al cargar usuarios.' + (err.message || ''));
+      setError('Error inesperado al cargar usuarios: ' + (err.message || ''));
       setUsuarios([]);
       setTotalPaginasAPI(1);
     } finally {
       setLoading(false);
     }
-  }, [searchParams, setSearchParams]); // searchParams aquí para que el callback se actualice si cambia
+  }, [searchParams, setSearchParams]); 
 
   useEffect(() => {
     const cargarRoles = async () => {
@@ -125,16 +132,16 @@ const Usuarios = () => {
                 rolesArray = result.data;
             } else {
                 console.error('Formato de roles inesperado:', result.data);
-                setErrorCargandoRoles('Error al procesar roles.');
+                setErrorCargandoRoles('Error al procesar lista de roles.');
             }
             setRoles(rolesArray);
             const options = rolesArray.map(rol => ({ value: rol.idrol, label: rol.nombre }));
             setRolSelectOptions(options); 
         } else {
-          setErrorCargandoRoles(result.detalles || 'Error al obtener la lista de roles.');
+          setErrorCargandoRoles(result.detalles || 'No se pudo obtener la lista de roles.');
         }
       } catch (err) {
-        setErrorCargandoRoles('Error al cargar los roles: ' + err.message);
+        setErrorCargandoRoles('Error al cargar los roles: ' + (err.message || ''));
       } finally {
         setLoadingRoles(false);
       }
@@ -146,15 +153,12 @@ const Usuarios = () => {
     const currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
     const currentSearchFromUrl = searchParams.get('search') || '';
     
-    // console.log(`DEBUG: useEffect[searchParams] - URL Page: ${currentPageFromUrl}, URL Search: '${currentSearchFromUrl}'`);
-    // Sincronizar estados locales 'pagina' y 'busqueda' con la URL
     if (currentPageFromUrl !== pagina) {
       setPagina(currentPageFromUrl);
     }
     if (currentSearchFromUrl !== busqueda) {
       setBusqueda(currentSearchFromUrl);
     }
-
     fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
   }, [searchParams, fetchUsuariosCallback]);
 
@@ -167,10 +171,7 @@ const Usuarios = () => {
 
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
-    setBusqueda(newSearchTerm); // Actualiza el estado local para el filtrado inmediato
-
-    // Actualiza la URL. Esto disparará el useEffect de arriba, que llamará a fetchUsuariosCallback
-    // con el nuevo término de búsqueda para el backend.
+    setBusqueda(newSearchTerm); 
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSearchTerm) {
       newSearchParams.set('search', newSearchTerm);
@@ -181,23 +182,17 @@ const Usuarios = () => {
     setSearchParams(newSearchParams);
   };
   
-  // Lógica de filtrado en el frontend
   const usuariosFiltrados = usuarios.filter(usuario => {
-    if (!busqueda) { // Si no hay término en el input 'busqueda', no filtrar adicionalmente en frontend
+    if (!busqueda) { 
       return true;
     }
-
     const terminoBusquedaLower = busqueda.toLowerCase().trim();
-
     if (terminoBusquedaLower === "activo") {
       return usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1';
     }
     if (terminoBusquedaLower === "inactivo") {
-      // Asegurarse que la negación cubra todos los casos de "no activo"
       return !(usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1');
     }
-
-    // Búsqueda por campos de texto
     return (
       usuario.nombre?.toLowerCase().includes(terminoBusquedaLower) ||
       usuario.apellido?.toLowerCase().includes(terminoBusquedaLower) ||
@@ -209,17 +204,24 @@ const Usuarios = () => {
     );
   });
 
-
   const handleVerDetalle = async (id) => {
+    const usuarioId = parseInt(id, 10);
+    if (isNaN(usuarioId)) {
+        setDetalleError("ID de usuario inválido.");
+        openSnackbar("ID de usuario inválido para ver detalle.", 'error');
+        return;
+    }
     setDetalleOpen(true);
     setUsuarioDetalle(null);
     setDetalleLoading(true);
     setDetalleError('');
     try {
-      const data = await getUsuarioById(id);
+      const data = await getUsuarioById(usuarioId);
       setUsuarioDetalle(data);
     } catch (err) {
-      setDetalleError(err.response?.data?.message || err.message || 'Error al cargar detalle');
+      const errorMsg = err.message || 'Error al cargar detalle del usuario.';
+      setDetalleError(errorMsg); 
+      openSnackbar(errorMsg, 'error');
     } finally {
       setDetalleLoading(false);
     }
@@ -232,6 +234,12 @@ const Usuarios = () => {
   };
 
   const handleEditarUsuario = async (id) => {
+    const usuarioId = parseInt(id, 10);
+     if (isNaN(usuarioId)) {
+        setEditError("ID de usuario inválido."); 
+        openSnackbar("ID de usuario inválido para editar.", 'error');
+        return;
+    }
     setEditOpen(true);
     setEditUsuario(null);
     setEditForm({});
@@ -239,7 +247,7 @@ const Usuarios = () => {
     setEditError('');
     setEditValidationErrors({});
     try {
-      const data = await getUsuarioById(id);
+      const data = await getUsuarioById(usuarioId);
       setEditUsuario(data);
       const initialForm = {};
       CAMPOS_EDITABLES.forEach(campo => {
@@ -247,7 +255,9 @@ const Usuarios = () => {
       });
       setEditForm(initialForm);
     } catch (err) {
-      setEditError(err.response?.data?.message || err.message || 'Error al cargar datos para editar');
+      const errorMsg = err.message || 'Error al cargar datos del usuario para editar.';
+      setEditError(errorMsg); 
+      openSnackbar(errorMsg, 'error');
     } finally {
       setEditLoading(false);
     }
@@ -265,11 +275,9 @@ const Usuarios = () => {
     const newErrors = {};
     let isValid = true;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     CAMPOS_EDITABLES.forEach(campo => {
         const value = formData[campo.name];
         const trimmedValue = typeof value === 'string' ? value.trim() : value;
-
         if (campo.required) {
             if (typeof trimmedValue === 'string' && !trimmedValue) {
                 newErrors[campo.name] = `${campo.label} es requerido`;
@@ -290,16 +298,13 @@ const Usuarios = () => {
     return isValid;
   };
 
-
   const handleGuardarEdicion = async () => {
     if (!editUsuario) return;
     setEditError('');
     setEditValidationErrors({});
-
     if (!validateEditForm(editForm)) {
         return;
     }
-
     const dataToSend = {};
     let hasChanges = false;
     CAMPOS_EDITABLES.forEach(({ name }) => {
@@ -310,23 +315,24 @@ const Usuarios = () => {
         }
       }
     });
-    
     if (!hasChanges) {
-      setEditError('No hay cambios para guardar.');
+      setEditError('No hay cambios para guardar.'); 
       return;
     }
-    
     setEditLoading(true);
     try {
-      await updateUsuario(editUsuario.idusuario, dataToSend);
-      setSuccessMsg('Usuario actualizado correctamente');
-      // Usar los parámetros actuales de la URL para la recarga
+      const usuarioId = parseInt(editUsuario.idusuario, 10);
+      if (isNaN(usuarioId)) throw new Error("ID de usuario inválido para actualizar.");
+      await updateUsuario(usuarioId, dataToSend);
+      openSnackbar('Usuario actualizado correctamente', 'success');
       const currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
       const currentSearchFromUrl = searchParams.get('search') || '';
       fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl); 
       setEditOpen(false);
     } catch (err) {
-      setEditError(err.response?.data?.error || err.response?.data?.detalles || err.message || 'Ocurrió un error al actualizar');
+      const errorMsg = err.message || 'Ocurrió un error al actualizar el usuario.';
+      setEditError(errorMsg); 
+      openSnackbar(errorMsg, 'error');
     } finally {
       setEditLoading(false);
     }
@@ -342,37 +348,57 @@ const Usuarios = () => {
 
   const handleUsuarioCreadoExitosamente = (nuevoUsuario) => {
     setCrearOpen(false);
-    setCrearSuccess(true); 
+    openSnackbar('Usuario creado correctamente', 'success');
     const newSearchParams = new URLSearchParams(searchParams); 
     newSearchParams.set('page', '1');
-    // Opcional: limpiar búsqueda tras crear un usuario
-    // newSearchParams.delete('search'); 
-    // if (busqueda) setBusqueda(''); // Limpiar estado local también
     setSearchParams(newSearchParams); 
   };
   
-  const handleEliminadoExitoso = () => {
+  const handleCrearError = (errorMessage) => {
+    setCrearErrorInterno(errorMessage); // Para el Alert dentro del diálogo Crear
+    openSnackbar(errorMessage, 'error'); // Para el Snackbar general
+  };
+
+  const handleUsuarioEliminado = (idUsuarioEliminado) => {
     setEliminarOpen(false);
+    openSnackbar('Usuario eliminado correctamente', 'success');
+    
+    setUsuarios(prevUsuarios => prevUsuarios.filter(u => u.idusuario !== idUsuarioEliminado));
+
     const fetchCurrentPageOrPrevious = async () => {
-        setLoading(true);
+        setLoading(true); 
         const currentSearchFromUrl = searchParams.get('search') || '';
         let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
+        
+        const usuariosActualizados = usuarios.filter(u => u.idusuario !== idUsuarioEliminado);
+        const usuariosFiltradosActualizados = usuariosActualizados.filter(usuario => { 
+            if (!busqueda) return true;
+            const terminoBusquedaLower = busqueda.toLowerCase().trim();
+            if (terminoBusquedaLower === "activo") return usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1';
+            if (terminoBusquedaLower === "inactivo") return !(usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1');
+            return (
+                usuario.nombre?.toLowerCase().includes(terminoBusquedaLower) ||
+                usuario.apellido?.toLowerCase().includes(terminoBusquedaLower) ||
+                usuario.email?.toLowerCase().includes(terminoBusquedaLower)
+            );
+        });
 
-        const result = await getUsuarios(currentPageFromUrl, USUARIOS_POR_PAGINA, currentSearchFromUrl);
-        if (result.success && result.data && result.data.usuarios.length === 0 && currentPageFromUrl > 1) {
-            const newPage = currentPageFromUrl - 1;
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.set('page', newPage.toString());
-            setSearchParams(newSearchParams); 
+        if (usuariosFiltradosActualizados.length === 0 && currentPageFromUrl > 1) {
+             if (totalPaginasAPI > 1) { 
+                 currentPageFromUrl = currentPageFromUrl - 1;
+                 const newSearchParams = new URLSearchParams(searchParams);
+                 newSearchParams.set('page', currentPageFromUrl.toString());
+                 setSearchParams(newSearchParams); 
+             } else {
+                 fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
+             }
         } else {
-            fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl); 
+            fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
         }
         setLoading(false);
     };
     fetchCurrentPageOrPrevious();
-    setSuccessMsg('Usuario eliminado correctamente');
   };
-
 
   const camposCrearConRoles = CAMPOS_CREAR_ORIGINAL.map(campo => {
     if (campo.name === 'rol_idrol') {
@@ -380,6 +406,13 @@ const Usuarios = () => {
     }
     return campo;
   });
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ open: false, message: '', severity: 'info' });
+  };
 
   return (
     <Box p={3}>
@@ -395,7 +428,10 @@ const Usuarios = () => {
         <Button
           variant="contained"
           color="success"
-          onClick={() => setCrearOpen(true)}
+          onClick={() => {
+            setCrearErrorInterno(''); 
+            setCrearOpen(true);
+          }}
           sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, width: {xs: '100%', sm: 'auto'} }}
           startIcon={<AddIcon />}
         >
@@ -403,7 +439,7 @@ const Usuarios = () => {
         </Button>
       </Box>
       
-      {errorCargandoRoles && (
+      {errorCargandoRoles && !loadingRoles && (
         <Box mb={2}>
           <Alert severity="warning">{errorCargandoRoles}</Alert>
         </Box>
@@ -432,7 +468,6 @@ const Usuarios = () => {
                 </TableCell>
               </TableRow>
             )}
-            {/* Mapear sobre usuariosFiltrados en lugar de usuarios */}
             {usuariosFiltrados.map((usuario, idx) => (
               <TableRow key={usuario.idusuario || idx} hover>
                 <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
@@ -440,14 +475,21 @@ const Usuarios = () => {
                 <TableCell>{usuario.email}</TableCell>
                 <TableCell align="center">
                   <CambiarEstado
-                    id={usuario.idusuario}
+                    id={usuario.idusuario} 
                     estadoActual={usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1'}
-                    onEstadoCambiado={(idUsuario, nuevoEstado) => {
-                      // Actualizar el estado en la lista original 'usuarios' también, 
-                      // para que si se quita el filtro, el estado refleje el cambio.
-                      setUsuarios((prev) => prev.map(u => u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u));
-                      setSuccessMsg(`Estado del usuario ${usuario.nombre} cambiado.`);
+                    onEstadoCambiado={(idUsuario, nuevoEstado, errorMsg) => { 
+                      if (errorMsg) {
+                        openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
+                      } else {
+                        setUsuarios((prevUsuarios) => 
+                          prevUsuarios.map(u => 
+                            u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u
+                          )
+                        );
+                        openSnackbar(`Estado del usuario ${usuario.nombre} cambiado.`, 'success');
+                      }
                     }}
+                    updateEstadoApi={updateEstadoUsuario} 
                   />
                 </TableCell>
                 <TableCell align="center">
@@ -463,13 +505,10 @@ const Usuarios = () => {
         </Table>
       </TableContainer>
 
-      {/* La paginación debe basarse en totalPaginasAPI ya que los datos vienen paginados del backend */}
-      {/* Si el filtrado frontend redujera el número de páginas visibles, la paginación se volvería inconsistente */}
-      {/* con el conjunto de datos completo del backend. */}
       {!loading && totalPaginasAPI > 1 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
           <Pagination
-            count={totalPaginasAPI} // Sigue usando totalPaginasAPI del backend
+            count={totalPaginasAPI}
             page={pagina} 
             onChange={handleChangePagina}
             color="primary"
@@ -478,12 +517,27 @@ const Usuarios = () => {
         </Box>
       )}
 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={snackbar.severity === 'success' ? 3000 : 6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+            onClose={handleCloseSnackbar} 
+            severity={snackbar.severity} 
+            sx={{ width: '100%' }}
+        >
+            {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <VerDetalle
         open={detalleOpen}
         onClose={handleCerrarDetalle}
         usuarioDetalle={usuarioDetalle}
         loading={detalleLoading}
-        error={detalleError}
+        error={detalleError} 
         roles={roles} 
       />
 
@@ -495,43 +549,31 @@ const Usuarios = () => {
         onFormChange={handleEditFormChange}
         onSave={handleGuardarEdicion}
         loading={editLoading}
-        validationErrors={editValidationErrors} 
+        validationErrors={editValidationErrors}
         camposEditables={CAMPOS_EDITABLES}
         titulo="Editar Usuario"
-        apiError={editError} 
+        apiError={editError}
+        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
       />
-
-      <Snackbar
-        open={!!successMsg || crearSuccess}
-        autoHideDuration={3000}
-        onClose={() => { setSuccessMsg(''); setCrearSuccess(false);}}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-            severity="success" 
-            onClose={() => { setSuccessMsg(''); setCrearSuccess(false);}} 
-            sx={{ width: '100%' }}
-        >
-            {crearSuccess ? "Usuario creado correctamente" : successMsg}
-        </Alert>
-      </Snackbar>
-
 
       <Eliminar
         id={usuarioEliminar?.idusuario}
         open={eliminarOpen}
         onClose={() => setEliminarOpen(false)}
-        onEliminado={handleEliminadoExitoso}
+        onEliminado={handleUsuarioEliminado}
+        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
         nombre={usuarioEliminar ? `${usuarioEliminar.nombre} ${usuarioEliminar.apellido}` : ''}
         tipoEntidad="usuario"
+        deleteApi={deleteUsuario}
       />
 
       <Crear
         open={crearOpen}
         onClose={() => setCrearOpen(false)}
         onCreado={handleUsuarioCreadoExitosamente}
-        campos={camposCrearConRoles} 
+        campos={camposCrearConRoles}
         titulo="Registrar Usuario"
+        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
       />
     </Box>
   );

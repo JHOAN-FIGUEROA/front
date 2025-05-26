@@ -8,6 +8,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Buscador from '../components/Buscador';
+import VerDetalle from '../components/VerDetalle';
 
 const PROVEEDORES_POR_PAGINA = 5;
 
@@ -19,6 +20,9 @@ const Proveedores = () => {
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [successMsg, setSuccessMsg] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [nitproveedorSeleccionado, setNitproveedorSeleccionado] = useState(null);
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [proveedorDetalle, setProveedorDetalle] = useState(null);
 
   const fetchProveedores = useCallback(async (currentPage) => {
     setLoading(true);
@@ -106,7 +110,10 @@ const Proveedores = () => {
                 <TableCell>{proveedor.telefono}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <IconButton color="info" size="small" onClick={() => { /* Lógica para ver detalle */ }} title="Ver Detalle">
+                    <IconButton color="info" size="small" onClick={() => {
+                      setNitproveedorSeleccionado(proveedor.nitproveedor);
+                      setDetalleOpen(true);
+                    }} title="Ver Detalle">
                       <VisibilityIcon fontSize="small" />
                     </IconButton>
                     <IconButton color="warning" size="small" onClick={() => { /* Lógica para editar */ }} title="Editar">
@@ -142,6 +149,14 @@ const Proveedores = () => {
           {successMsg}
         </Alert>
       </Snackbar>
+      <VerDetalle
+        open={detalleOpen}
+        onClose={() => setDetalleOpen(false)}
+        nitproveedor={nitproveedorSeleccionado}
+        loading={loading}
+        error={error}
+        setProveedorDetalle={setProveedorDetalle}
+      />
     </Box>
   );
 };

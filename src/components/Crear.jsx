@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { createUsuario } from '../api';
 
-const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, titulo = 'Registrar Usuario' }) => {
+// Asegúrate de que la prop onError se desestructure aquí
+const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, titulo = 'Registrar Usuario', onError }) => {
   const [form, setForm] = useState(() => Object.fromEntries(campos.map(c => [c.name, c.default || ''])));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,22 +40,11 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
         if (typeof trimmedValue === 'string' && !trimmedValue) {
           newErrors[campo.name] = `${campo.label} es requerido`;
           isValid = false;
-        } else if (trimmedValue === null || trimmedValue === undefined || (typeof trimmedValue !== 'string' && !trimmedValue && trimmedValue !== 0)) {
-            // Consider 0 as a valid number, but empty strings or null/undefined for non-strings are invalid
-            if (!(typeof trimmedValue === 'number' && trimmedValue === 0)) {
-                 newErrors[campo.name] = `${campo.label} es requerido`;
-                 isValid = false;
-            }
         }
       }
 
       if (campo.name === 'email' && trimmedValue && !emailRegex.test(trimmedValue)) {
         newErrors[campo.name] = 'Formato de email inválido';
-        isValid = false;
-      }
-      
-      if (campo.type === 'password' && campo.required !== false && !value) { // Password validation uses original value
-        newErrors[campo.name] = `${campo.label} es requerida`;
         isValid = false;
       }
     });
@@ -74,13 +64,16 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
 
     setLoading(true);
     try {
-      await createUsuario(form);
+      const response = await createUsuario(form);
       setSuccess(true);
-      if (onCreado) onCreado(form);
-      // setForm(Object.fromEntries(campos.map(c => [c.name, c.default || '']))); // Reset handled by useEffect on 'open'
-      // onClose(); // Optionally close on success
+      if (onCreado) onCreado(response);
+      openSnackbar('Usuario registrado correctamente', 'success');
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.detalles || err.message || 'Ocurrió un error');
+      const errorMessage = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Ocurrió un error al crear el usuario.';
+      setError(errorMessage);
+      if (onError) {
+        onError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -94,7 +87,7 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
           <DialogContent dividers>
             <Grid container spacing={2}>
               {campos.map(({ name, label, select, options, type = 'text', required = true }) => (
-                <Grid item xs={12} sm={6} key={name}>
+                <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
                   {select ? (
                     <TextField
                       select
@@ -108,7 +101,7 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                       error={!!validationErrors[name]}
                       helperText={validationErrors[name]}
                     >
-                      {options.map(opt => (
+                      {Array.isArray(options) && options.map(opt => (
                         <MenuItem key={opt.value || opt} value={opt.value || opt}>
                           {opt.label || opt}
                         </MenuItem>
@@ -143,7 +136,12 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
           </DialogActions>
         </form>
       </Dialog>
-      <Snackbar open={success} autoHideDuration={2000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+      <Snackbar
+        open={success}
+        autoHideDuration={2000}
+        onClose={() => setSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
         <Alert severity="success" onClose={() => setSuccess(false)} sx={{ width: '100%' }}>
           Usuario registrado correctamente
         </Alert>

@@ -1,4 +1,5 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Grid, CircularProgress, Alert, TextField, MenuItem } from '@mui/material';
+import { Snackbar } from '@mui/material';
 
 const Editar = ({
   open,
@@ -11,29 +12,28 @@ const Editar = ({
   onFormChange,
   onSave,
   camposEditables = [],
-  loadingSave // Loading para la acción de guardar
+  loadingSave, // Loading para la acción de guardar
+  setApiError,
+  onError // Asegúrate de que esta prop esté presente
 }) => (
   <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
     <DialogTitle>Editar Usuario</DialogTitle>
     <DialogContent dividers>
       {loading && <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}><CircularProgress /></Box>}
       
-      {/* Mostrar error general de API (de carga inicial o de guardado) si existe y no está cargando */}
-      {apiError && !loading && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
-
-      {/* Esta condición es redundante si apiError ya cubre el error de carga inicial. 
-          Si apiError se establece cuando el usuario no se carga, la línea anterior es suficiente.
-          Si se necesita diferenciar un error de carga de un error de guardado, se necesitarían props separadas.
-          Por ahora, asumiendo que apiError se usa para ambos:
-      */}
-      {/* {!loading && !usuario && apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>} */}
-
+      <Snackbar
+        open={apiError && !loading}
+        autoHideDuration={3000}
+        onClose={() => setApiError('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setApiError('')}>{apiError}</Alert>
+      </Snackbar>
 
       {usuario && !loading && (
         <Box component="form" onSubmit={(e) => { e.preventDefault(); onSave(); }} noValidate sx={{ mt: 1 }}>
           <Grid container spacing={2}>
             {Array.isArray(camposEditables) && camposEditables.map(({ name, label, select, options = [], type = 'text', required = true }) => (
-              // Para MUI Grid v2, se elimina la prop 'item'. 'xs' y 'sm' se aplican directamente.
               <Grid xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
                 {select ? (
                   <TextField

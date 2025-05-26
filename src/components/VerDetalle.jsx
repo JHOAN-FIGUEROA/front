@@ -1,7 +1,25 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Grid, CircularProgress, Alert, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { useEffect } from 'react';
+import { getProveedorByNit } from '../api'; // Asegúrate de importar la función
 
-const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error }) => {
+const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor }) => {
   const esRol = usuarioDetalle && 'permisos_asociados' in usuarioDetalle;
+
+  useEffect(() => {
+    const fetchProveedor = async () => {
+      if (nitproveedor) {
+        try {
+          const data = await getProveedorByNit(nitproveedor);
+          setProveedorDetalle(data);
+        } catch (err) {
+          console.error(err);
+          // Manejo de errores si es necesario
+        }
+      }
+    };
+
+    fetchProveedor();
+  }, [nitproveedor]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
