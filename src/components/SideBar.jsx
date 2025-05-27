@@ -3,8 +3,9 @@ import { Drawer, List, ListItem, ListItemIcon, ListItemText, Collapse, IconButto
 import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout, ShoppingCart } from '@mui/icons-material';
 import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useMediaQuery } from '@mui/material';
+import { PERMISSIONS } from '../constants/permissions';
 
 const drawerWidth = 240;
 const closedDrawerWidth = 64; // Ancho cuando el sidebar está cerrado
@@ -49,7 +50,7 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
   const [openCompras, setOpenCompras] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, hasPermission } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down(breakpoint));
 
@@ -95,87 +96,103 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
       )}
       <Divider />
       <List sx={{ paddingTop: navbarHeight }}>
-        <ListItem
-          {...({ button: 'true' })}
-          selected={location.pathname === '/dashboard'}
-          onClick={() => handleNavigate('/dashboard')}
-          sx={{
-             '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-             '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-          }}
-        >
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <Dashboard />
-          </ListItemIcon>
-          {open && <ListItemText primary="DashBoard" />}
-        </ListItem>
-        <ListItem {...({ button: 'true' })} onClick={handleConfigClick}>
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <Settings />
-          </ListItemIcon>
-          {open && <ListItemText primary="Configuración" />}
-          {open ? (openConfig ? <ExpandLess /> : <ExpandMore />) : null}
-        </ListItem>
-        <Collapse in={openConfig && open} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItem
-              {...({ button: 'true' })}
-              selected={location.pathname === '/config/usuarios'}
-              onClick={() => handleNavigate('/config/usuarios')}
-              sx={{
-                pl: openConfig && open ? 4 : 0,
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-              }}
-            >
-              <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
-                <People />
+        {hasPermission(PERMISSIONS.DASHBOARD) && (
+          <ListItem
+            {...({ button: 'true' })}
+            selected={location.pathname === '/dashboard'}
+            onClick={() => handleNavigate('/dashboard')}
+            sx={{
+               '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+               '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <ListItemIcon sx={{ color: '#fff' }}>
+              <Dashboard />
+            </ListItemIcon>
+            {open && <ListItemText primary="DashBoard" />}
+          </ListItem>
+        )}
+        {(hasPermission(PERMISSIONS.USUARIOS) || hasPermission(PERMISSIONS.ROLES)) && (
+          <>
+            <ListItem {...({ button: 'true' })} onClick={handleConfigClick}>
+              <ListItemIcon sx={{ color: '#fff' }}>
+                <Settings />
               </ListItemIcon>
-              {open && <ListItemText primary="Usuarios" />}
+              {open && <ListItemText primary="Configuración" />}
+              {open ? (openConfig ? <ExpandLess /> : <ExpandMore />) : null}
             </ListItem>
-            <ListItem
-              {...({ button: 'true' })}
-              selected={location.pathname === '/config/roles'}
-              onClick={() => handleNavigate('/config/roles')}
-              sx={{
-                pl: openConfig && open ? 4 : 0,
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-              }}
-            >
-              <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
-                <Security />
-              </ListItemIcon>
-              {open && <ListItemText primary="Roles" />}
-            </ListItem>
-          </List>
-        </Collapse>
-        <ListItem {...({ button: 'true' })} onClick={handleComprasClick}>
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <ShoppingCart />
-          </ListItemIcon>
-          {open && <ListItemText primary="Compras" />}
-          {open ? (openCompras ? <ExpandLess /> : <ExpandMore />) : null}
-        </ListItem>
-        <Collapse in={openCompras && open} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItem
-              {...({ button: 'true' })}
-              selected={location.pathname === '/compras/proveedores'}
-              onClick={() => handleNavigate('/compras/proveedores')}
-              sx={{
-                pl: openCompras && open ? 4 : 0,
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-                '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-              }}
-            >
-              <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-                <People />
-              </ListItemIcon>
-              {open && <ListItemText primary="Proveedores" />}
-            </ListItem>
-          </List>
-        </Collapse>
+            <Collapse in={openConfig && open} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {hasPermission(PERMISSIONS.USUARIOS) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/config/usuarios'}
+                    onClick={() => handleNavigate('/config/usuarios')}
+                    sx={{
+                      pl: openConfig && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
+                      <People />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Usuarios" />}
+                  </ListItem>
+                )}
+                {hasPermission(PERMISSIONS.ROLES) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/config/roles'}
+                    onClick={() => handleNavigate('/config/roles')}
+                    sx={{
+                      pl: openConfig && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openConfig && open ? 1 : 0 }}>
+                      <Security />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Roles" />}
+                  </ListItem>
+                )}
+              </List>
+            </Collapse>
+          </>
+        )}
+        {hasPermission(PERMISSIONS.PROVEEDORES) && (
+           <>
+              <ListItem {...({ button: 'true' })} onClick={handleComprasClick}>
+                <ListItemIcon sx={{ color: '#fff' }}>
+                  <ShoppingCart />
+                </ListItemIcon>
+                {open && <ListItemText primary="Compras" />}
+                {open ? (openCompras ? <ExpandLess /> : <ExpandMore />) : null}
+              </ListItem>
+              <Collapse in={openCompras && open} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {hasPermission(PERMISSIONS.PROVEEDORES) && (
+                    <ListItem
+                      {...({ button: 'true' })}
+                      selected={location.pathname === '/compras/proveedores'}
+                      onClick={() => handleNavigate('/compras/proveedores')}
+                      sx={{
+                        pl: openCompras && open ? 4 : 0,
+                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                        '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                        <People />
+                      </ListItemIcon>
+                      {open && <ListItemText primary="Proveedores" />}
+                    </ListItem>
+                  )}
+                </List>
+              </Collapse>
+           </>
+        )}
       </List>
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ p: open ? 2 : '16px 8px', display: 'flex', justifyContent: open ? 'flex-start' : 'center' }}>

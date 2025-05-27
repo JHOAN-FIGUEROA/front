@@ -11,6 +11,7 @@ import Usuarios from './page/Usuarios';
 import Roles from './page/Roles';
 import Proveedores from './page/Proveedores';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const MainContent = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -54,10 +55,46 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashboardLayout><DashBoard /></DashboardLayout>} />
-          <Route path="/config/usuarios" element={<DashboardLayout><Usuarios /></DashboardLayout>} />
-          <Route path="/config/roles" element={<DashboardLayout><Roles /></DashboardLayout>} />
-          <Route path="/compras/proveedores" element={<DashboardLayout><Proveedores /></DashboardLayout>} />
+          <Route 
+            path="/dashboard"
+            element={
+              <ProtectedRoute requiredPermission="Dashboard">
+                <DashboardLayout>
+                  <DashBoard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/config/usuarios"
+            element={
+              <ProtectedRoute requiredPermission="Usuarios">
+                <DashboardLayout>
+                  <Usuarios />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/config/roles"
+            element={
+              <ProtectedRoute requiredPermission="Roles">
+                <DashboardLayout>
+                  <Roles />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/compras/proveedores"
+            element={
+              <ProtectedRoute requiredPermission="Proveedores">
+                <DashboardLayout>
+                  <Proveedores />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Swal from 'sweetalert2';
-import { loginUser } from '../api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   flex: 1,
@@ -90,6 +89,16 @@ const LoginForm = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos Incompletos',
+        text: 'Por favor, complete todos los campos correctamente',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       return;
     }
 
@@ -101,77 +110,70 @@ const LoginForm = () => {
         password: formData.password.trim(),
       };
 
-      const response = await loginUser(credentials);
+      const result = await login(credentials.email, credentials.password);
 
-      // Si loginUser no lanzó un error (response.ok fue true)
-      // Actualizar el estado de autenticación y redirigir
-      login(response.token);
+      if (result.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Bienvenido!',
+          text: 'Inicio de sesión exitoso',
+          timer: 1500,
+          showConfirmButton: false,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          position: 'center',
+          width: 'auto',
+          padding: '1.5em'
+        });
 
-      await Swal.fire({
-        icon: 'success',
-        title: '¡Bienvenido!',
-        text: 'Inicio de sesión exitoso',
-        timer: 1500,
-        showConfirmButton: false,
-        confirmButtonColor: '#2E8B57',
-      });
+        navigate('/dashboard');
 
-      navigate('/dashboard');
+      } else {
+        let errorMessage = result.error || 'Ha ocurrido un error al iniciar sesión.';
+        let errorTitle = 'Error de Autenticación';
 
-    } catch (error) {
-      let errorMessage = 'Ha ocurrido un error inesperado. Por favor, intente más tarde.';
-      let errorTitle = 'Error del Sistema';
-      let statusCode = null;
+        if (errorMessage.includes('Credenciales incorrectas')) {
+          errorTitle = 'Credenciales Inválidas';
+        } else if (errorMessage.includes('Cuenta inactiva')) {
+          errorTitle = 'Cuenta Inactiva';
+        } else if (errorMessage.includes('Acceso no permitido')) {
+          errorTitle = 'Acceso Restringido';
+        }
 
-      // Si el error es una instancia de Response (un error HTTP de fetch)
-      if (error instanceof Response) {
-        statusCode = error.status;
-        // Intentar leer el cuerpo del error para obtener detalles si están disponibles
-        try {
-          const errorData = await error.json();
-          if (errorData && errorData.detalles) {
-             errorMessage = errorData.detalles;
-          } else if (errorData && errorData.error) {
-             errorMessage = errorData.error;
-          } else if (error.statusText) {
-             errorMessage = error.statusText;
+        Swal.fire({
+          icon: 'error',
+          title: errorTitle,
+          text: errorMessage,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown',
+            title: 'error-title',
+            content: 'error-content'
+          },
+          showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+          },
+          hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
           }
-        } catch (jsonError) {
-          // Si no se puede parsear como JSON, usar el statusText o un mensaje genérico
-           errorMessage = error.statusText || 'Error en la respuesta del servidor';
-        }
-
-        switch (statusCode) {
-          case 400:
-            errorTitle = 'Error de Validación';
-            break;
-          case 401:
-            errorTitle = 'Error de Autenticación';
-             errorMessage = errorMessage.includes('Credenciales incorrectas') ? errorMessage : 'El email o la contraseña son incorrectos';
-            break;
-          case 403:
-            errorTitle = 'Cuenta Inactiva';
-             errorMessage = errorMessage.includes('Cuenta inactiva') ? errorMessage : 'Tu cuenta está inactiva. Por favor, contacta al administrador';
-            break;
-          case 503:
-            errorTitle = 'Error de Conexión';
-             errorMessage = errorMessage.includes('conexión') ? errorMessage : 'No se pudo conectar con el servidor. Por favor, intente más tarde';
-            break;
-          default:
-            errorTitle = 'Error del Sistema';
-        }
-
-      } else if (error.message) {
-        // Manejar otros tipos de errores (por ejemplo, errores de red antes de obtener respuesta)
-         errorMessage = error.message;
-         errorTitle = 'Error de Red o Desconocido';
+        });
       }
 
+    } catch (error) {
+      console.error('Unexpected error during login process:', error);
       Swal.fire({
         icon: 'error',
-        title: errorTitle,
-        text: errorMessage,
+        title: 'Error Inesperado',
+        text: error.message || 'Ha ocurrido un error inesperado al procesar el login.',
         confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
       });
     } finally {
       setLoading(false);

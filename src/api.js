@@ -1,21 +1,45 @@
+import axios from 'axios';
+
 const API_URL = import.meta.env.VITE_API_URL;
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Interceptor para añadir el token en las peticiones (si existe)
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    config.headers['Content-Type'] = 'application/json'; // Asegurar Content-Type por defecto
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para manejar errores de respuesta (incluyendo 401)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Limpiar datos de sesión
+      localStorage.removeItem('token');
+      localStorage.removeItem('user'); // Asumiendo que guardas el usuario aquí también
+      // Redirigir al login
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      throw response;
-    }
-
-    const data = await response.json();
-    return data;
+    const response = await api.post('/api/usuarios/login', credentials);
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -23,21 +47,18 @@ export const loginUser = async (credentials) => {
 
 export const getUsuarios = async (page = 1, limit = 5, searchTerm = '') => {
   try {
-    let url = `${API_URL}/api/usuarios?page=${page}&limit=${limit}`;
-    if (searchTerm) {
-      url += `&search=${encodeURIComponent(searchTerm)}`;
-    }
-    url += `&_t=${Date.now()}`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw response;
-    }
-    const data = await response.json();
-    return { success: true, data: data };
+    const response = await api.get('/api/usuarios', {
+      params: {
+        page,
+        limit,
+        search: searchTerm,
+      },
+    });
+    return { success: true, data: response.data };
   } catch (error) {
-    if (error instanceof Response) {
-      throw error;
+    console.error('Error al obtener usuarios:', error);
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
       return { error: true, status: 500, detalles: error.message || 'Error al conectar con el servidor' };
     }
@@ -46,113 +67,89 @@ export const getUsuarios = async (page = 1, limit = 5, searchTerm = '') => {
 
 export const getUsuarioById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/${id}`);
-    if (!response.ok) {
-      throw new Error('Error al obtener el detalle del usuario');
-    }
-    const data = await response.json();
-    return data;
+    const response = await api.get(`/api/usuarios/${id}`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al obtener usuario por ID:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 export const updateUsuario = async (id, data) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al actualizar el usuario');
-    }
-    return await response.json();
+    const response = await api.put(`/api/usuarios/${id}`, data);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al actualizar usuario:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 export const updateEstadoUsuario = async (id, estado) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/estado/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ estado }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al cambiar el estado del usuario');
-    }
-    return await response.json();
+    const response = await api.patch(`/api/usuarios/estado/${id}`, { estado });
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al cambiar estado de usuario:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 export const deleteUsuario = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al eliminar el usuario');
-    }
-    return await response.json();
+    const response = await api.delete(`/api/usuarios/${id}`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al eliminar usuario:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 export const createUsuario = async (data) => {
   try {
-    const response = await fetch(`${API_URL}/api/usuarios/registrar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al registrar el usuario');
-    }
-    return await response.json();
+    const response = await api.post('/api/usuarios/registrar', data);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al crear usuario:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 // Obtener roles
 export const getRoles = async (page = 1, limit = 5, searchTerm = '') => {
   try {
-    let url = `${API_URL}/api/rol?pagina=${page}&limit=${limit}`;
-    if (searchTerm) {
-      url += `&search=${encodeURIComponent(searchTerm)}`;
-    }
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al obtener los roles');
-    }
-    const data = await response.json();
-    return { success: true, data: data };
+    const response = await api.get('/api/rol', {
+      params: {
+        pagina: page,
+        limit,
+        search: searchTerm,
+      },
+    });
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Error en getRoles API call:', error);
-    if (error instanceof Response) {
-      try {
-        const errorBody = await error.json();
-        return { error: true, status: error.status, detalles: errorBody.message || `Error HTTP ${error.status}` };
-      } catch (jsonError) {
-        return { error: true, status: error.status, detalles: `Error HTTP ${error.status}` };
-      }
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
       return { error: true, status: 500, detalles: error.message || 'Error desconocido al obtener roles' };
     }
@@ -162,113 +159,92 @@ export const getRoles = async (page = 1, limit = 5, searchTerm = '') => {
 // Crear rol
 export const createRol = async (data) => {
   try {
-    const response = await fetch(`${API_URL}/api/rol`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear el rol');
-    }
-    return await response.json();
+    const response = await api.post('/api/rol', data);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al crear rol:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 // Editar rol
 export const updateRol = async (id, data) => {
   try {
-    const response = await fetch(`${API_URL}/api/rol/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al actualizar el rol');
-    }
-    return await response.json();
+    const response = await api.put(`/api/rol/${id}`, data);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al actualizar rol:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 // Eliminar rol
 export const deleteRol = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/api/rol/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al eliminar el rol');
-    }
-    return await response.json();
+    const response = await api.delete(`/api/rol/${id}`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al eliminar rol:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
-// Cambiar estado de rol (PATCH)
+// Cambiar estado de rol (PUT)
 export const updateEstadoRol = async (id, estado) => {
   try {
-    const response = await fetch(`${API_URL}/api/rol/estado/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ estado }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al cambiar el estado del rol');
-    }
-    const data = await response.json();
-    return data;
+    const response = await api.put(`/api/rol/estado/${id}`, { estado });
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al cambiar estado de rol:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 // Obtener detalle de rol
 export const getRolById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/api/rol/${id}`);
-    if (!response.ok) {
-      throw new Error('Error al obtener el detalle del rol');
-    }
-    return await response.json();
+    const response = await api.get(`/api/rol/${id}`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al obtener rol por ID:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
 
 // Obtener proveedores
 export const getProveedores = async (page = 1, limit = 5) => {
   try {
-    let url = `${API_URL}/api/proveedores?pagina=${page}&limit=${limit}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al obtener los proveedores');
-    }
-    const data = await response.json();
-    return { success: true, data: data };
+    const response = await api.get('/api/proveedores', {
+      params: {
+        pagina: page,
+        limit,
+      },
+    });
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Error en getProveedores API call:', error);
-    if (error instanceof Response) {
-      try {
-        const errorBody = await error.json();
-        return { error: true, status: error.status, detalles: errorBody.message || `Error HTTP ${error.status}` };
-      } catch (jsonError) {
-        return { error: true, status: error.status, detalles: `Error HTTP ${error.status}` };
-      }
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
       return { error: true, status: 500, detalles: error.message || 'Error desconocido al obtener proveedores' };
     }
@@ -277,12 +253,19 @@ export const getProveedores = async (page = 1, limit = 5) => {
 
 export const getProveedorByNit = async (nit) => {
   try {
-    const response = await fetch(`${API_URL}/api/proveedores/nit/${nit}`);
-    if (!response.ok) {
-      throw new Error('Error al obtener el detalle del proveedor');
-    }
-    return await response.json();
+    const response = await api.get(`/api/proveedores/nit/${nit}`);
+    return response.data;
   } catch (error) {
-    throw new Error(error.message || 'Error al conectar con el servidor');
+    console.error('Error al obtener proveedor por NIT:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };
+
+// Puedes agregar más funciones para otras entidades (clientes, productos, etc.) siguiendo el mismo patrón
+
+// Asegúrate de que la instancia de axios se exporta correctamente
+export { api };
