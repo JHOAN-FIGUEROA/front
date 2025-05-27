@@ -434,7 +434,7 @@ const Roles = () => {
     });
   };
 
-  const handleEliminadoExitoso = (idRolEliminado) => {
+  const handleEliminadoExitoso = async (idRolEliminado) => {
     setEliminarOpen(false);
     Swal.fire({
       icon: 'success',
@@ -452,38 +452,22 @@ const Roles = () => {
         popup.style.zIndex = 99999;
       }
     });
-    setRoles((prev) => prev.filter(r => r.idrol !== idRolEliminado));
+    
+    // No modificamos el estado local 'roles' directamente para paginación
+    // setRoles((prev) => prev.filter(r => r.idrol !== idRolEliminado));
 
-    const fetchCurrentPageOrPrevious = async () => {
-        setLoading(true);
-        const currentSearchFromUrl = searchParams.get('search') || '';
-        let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
+    // Re-obtener la lista y verificar la paginación
+    const currentSearchFromUrl = searchParams.get('search') || '';
+    let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
 
-        const rolesActualizados = roles.filter(r => r.idrol !== idRolEliminado);
-        const rolesFiltradosActualizados = rolesActualizados.filter((rol) => {
-            if (!busqueda) return true;
-            const terminoBusquedaLower = busqueda.toLowerCase().trim();
-            if (terminoBusquedaLower === "activo") return rol.estado === true || rol.estado === 1 || rol.estado === 'true';
-            if (terminoBusquedaLower === "inactivo") return !(rol.estado === true || rol.estado === 1 || rol.estado === 'true');
-            return rol.nombre?.toLowerCase().includes(terminoBusquedaLower);
-        });
+    // Obtener el nuevo total de páginas después de la eliminación
+    // Una forma es hacer una pequeña llamada solo para obtener la paginación,
+    // o simplemente refetching la página actual y manejar si está vacía.
+    // La opción de refetch y manejar si está vacía es más simple.
 
+    // Refetch la página actual. fetchRolesCallback ya maneja el caso de página vacía al ir a la última.
+    fetchRolesCallback(currentPageFromUrl, currentSearchFromUrl);
 
-        if (rolesFiltradosActualizados.length === 0 && currentPageFromUrl > 1) {
-            if (totalPaginasAPI > 1) {
-                 currentPageFromUrl = currentPageFromUrl - 1;
-                 const newSearchParams = new URLSearchParams(searchParams);
-                 newSearchParams.set('page', currentPageFromUrl.toString());
-                 setSearchParams(newSearchParams); 
-            } else {
-                 fetchRolesCallback(currentPageFromUrl, currentSearchFromUrl);
-            }
-        } else {
-            fetchRolesCallback(currentPageFromUrl, currentSearchFromUrl); 
-        }
-        setLoading(false);
-    };
-    fetchCurrentPageOrPrevious();
   };
 
   // console.log("RENDER Roles.jsx - snackbar:", snackbar);

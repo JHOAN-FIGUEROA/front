@@ -2,6 +2,7 @@ import { Box, useTheme, useMediaQuery, CssBaseline } from '@mui/material';
 import { useState } from 'react';
 import SideBar from './SideBar';
 import Navbar from './Navbar';
+import { useInactivityTimer } from '../hooks/useInactivityTimer';
 
 const drawerWidth = 240;
 const closedDrawerWidth = 64;
@@ -14,6 +15,9 @@ const DashboardLayout = ({ children }) => {
 
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Usar el hook del temporizador de inactividad
+  useInactivityTimer();
 
   // Handler para el toggle en desktop (sidebar permanente)
   const handleDesktopToggle = () => {

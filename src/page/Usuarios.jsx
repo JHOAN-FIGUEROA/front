@@ -20,8 +20,8 @@ import Crear from '../components/Crear';
 
 const USUARIOS_POR_PAGINA = 5;
 const CAMPOS_EDITABLES = [
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true },
-  { name: 'documento', label: 'Documento', required: true },
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true, disabled: true },
+  { name: 'documento', label: 'Documento', required: true, disabled: true },
   { name: 'nombre', label: 'Nombre', required: true },
   { name: 'apellido', label: 'Apellido', required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
@@ -126,13 +126,13 @@ const Usuarios = () => {
       setLoadingRoles(true);
       setErrorCargandoRoles('');
       try {
-        const result = await getRoles(1, 100); 
+        const result = await getRoles(null, null, '', true); 
         if (result.success && result.data) {
             let rolesArray = [];
-            if (result.data.roles && Array.isArray(result.data.roles)) {
-                rolesArray = result.data.roles;
-            } else if (Array.isArray(result.data)) {
+            if (Array.isArray(result.data)) {
                 rolesArray = result.data;
+            } else if (result.data.roles && Array.isArray(result.data.roles)) {
+                rolesArray = result.data.roles;
             } else {
                 console.error('Formato de roles inesperado:', result.data);
                 setErrorCargandoRoles('Error al procesar lista de roles.');
@@ -140,7 +140,7 @@ const Usuarios = () => {
             setRoles(rolesArray);
             const options = rolesArray.map(rol => ({ value: rol.idrol, label: rol.nombre }));
             setRolSelectOptions(options); 
-        } else {
+        } else if (result.error) {
           setErrorCargandoRoles(result.detalles || 'No se pudo obtener la lista de roles.');
         }
       } catch (err) {
@@ -275,24 +275,22 @@ const Usuarios = () => {
         initialForm[campo.name] = data[campo.name] || '';
       });
 
-      // Cargar roles para el selector
-      const rolesResult = await getRoles(1, 100); // Obtener todos los roles
-      if (rolesResult.success && rolesResult.data) {
-        const rolesOptions = rolesResult.data.roles.map(rol => ({
-          value: rol.idrol,
-          label: rol.nombre
-        }));
-        setRolSelectOptions(rolesOptions);
-        
-        // Actualizar las opciones en CAMPOS_EDITABLES
-        const camposActualizados = CAMPOS_EDITABLES.map(campo => {
-          if (campo.name === 'rol_idrol') {
-            return { ...campo, options: rolesOptions };
-          }
-          return campo;
-        });
-        setCamposCrear(camposActualizados);
-      }
+      // Reutilizar las opciones de roles ya cargadas al montar el componente
+      // en lugar de cargar roles de nuevo aquí.
+      // Esto también resuelve el error del linter por redeclaración de rolesResult.
+      
+      // Ya no necesitamos cargar roles aquí porque ya se cargaron en el useEffect inicial
+      // const rolesResult = await getRoles(); // <<-- Eliminar esta línea
+      // if (rolesResult.success && rolesResult.data) { // <<-- Eliminar esta línea
+      //   const rolesOptions = rolesResult.data.map(rol => ({ // <<-- Eliminar esta línea
+      //     value: rol.idrol,
+      //     label: rol.nombre
+      //   }));
+      //   setRolSelectOptions(rolesOptions); // <<-- Esto se actualiza al montar, no aquí
+      // } // <<-- Eliminar esta línea
+
+      // Las opciones de rolSelectOptions ya están disponibles en el scope del componente
+      // y se pasan al componente Editar.
 
       setEditForm(initialForm);
     } catch (err) {
@@ -469,7 +467,7 @@ const Usuarios = () => {
     });
   };
 
-  const handleUsuarioEliminado = (idUsuarioEliminado) => {
+  const handleUsuarioEliminado = async (idUsuarioEliminado) => {
     setEliminarOpen(false);
     Swal.fire({
       icon: 'success',
@@ -488,41 +486,16 @@ const Usuarios = () => {
       }
     });
     
-    setUsuarios(prevUsuarios => prevUsuarios.filter(u => u.idusuario !== idUsuarioEliminado));
+    // No modificamos el estado local 'usuarios' directamente para paginación
+    // setUsuarios(prevUsuarios => prevUsuarios.filter(u => u.idusuario !== idUsuarioEliminado));
 
-    const fetchCurrentPageOrPrevious = async () => {
-        setLoading(true); 
-        const currentSearchFromUrl = searchParams.get('search') || '';
-        let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
-        
-        const usuariosActualizados = usuarios.filter(u => u.idusuario !== idUsuarioEliminado);
-        const usuariosFiltradosActualizados = usuariosActualizados.filter(usuario => { 
-            if (!busqueda) return true;
-            const terminoBusquedaLower = busqueda.toLowerCase().trim();
-            if (terminoBusquedaLower === "activo") return usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1';
-            if (terminoBusquedaLower === "inactivo") return !(usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1');
-            return (
-                usuario.nombre?.toLowerCase().includes(terminoBusquedaLower) ||
-                usuario.apellido?.toLowerCase().includes(terminoBusquedaLower) ||
-                usuario.email?.toLowerCase().includes(terminoBusquedaLower)
-            );
-        });
+    // Re-obtener la lista y verificar la paginación
+    const currentSearchFromUrl = searchParams.get('search') || '';
+    let currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
 
-        if (usuariosFiltradosActualizados.length === 0 && currentPageFromUrl > 1) {
-             if (totalPaginasAPI > 1) { 
-                 currentPageFromUrl = currentPageFromUrl - 1;
-                 const newSearchParams = new URLSearchParams(searchParams);
-                 newSearchParams.set('page', currentPageFromUrl.toString());
-                 setSearchParams(newSearchParams); 
-             } else {
-                 fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
-             }
-        } else {
-            fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
-        }
-        setLoading(false);
-    };
-    fetchCurrentPageOrPrevious();
+    // Refetch la página actual. fetchUsuariosCallback ya maneja el caso de página inválida.
+    fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl);
+
   };
 
   const camposCrearConRoles = CAMPOS_CREAR_ORIGINAL.map(campo => {
@@ -692,7 +665,8 @@ const Usuarios = () => {
             return { ...campo, options: rolSelectOptions };
           }
           return campo;
-        })}
+        })
+        .filter(campo => !(campo.name === 'rol_idrol' && editUsuario?.idusuario === 34))}
       />
 
       <Eliminar

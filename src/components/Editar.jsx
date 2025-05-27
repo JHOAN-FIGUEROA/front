@@ -33,7 +33,7 @@ const Editar = ({
       {usuario && !loading && (
         <Box component="form" onSubmit={(e) => { e.preventDefault(); onSave(); }} noValidate sx={{ mt: 1 }}>
           <Grid container spacing={2}>
-            {Array.isArray(camposEditables) && camposEditables.map(({ name, label, select, options = [], type = 'text', required = true }) => (
+            {Array.isArray(camposEditables) && camposEditables.map(({ name, label, select, options = [], type = 'text', required = true, disabled = false }) => (
               <Grid xs={12} sm={6} key={name}>
                 {select ? (
                   <TextField
@@ -47,6 +47,7 @@ const Editar = ({
                     required={required}
                     error={!!validationErrors[name]}
                     helperText={validationErrors[name]}
+                    disabled={disabled}
                   >
                     {Array.isArray(options) && options.map(opt => (
                       <MenuItem key={typeof opt === 'object' ? opt.value : opt} value={typeof opt === 'object' ? opt.value : opt}>
@@ -66,6 +67,7 @@ const Editar = ({
                     required={required}
                     error={!!validationErrors[name]}
                     helperText={validationErrors[name]}
+                    disabled={disabled}
                   />
                 )}
               </Grid>
