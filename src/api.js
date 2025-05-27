@@ -136,16 +136,38 @@ export const createUsuario = async (data) => {
 };
 
 // Obtener roles
-export const getRoles = async (page = 1, limit = 5, searchTerm = '') => {
+export const getRoles = async (page = 1, limit = 5, searchTerm = '', forSelector = false) => {
   try {
-    const response = await api.get('/api/rol', {
-      params: {
+    let url = '/api/rol';
+    let params = {};
+
+    if (forSelector) {
+      url = '/api/rol/r'; // Nuevo endpoint para selector
+      // No se envían parámetros de paginación ni búsqueda en este modo
+    } else {
+      // Modo paginado (para tablas)
+      params = {
         pagina: page,
         limit,
         search: searchTerm,
-      },
+      };
+    }
+
+    const response = await api.get(url, {
+      params,
     });
-    return { success: true, data: response.data };
+
+    // Ajustar el formato de respuesta esperado si es para selector (devolver el array directo)
+    if (forSelector && response.data && Array.isArray(response.data)) {
+        return { success: true, data: response.data };
+    } else if (!forSelector && response.data && (response.data.roles || Array.isArray(response.data))) { // Mantener compatibilidad con respuesta paginada y la anterior no paginada en Usuarios
+       return { success: true, data: response.data };
+    }
+     else {
+       console.error('Formato de respuesta inesperado de getRoles:', response.data);
+       return { error: true, status: response.status || 500, detalles: 'Formato de respuesta inesperado del servidor' };
+    }
+
   } catch (error) {
     console.error('Error en getRoles API call:', error);
     if (error.response) {
