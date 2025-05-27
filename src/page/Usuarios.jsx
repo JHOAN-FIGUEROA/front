@@ -8,6 +8,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { useSearchParams } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 import Buscador from '../components/Buscador';
 import VerDetalle from '../components/VerDetalle';
@@ -18,7 +20,7 @@ import Crear from '../components/Crear';
 
 const USUARIOS_POR_PAGINA = 5;
 const CAMPOS_EDITABLES = [
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI', 'NIT'], required: true },
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true },
   { name: 'documento', label: 'Documento', required: true },
   { name: 'nombre', label: 'Nombre', required: true },
   { name: 'apellido', label: 'Apellido', required: true },
@@ -31,7 +33,7 @@ const CAMPOS_EDITABLES = [
 ];
 
 const CAMPOS_CREAR_ORIGINAL = [
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI', 'NIT'], required: true },
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI',], required: true },
   { name: 'documento', label: 'Documento', required: true },
   { name: 'nombre', label: 'Nombre', required: true },
   { name: 'apellido', label: 'Apellido', required: true },
@@ -209,7 +211,20 @@ const Usuarios = () => {
     const usuarioId = parseInt(id, 10);
     if (isNaN(usuarioId)) {
         setDetalleError("ID de usuario inválido.");
-        openSnackbar("ID de usuario inválido para ver detalle.", 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'ID de usuario inválido para ver detalle',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          zIndex: 9999,
+          didOpen: (popup) => {
+            popup.style.zIndex = 9999;
+          }
+        });
         return;
     }
     setDetalleOpen(true);
@@ -221,8 +236,21 @@ const Usuarios = () => {
       setUsuarioDetalle(data);
     } catch (err) {
       const errorMsg = err.message || 'Error al cargar detalle del usuario.';
-      setDetalleError(errorMsg); 
-      openSnackbar(errorMsg, 'error');
+      setDetalleError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Cargar Detalle',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
     } finally {
       setDetalleLoading(false);
     }
@@ -329,7 +357,20 @@ const Usuarios = () => {
       }
     });
     if (!hasChanges) {
-      setEditError('No hay cambios para guardar.'); 
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin Cambios',
+        text: 'No hay cambios para guardar',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
       return;
     }
     setEditLoading(true);
@@ -337,15 +378,43 @@ const Usuarios = () => {
       const usuarioId = parseInt(editUsuario.idusuario, 10);
       if (isNaN(usuarioId)) throw new Error("ID de usuario inválido para actualizar.");
       await updateUsuario(usuarioId, dataToSend);
-      openSnackbar('Usuario actualizado correctamente', 'success');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Usuario Actualizado!',
+        text: 'Los cambios han sido guardados correctamente',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
       const currentPageFromUrl = parseInt(searchParams.get('page')) || 1;
       const currentSearchFromUrl = searchParams.get('search') || '';
       fetchUsuariosCallback(currentPageFromUrl, currentSearchFromUrl); 
       setEditOpen(false);
     } catch (err) {
       const errorMsg = err.message || 'Ocurrió un error al actualizar el usuario.';
-      setEditError(errorMsg); 
-      openSnackbar(errorMsg, 'error');
+      setEditError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Actualizar',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
     } finally {
       setEditLoading(false);
     }
@@ -361,20 +430,63 @@ const Usuarios = () => {
 
   const handleUsuarioCreadoExitosamente = (nuevoUsuario) => {
     setCrearOpen(false);
-    openSnackbar('Usuario creado correctamente', 'success');
+    Swal.fire({
+      icon: 'success',
+      title: '¡Usuario Creado!',
+      text: 'El usuario ha sido registrado correctamente',
+      timer: 2000,
+      showConfirmButton: false,
+      position: 'center',
+      background: '#fff',
+      customClass: {
+        popup: 'animated fadeInDown'
+      },
+      zIndex: 9999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 9999;
+      }
+    });
     const newSearchParams = new URLSearchParams(searchParams); 
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams); 
   };
   
   const handleCrearError = (errorMessage) => {
-    setCrearErrorInterno(errorMessage); // Para el Alert dentro del diálogo Crear
-    openSnackbar(errorMessage, 'error'); // Para el Snackbar general
+    setCrearErrorInterno(errorMessage);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error al Crear Usuario',
+      text: errorMessage,
+      confirmButtonColor: '#2E8B57',
+      background: '#fff',
+      customClass: {
+        popup: 'animated fadeInDown'
+      },
+      zIndex: 9999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 9999;
+      }
+    });
   };
 
   const handleUsuarioEliminado = (idUsuarioEliminado) => {
     setEliminarOpen(false);
-    openSnackbar('Usuario eliminado correctamente', 'success');
+    Swal.fire({
+      icon: 'success',
+      title: '¡Usuario Eliminado!',
+      text: 'El usuario ha sido eliminado correctamente',
+      timer: 2000,
+      showConfirmButton: false,
+      position: 'center',
+      background: '#fff',
+      customClass: {
+        popup: 'animated fadeInDown'
+      },
+      zIndex: 9999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 9999;
+      }
+    });
     
     setUsuarios(prevUsuarios => prevUsuarios.filter(u => u.idusuario !== idUsuarioEliminado));
 
@@ -428,7 +540,7 @@ const Usuarios = () => {
   };
 
   return (
-    <Box p={3}>
+    <Box p={3} sx={{ position: 'relative' }}>
       <Typography variant="h5" gutterBottom>Usuarios Registrados</Typography>
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
         <Box sx={{ flexGrow: 1, width: {xs: '100%', sm: 350} }}> 
@@ -462,7 +574,16 @@ const Usuarios = () => {
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{width: '100%'}}>{error}</Alert>}
       </Box>
-      <TableContainer component={Paper} sx={{ margin: '0 auto', boxShadow: 2, overflowX: 'auto' }}>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          margin: '0 auto', 
+          boxShadow: 2, 
+          overflowX: 'auto',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
         <Table sx={{ minWidth: 650 }} aria-label="tabla de usuarios">
           <TableHead>
             <TableRow>
@@ -509,7 +630,9 @@ const Usuarios = () => {
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
                     <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
-                    <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
+                    {usuario.rol_idrol !== 1 && (
+                      <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
+                    )}
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -594,5 +717,17 @@ const Usuarios = () => {
     </Box>
   );
 };
+
+// Agregar estilos globales para SweetAlert2
+const style = document.createElement('style');
+style.textContent = `
+  .swal2-container {
+    z-index: 99999 !important;
+  }
+  .swal2-popup {
+    z-index: 99999 !important;
+  }
+`;
+document.head.appendChild(style);
 
 export default Usuarios;
