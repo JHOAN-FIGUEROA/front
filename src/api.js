@@ -160,13 +160,45 @@ export const getRoles = async (page = 1, limit = 5, searchTerm = '', forSelector
     // Ajustar el formato de respuesta esperado si es para selector (devolver el array directo)
     if (forSelector && response.data && Array.isArray(response.data)) {
         return { success: true, data: response.data };
-    } else if (!forSelector && response.data && (response.data.roles || Array.isArray(response.data))) { // Mantener compatibilidad con respuesta paginada y la anterior no paginada en Usuarios
-       return { success: true, data: response.data };
     }
-     else {
-       console.error('Formato de respuesta inesperado de getRoles:', response.data);
-       return { error: true, status: response.status || 500, detalles: 'Formato de respuesta inesperado del servidor' };
+    
+    // Si la respuesta principal indica éxito
+    if (response.data && response.data.success === true) {
+      let rolesArray = [];
+      let paginacionData = null;
+
+      // Intentar extraer el array de roles de diferentes estructuras
+      if (response.data.data && Array.isArray(response.data.data)) { // Nueva estructura con lista en .data.data
+          rolesArray = response.data.data;
+          if (response.data.paginacion) { // Y posible paginación en el nivel superior
+              paginacionData = response.data.paginacion;
+          }
+      } else if (response.data.data && response.data.data.roles && Array.isArray(response.data.data.roles)) { // Estructura paginada anterior con lista en .data.data.roles
+          rolesArray = response.data.data.roles;
+          if (response.data.data.paginacion) { // Y paginación en .data.data.paginacion
+              paginacionData = response.data.data.paginacion;
+          }
+      } else if (response.data.roles && Array.isArray(response.data.roles)) { // Estructura anterior con lista en .data.roles
+          rolesArray = response.data.roles;
+          if (response.data.paginacion) { // Y posible paginación en el nivel superior
+               paginacionData = response.data.paginacion;
+          } else if (response.data.data && response.data.data.paginacion) { // O paginación en .data.data.paginacion
+              paginacionData = response.data.data.paginacion;
+          }
+      } else if (Array.isArray(response.data)) { // Si response.data es directamente el array (para selector o no paginado)
+           rolesArray = response.data;
+      }
+
+      // Si llegamos aquí y success es true, pero no encontramos un array, asumimos lista vacía.
+      // Esto maneja { success: true, message: '...', data: {} } y otros casos inesperados de éxito.
+      return { success: true, data: { roles: rolesArray, paginacion: paginacionData } };
     }
+    
+    
+     // Si la respuesta no indica éxito o tiene un formato inesperado para un caso de error
+     console.error('Formato de respuesta inesperado de getRoles:', response.data);
+     return { error: true, status: response.status || 500, detalles: 'Formato de respuesta inesperado del servidor' };
+    
 
   } catch (error) {
     console.error('Error en getRoles API call:', error);
@@ -287,7 +319,131 @@ export const getProveedorByNit = async (nit) => {
   }
 };
 
-// Puedes agregar más funciones para otras entidades (clientes, productos, etc.) siguiendo el mismo patrón
+// Funciones para la gestión de clientes
+export const getClientes = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/clientes', {
+      params: {
+        page,
+        limit,
+        search: searchTerm,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener clientes:', error);
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
+    } else {
+      return { error: true, status: 500, detalles: error.message || 'Error al conectar con el servidor' };
+    }
+  }
+};
+
+export const getClientesTodos = async (searchTerm = '') => {
+  try {
+    const response = await api.get('/api/clientes/todos', {
+      params: { search: searchTerm }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener todos los clientes:', error);
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
+    } else {
+      return { error: true, status: 500, detalles: error.message || 'Error al conectar con el servidor' };
+    }
+  }
+};
+
+export const getClienteById = async (id, incluirVentas = false) => {
+  try {
+    const response = await api.get(`/api/clientes/${id}`, {
+      params: {
+        incluirVentas: incluirVentas
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener cliente por documento:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const createCliente = async (data) => {
+  try {
+    const response = await api.post('/api/clientes', {
+      tipodocumento: data.tipodocumento,
+      documentocliente: data.documentocliente,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      email: data.email,
+      password: data.password,
+      telefono: data.telefono,
+      municipio: data.municipio,
+      complemento: data.complemento,
+      direccion: data.direccion,
+      barrio: data.barrio
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al crear cliente:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const updateCliente = async (id, data) => {
+  try {
+    // Asumimos que la API espera PATCH o PUT en /api/clientes/{documento}
+    const response = await api.patch(`/api/clientes/${id}`, data); // O api.put
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar cliente por documento:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const updateEstadoCliente = async (id, estado) => {
+  try {
+    // Asumimos que la API espera PATCH en /api/clientes/estado/{documento}
+    const response = await api.patch(`/api/clientes/estado/${id}`, { estado });
+    return response.data;
+  } catch (error) {
+    console.error('Error al cambiar estado de cliente por documento:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const deleteCliente = async (id) => {
+  try {
+    // Asumimos que la API espera DELETE en /api/clientes/{documento}
+    const response = await api.delete(`/api/clientes/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar cliente por documento:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
 
 // Asegúrate de que la instancia de axios se exporta correctamente
 export { api };

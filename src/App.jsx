@@ -10,6 +10,7 @@ import DashBoard from './components/DashBoard';
 import Usuarios from './page/Usuarios';
 import Roles from './page/Roles';
 import Proveedores from './page/Proveedores';
+import Clientes from './page/Clientes';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -48,6 +49,35 @@ const HomePage = () => (
     <Footer />
   </Box>
 );
+
+// Agregar estilos globales para SweetAlert2
+const style = document.createElement('style');
+style.textContent = `
+  .swal2-container {
+    z-index: 99999 !important;
+  }
+  .swal2-popup {
+    z-index: 99999 !important;
+  }
+  .animated {
+    animation-duration: 0.3s;
+    animation-fill-mode: both;
+  }
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translate3d(0, -20px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  .fadeInDown {
+    animation-name: fadeInDown;
+  }
+`;
+document.head.appendChild(style);
 
 function App() {
   return (
@@ -91,6 +121,16 @@ function App() {
               <ProtectedRoute requiredPermission="Proveedores">
                 <DashboardLayout>
                   <Proveedores />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/ventas/clientes"
+            element={
+              <ProtectedRoute requiredPermission="Clientes">
+                <DashboardLayout>
+                  <Clientes />
                 </DashboardLayout>
               </ProtectedRoute>
             }

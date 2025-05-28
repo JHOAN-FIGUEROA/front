@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Box, Divider, Button } from '@mui/material';
-import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout, ShoppingCart } from '@mui/icons-material';
+import { Dashboard, Settings, People, Security, ExpandLess, ExpandMore, Menu, Logout, ShoppingCart, Store } from '@mui/icons-material';
 import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -48,6 +48,7 @@ const StyledDrawer = styled(Drawer)(({ theme, open, variant, navbarHeight }) => 
 const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
   const [openConfig, setOpenConfig] = useState(false);
   const [openCompras, setOpenCompras] = useState(false);
+  const [openVentas, setOpenVentas] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, hasPermission } = useAuth();
@@ -60,6 +61,10 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
 
   const handleComprasClick = () => {
     setOpenCompras(!openCompras);
+  };
+
+  const handleVentasClick = () => {
+    setOpenVentas(!openVentas);
   };
 
   const handleNavigate = (path) => {
@@ -187,6 +192,38 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
                         <People />
                       </ListItemIcon>
                       {open && <ListItemText primary="Proveedores" />}
+                    </ListItem>
+                  )}
+                </List>
+              </Collapse>
+           </>
+        )}
+        {hasPermission(PERMISSIONS.CLIENTES) && (
+           <>
+              <ListItem {...({ button: 'true' })} onClick={handleVentasClick}>
+                <ListItemIcon sx={{ color: '#fff' }}>
+                  <Store />
+                </ListItemIcon>
+                {open && <ListItemText primary="Ventas" />}
+                {open ? (openVentas ? <ExpandLess /> : <ExpandMore />) : null}
+              </ListItem>
+              <Collapse in={openVentas && open} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {hasPermission(PERMISSIONS.CLIENTES) && (
+                    <ListItem
+                      {...({ button: 'true' })}
+                      selected={location.pathname === '/ventas/clientes'}
+                      onClick={() => handleNavigate('/ventas/clientes')}
+                      sx={{
+                        pl: openVentas && open ? 4 : 0,
+                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                        '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: '#fff', pl: openVentas && open ? 1 : 0 }}>
+                        <People />
+                      </ListItemIcon>
+                      {open && <ListItemText primary="Clientes" />}
                     </ListItem>
                   )}
                 </List>

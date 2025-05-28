@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert } from '@mui/material';
-import { createUsuario } from '../api';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress } from '@mui/material';
+import { createUsuario, createCliente } from '../api';
+import { showErrorAlert } from '../utils/sweetAlert';
 
-// Asegúrate de que la prop onError se desestructure aquí
-const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, titulo = 'Registrar Usuario', onError }) => {
+const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, titulo = 'Registrar Usuario', onError, tipo = 'usuario' }) => {
   const [form, setForm] = useState(() => Object.fromEntries(campos.map(c => [c.name, c.default || ''])));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (open) {
       setForm(Object.fromEntries(campos.map(c => [c.name, c.default || ''])));
       setValidationErrors({});
-      setError('');
-      setSuccess(false);
     }
   }, [open, campos]);
 
@@ -55,27 +51,100 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setValidationErrors({});
 
     if (!validateForm()) {
+      const validationErrorMsg = 'Por favor, corrija los errores en el formulario.';
+      if (onError) {
+        onError(validationErrorMsg);
+      }
+      showErrorAlert('Error de Validación', validationErrorMsg);
       return;
     }
 
     setLoading(true);
     try {
-      const response = await createUsuario(form);
-      setSuccess(true);
-      if (onCreado) onCreado(response);
-      openSnackbar('Usuario registrado correctamente', 'success');
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Ocurrió un error al crear el usuario.';
-      setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
+      const createFunction = tipo === 'cliente' ? createCliente : createUsuario;
+      
+      const dataToSend = { ...form };
+      if (tipo === 'cliente' && dataToSend.documentocliente) {
+        const docNumber = Number(dataToSend.documentocliente);
+        if (isNaN(docNumber)) {
+          const errorMsg = 'El número de documento no es un número válido.';
+          setLoading(false);
+          if (onError) onError(errorMsg);
+          showErrorAlert('Error de Validación', errorMsg);
+          return;
+        }
+        dataToSend.documentocliente = docNumber;
       }
-    } finally {
+
+      console.log('Datos enviados para crear ', tipo, ':', dataToSend);
+
+      const response = await createFunction(dataToSend);
+
       setLoading(false);
+      if (onCreado) onCreado(response);
+      onClose();
+
+    } catch (err) {
+      setLoading(false);
+      console.error(`Error al crear ${tipo}:`, err);
+
+      if (err.response) {
+        console.error(`Respuesta de error del backend:`, err.response);
+      }
+
+      let friendlyErrorMessage = `Ocurrió un error al crear el ${tipo}.`;
+      let backendErrorDetails = err.response?.data?.detalles;
+      let backendErrorMessage = err.response?.data?.error;
+      let axiosErrorMessage = err.message;
+
+      if (typeof backendErrorDetails === 'object' && backendErrorDetails !== null) {
+        try {
+          const fieldErrors = Object.entries(backendErrorDetails);
+          if (fieldErrors.length > 0) {
+            friendlyErrorMessage = fieldErrors
+              .map(([key, messages]) => {
+                const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                let messageText = '';
+                if (Array.isArray(messages)) {
+                  messageText = messages.join(', ');
+                } else if (messages !== undefined && messages !== null) {
+                  messageText = String(messages);
+                } else {
+                  messageText = 'Error desconocido';
+                }
+                return `${formattedKey}: ${messageText}`;
+              })
+              .join('; ');
+
+            if (!friendlyErrorMessage) {
+              friendlyErrorMessage = backendErrorMessage || axiosErrorMessage || friendlyErrorMessage;
+            }
+          }
+        } catch (formatError) {
+          console.error('Error formateando respuesta de error del backend (detalles):', formatError);
+          friendlyErrorMessage = 'Error de validación con formato inesperado.';
+        }
+      } else if (typeof err.response?.data?.error === 'string') {
+        friendlyErrorMessage = err.response.data.error;
+      } else if (typeof err.response?.data === 'string') {
+        friendlyErrorMessage = err.response.data;
+      } else if (backendErrorMessage) {
+        friendlyErrorMessage = backendErrorMessage;
+      } else if (axiosErrorMessage) {
+        friendlyErrorMessage = axiosErrorMessage;
+      } else {
+        friendlyErrorMessage = 'Error con formato de respuesta inesperado del servidor.';
+      }
+
+      const finalErrorMessage = typeof friendlyErrorMessage === 'string' && friendlyErrorMessage.length > 0 ? friendlyErrorMessage : 'Ocurrió un error desconocido.';
+
+      if (onError) {
+        onError(finalErrorMessage);
+      }
+      showErrorAlert('Error al Crear', finalErrorMessage);
     }
   };
 
@@ -124,28 +193,17 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                 </Grid>
               ))}
             </Grid>
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
-            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={onClose} color="secondary" disabled={loading || loadingProp}>Cancelar</Button>
+            <Button onClick={onClose} color="secondary" disabled={loading || loadingProp}>
+              Cancelar
+            </Button>
             <Button type="submit" color="primary" disabled={loading || loadingProp}>
               {loading ? <CircularProgress size={18} /> : 'Registrar'}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
-      <Snackbar
-        open={success}
-        autoHideDuration={2000}
-        onClose={() => setSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccess(false)} sx={{ width: '100%' }}>
-          Usuario registrado correctamente
-        </Alert>
-      </Snackbar>
     </>
   );
 };

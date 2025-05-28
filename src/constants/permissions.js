@@ -22,6 +22,7 @@ export const ROUTE_PERMISSIONS = {
   '/config/usuarios': PERMISSIONS.USUARIOS,
   '/config/roles': PERMISSIONS.ROLES,
   '/compras/proveedores': PERMISSIONS.PROVEEDORES,
+  '/ventas/clientes': PERMISSIONS.CLIENTES,
 } ;
 
 // Nota: La guía usaba 'as const', que es sintaxis de TypeScript.
