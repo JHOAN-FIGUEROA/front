@@ -661,6 +661,7 @@ const Roles = () => {
                     <Box>
                         <Typography variant="subtitle1">ID: {rolDetalle.idrol}</Typography>
                         <Typography variant="subtitle1">Nombre: {rolDetalle.nombre}</Typography>
+                        <Typography variant="subtitle1">Descripción: {rolDetalle.descripcion}</Typography>
                         <Typography variant="subtitle1">Estado: {rolDetalle.estado ? 'Activo' : 'Inactivo'}</Typography>
                         <Typography variant="subtitle1" sx={{mt: 1}}>Permisos Asociados:</Typography>
                         {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (

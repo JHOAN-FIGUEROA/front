@@ -8,6 +8,11 @@ import Footer from './components/Footer';
 import DashboardLayout from './components/DashboardLayout';
 import DashBoard from './components/DashBoard';
 import Usuarios from './page/Usuarios';
+import Clientes from './page/Clientes';
+import Productos from './page/Productos';
+import Compras from './page/Compras';
+import Categoria from './page/Categoria';
+import Ventas from './page/Ventas';
 import Roles from './page/Roles';
 import Proveedores from './page/Proveedores';
 import { AuthProvider } from './context/AuthContext';
@@ -20,7 +25,7 @@ const MainContent = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
   alignItems: 'flex-start',
   gap: theme.spacing(4),
-  padding: theme.spacing(22, 2, 17.1),
+  padding: theme.spacing(32.3, 2, 17.1),
   minHeight: 'calc(100vh - 64px - 80px)',
   width: '100%',
   maxWidth: '1200px',
@@ -83,6 +88,24 @@ function App() {
                   <Roles />
                 </DashboardLayout>
               </ProtectedRoute>
+            }/>
+          <Route 
+            path="/compras"
+            element={
+              <ProtectedRoute requiredPermission="Roles">
+                <DashboardLayout>
+                  <Compras />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }/>
+          <Route 
+            path="/compras/categorias"
+            element={
+              <ProtectedRoute requiredPermission="Roles">
+                <DashboardLayout>
+                  <Categoria />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
           />
           <Route 
@@ -91,6 +114,32 @@ function App() {
               <ProtectedRoute requiredPermission="Proveedores">
                 <DashboardLayout>
                   <Proveedores />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }/><Route 
+            path="/ventas"
+            element={
+              <ProtectedRoute requiredPermission="clientes">
+                <DashboardLayout>
+                  <Ventas />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }/>
+          <Route 
+            path="/compras/productos"
+            element={
+              <ProtectedRoute requiredPermission="clientes">
+                <DashboardLayout>
+                  <Productos />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }/>
+          <Route 
+            path="/ventas/clientes"
+            element={
+              <ProtectedRoute requiredPermission="clientes">
+                <DashboardLayout>
+                  <Clientes />
                 </DashboardLayout>
               </ProtectedRoute>
             }
