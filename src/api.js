@@ -287,6 +287,37 @@ export const getProveedorByNit = async (nit) => {
   }
 };
 
+export const solicitarTokenRecuperacion = async (data) => {
+  try {
+    const response = await api.post('/api/usuarios/auth/recuperar-password', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error al solicitar token de recuperación:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const restablecerPassword = async (token, nuevaPassword) => {
+  try {
+    const response = await api.post('/api/usuarios/auth/restablecer-password', {
+      token,
+      nuevaPassword
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al restablecer contraseña:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
 // Puedes agregar más funciones para otras entidades (clientes, productos, etc.) siguiendo el mismo patrón
 
 // Asegúrate de que la instancia de axios se exporta correctamente
