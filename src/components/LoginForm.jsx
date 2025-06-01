@@ -20,9 +20,6 @@ const StyledButton = styled(Button)({
   '&:hover': {
     backgroundColor: '#3CB371', // Verde mar medio
   },
-  '&:disabled': {
-    backgroundColor: '#cccccc',
-  },
   marginTop: '20px',
   width: '100%',
 });
@@ -36,91 +33,72 @@ const LoginForm = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [fieldValidation, setFieldValidation] = useState({
-    email: false,
-    password: false,
-  });
 
-  // Validación del email en tiempo real
-  const validateEmail = (email) => {
-    const emailStr = email.trim();
-    
+  const validateForm = () => {
+    const newErrors = {};
+    const emailStr = formData.email.trim();
+    const passwordStr = formData.password.trim();
+
+    // Validación de campos requeridos
     if (!emailStr) {
-      return { isValid: false, message: 'El email es requerido' };
+      newErrors.email = 'El email es requerido';
     }
-
-    if (emailStr.length > 100) {
-      return { isValid: false, message: 'El email excede la longitud máxima permitida (100 caracteres)' };
-    }
-
-    // Validación de caracteres especiales no permitidos
-    if (/[<>()[\]\\,;:\s"]+/.test(emailStr)) {
-      return { isValid: false, message: 'El email contiene caracteres no permitidos' };
+    if (!passwordStr) {
+      newErrors.password = 'La contraseña es requerida';
     }
 
     // Validación de formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailStr)) {
-      return { isValid: false, message: 'El formato del email no es válido' };
+    if (emailStr && !emailRegex.test(emailStr)) {
+      newErrors.email = 'El formato del email no es válido';
     }
 
-    return { isValid: true, message: '' };
-  };
-
-  // Validación de la contraseña en tiempo real
-  const validatePassword = (password) => {
-    const passwordStr = password.trim();
-    
-    if (!passwordStr) {
-      return { isValid: false, message: 'La contraseña es requerida' };
+    // Validación de caracteres especiales en email
+    if (emailStr && /[<>()[\]\\,;:\s"]+/.test(emailStr)) {
+      newErrors.email = 'El email contiene caracteres no permitidos';
     }
 
+    // Validación de longitud máxima
+    if (emailStr.length > 100) {
+      newErrors.email = 'El email excede la longitud máxima permitida';
+    }
     if (passwordStr.length > 100) {
-      return { isValid: false, message: 'La contraseña excede la longitud máxima permitida (100 caracteres)' };
+      newErrors.password = 'La contraseña excede la longitud máxima permitida';
     }
 
-    return { isValid: true, message: '' };
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     setFormData({
       ...formData,
       [name]: value,
     });
-
-    // Validación en tiempo real según el campo
-    let validation;
-    if (name === 'email') {
-      validation = validateEmail(value);
-    } else if (name === 'password') {
-      validation = validatePassword(value);
+    // Limpiar el error del campo cuando el usuario comienza a escribir
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: '',
+      });
     }
-
-    // Actualizar errores
-    setErrors({
-      ...errors,
-      [name]: validation.isValid ? '' : validation.message,
-    });
-
-    // Actualizar estado de validación de campos
-    setFieldValidation({
-      ...fieldValidation,
-      [name]: validation.isValid,
-    });
-  };
-
-  // Verificar si el formulario es válido para habilitar el botón
-  const isFormValid = () => {
-    return fieldValidation.email && fieldValidation.password && !loading;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Si el formulario no es válido, no proceder (esto no debería pasar)
-    if (!isFormValid()) {
+    if (!validateForm()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos Incompletos',
+        text: 'Por favor, complete todos los campos correctamente',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       return;
     }
 
@@ -211,7 +189,7 @@ const LoginForm = () => {
         <Box sx={{ '& > :not(style)': { mb: 2 } }}>
           <TextField
             fullWidth
-            label="correo@ejemplo.com"
+            label="corre@ejemplo.com"
             name="email"
             type="email"
             value={formData.email}
@@ -219,13 +197,6 @@ const LoginForm = () => {
             variant="outlined"
             error={!!errors.email}
             helperText={errors.email}
-            sx={{
-              '& .MuiFormHelperText-root': {
-                color: errors.email ? '#d32f2f' : 'inherit',
-                fontSize: '0.75rem',
-                marginTop: '4px'
-              }
-            }}
           />
           <TextField
             fullWidth
@@ -237,27 +208,9 @@ const LoginForm = () => {
             variant="outlined"
             error={!!errors.password}
             helperText={errors.password}
-            disabled={!fieldValidation.email} // Se deshabilita si el email no es válido
-            sx={{
-              '& .MuiFormHelperText-root': {
-                color: errors.password ? '#d32f2f' : 'inherit',
-                fontSize: '0.75rem',
-                marginTop: '4px'
-              },
-              '& .MuiInputBase-root.Mui-disabled': {
-                backgroundColor: '#f5f5f5',
-                '& .MuiInputBase-input': {
-                  color: '#999999'
-                }
-              }
-            }}
           />
         </Box>
-        <StyledButton 
-          type="submit" 
-          variant="contained" 
-          disabled={!isFormValid()}
-        >
+        <StyledButton type="submit" variant="contained" disabled={loading}>
           {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
         </StyledButton>
       </form>
