@@ -55,7 +55,7 @@ export const getUsuarios = async (page = 1, limit = 5, searchTerm = '') => {
     });
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
+    // console.error('Error al obtener usuarios:', error); // Comentado para evitar log en consola
     if (error.response) {
       return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
@@ -69,7 +69,7 @@ export const getUsuarioById = async (id) => {
     const response = await api.get(`/api/usuarios/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener usuario por ID:', error);
+    // console.error('Error al obtener usuario por ID:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -83,7 +83,7 @@ export const updateUsuario = async (id, data) => {
     const response = await api.put(`/api/usuarios/${id}`, data);
     return response.data;
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
+    // console.error('Error al actualizar usuario:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -97,7 +97,7 @@ export const updateEstadoUsuario = async (id, estado) => {
     const response = await api.patch(`/api/usuarios/estado/${id}`, { estado });
     return response.data;
   } catch (error) {
-    console.error('Error al cambiar estado de usuario:', error);
+    // console.error('Error al cambiar estado de usuario:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -111,7 +111,7 @@ export const deleteUsuario = async (id) => {
     const response = await api.delete(`/api/usuarios/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
+    // console.error('Error al eliminar usuario:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -125,7 +125,7 @@ export const createUsuario = async (data) => {
     const response = await api.post('/api/usuarios/registrar', data);
     return response.data;
   } catch (error) {
-    console.error('Error al crear usuario:', error);
+    // console.error('Error al crear usuario:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -163,12 +163,12 @@ export const getRoles = async (page = 1, limit = 5, searchTerm = '', forSelector
        return { success: true, data: response.data };
     }
      else {
-       console.error('Formato de respuesta inesperado de getRoles:', response.data);
+       // console.error('Formato de respuesta inesperado de getRoles:', response.data); // Comentado
        return { error: true, status: response.status || 500, detalles: 'Formato de respuesta inesperado del servidor' };
     }
 
   } catch (error) {
-    console.error('Error en getRoles API call:', error);
+    // console.error('Error en getRoles API call:', error); // Comentado para evitar log en consola
     if (error.response) {
       return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
@@ -183,7 +183,7 @@ export const createRol = async (data) => {
     const response = await api.post('/api/rol', data);
     return response.data;
   } catch (error) {
-    console.error('Error al crear rol:', error);
+    // console.error('Error al crear rol:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -198,7 +198,7 @@ export const updateRol = async (id, data) => {
     const response = await api.put(`/api/rol/${id}`, data);
     return response.data;
   } catch (error) {
-    console.error('Error al actualizar rol:', error);
+    // console.error('Error al actualizar rol:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -213,7 +213,7 @@ export const deleteRol = async (id) => {
     const response = await api.delete(`/api/rol/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error al eliminar rol:', error);
+    // console.error('Error al eliminar rol:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -228,7 +228,7 @@ export const updateEstadoRol = async (id, estado) => {
     const response = await api.put(`/api/rol/estado/${id}`, { estado });
     return response.data;
   } catch (error) {
-    console.error('Error al cambiar estado de rol:', error);
+    // console.error('Error al cambiar estado de rol:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -243,7 +243,7 @@ export const getRolById = async (id) => {
     const response = await api.get(`/api/rol/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener rol por ID:', error);
+    // console.error('Error al obtener rol por ID:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -263,7 +263,7 @@ export const getProveedores = async (page = 1, limit = 5) => {
     });
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error en getProveedores API call:', error);
+    // console.error('Error en getProveedores API call:', error); // Comentado para evitar log en consola
     if (error.response) {
       return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
@@ -277,7 +277,7 @@ export const getProveedorByNit = async (nit) => {
     const response = await api.get(`/api/proveedores/nit/${nit}`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener proveedor por NIT:', error);
+    // console.error('Error al obtener proveedor por NIT:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -289,13 +289,13 @@ export const getProveedorByNit = async (nit) => {
 export const solicitarTokenRecuperacion = async (data) => {
   try {
     const response = await api.post('/api/usuarios/auth/recuperar-password', data);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error al solicitar token de recuperación:', error);
+    // console.error('Error al solicitar token de recuperación:', error); // Comentado
     if (error.response) {
-      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+      return { error: true, status: error.response.status, message: error.response.data.message || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
-      throw new Error(error.message || 'Error al conectar con el servidor');
+      return { error: true, status: 500, message: error.message || 'Error al conectar con el servidor' };
     }
   }
 };
@@ -306,13 +306,13 @@ export const restablecerPassword = async (token, nuevaPassword) => {
       token,
       nuevaPassword
     });
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error al restablecer contraseña:', error);
+    // console.error('Error al restablecer contraseña:', error); // Comentado
     if (error.response) {
-      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+      return { error: true, status: error.response.status, message: error.response.data.message || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
-      throw new Error(error.message || 'Error al conectar con el servidor');
+      return { error: true, status: 500, message: error.message || 'Error al conectar con el servidor' };
     }
   }
 };
