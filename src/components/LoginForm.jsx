@@ -45,6 +45,8 @@ const LoginForm = () => {
     confirmarPassword: ''
   });
   const [recuperarErrors, setRecuperarErrors] = useState({});
+  const [solicitarLoading, setSolicitarLoading] = useState(false);
+  const [restablecerLoading, setRestablecerLoading] = useState(false);
 
   const validateEmail = (email) => {
     const newErrors = {};
@@ -173,7 +175,7 @@ const LoginForm = () => {
           errorTitle = 'Acceso Restringido';
         }
 
-        Swal.fire({
+        await Swal.fire({
           icon: 'error',
           title: errorTitle,
           text: errorMessage,
@@ -195,10 +197,11 @@ const LoginForm = () => {
 
     } catch (error) {
       console.error('Unexpected error during login process:', error);
-      Swal.fire({
+      const mensaje = error.response?.data?.message || error.message || 'Ocurrió un error inesperado al procesar el login.';
+      await Swal.fire({
         icon: 'error',
         title: 'Error Inesperado',
-        text: error.message || 'Ha ocurrido un error inesperado al procesar el login.',
+        text: mensaje,
         confirmButtonColor: '#2E8B57',
         background: '#fff',
         customClass: {
@@ -276,10 +279,14 @@ const LoginForm = () => {
       return;
     }
 
+    setSolicitarLoading(true);
+
     try {
       const response = await solicitarTokenRecuperacion({ email: recuperarData.email });
       if (response) {
         setOpenRecuperarPassword(false);
+        setRecuperarData(prev => ({ ...prev, token: '' }));
+        setRecuperarErrors(prev => ({ ...prev, token: '' }));
         setOpenRestablecerPassword(true);
         Swal.fire({
           icon: 'success',
@@ -290,12 +297,15 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error('Error al solicitar token:', error);
+      const mensaje = error.response?.data?.message || error.message || 'Error al solicitar el token';
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message || 'Error al solicitar el token',
+        text: mensaje,
         confirmButtonColor: '#2E8B57',
       });
+    } finally {
+      setSolicitarLoading(false);
     }
   };
 
@@ -304,9 +314,18 @@ const LoginForm = () => {
       return;
     }
 
+    setRestablecerLoading(true);
+
     try {
       await restablecerPassword(recuperarData.token, recuperarData.nuevaPassword);
       setOpenRestablecerPassword(false);
+      setRecuperarData({
+        email: '',
+        token: '',
+        nuevaPassword: '',
+        confirmarPassword: ''
+      });
+      setRecuperarErrors({});
       Swal.fire({
         icon: 'success',
         title: 'Contraseña Actualizada',
@@ -315,12 +334,16 @@ const LoginForm = () => {
       });
       navigate('/login');
     } catch (error) {
+      console.error('Error al restablecer contraseña:', error);
+      const mensaje = error.response?.data?.message || error.message || 'Error al restablecer la contraseña';
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message || 'Error al restablecer la contraseña',
+        text: mensaje,
         confirmButtonColor: '#2E8B57',
       });
+    } finally {
+      setRestablecerLoading(false);
     }
   };
 
@@ -411,11 +434,25 @@ const LoginForm = () => {
       <Dialog 
         open={openRecuperarPassword} 
         onClose={() => setOpenRecuperarPassword(false)}
-        maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            minWidth: '300px',
+            maxWidth: '400px',
+            width: '100%',
+            margin: '24px auto',
+          },
+        }}
       >
         <DialogTitle>Recuperar Contraseña</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{
+          backgroundColor: '#ffffff',
+          padding: (theme) => theme.spacing(4),
+          borderRadius: '10px',
+          '&.MuiDialogContent-root': {
+            padding: (theme) => theme.spacing(4),
+          },
+        }}>
           <TextField
             fullWidth
             label="Correo electrónico"
@@ -428,11 +465,18 @@ const LoginForm = () => {
             margin="normal"
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{
+          backgroundColor: '#ffffff',
+          padding: (theme) => theme.spacing(2),
+          justifyContent: 'center',
+          borderBottomLeftRadius: '10px',
+          borderBottomRightRadius: '10px',
+        }}>
           <Button 
             onClick={() => setOpenRecuperarPassword(false)}
             color="error"
             variant="contained"
+            disabled={solicitarLoading}
           >
             Cancelar
           </Button>
@@ -440,8 +484,9 @@ const LoginForm = () => {
             onClick={handleSolicitarToken} 
             color="success"
             variant="contained"
+            disabled={solicitarLoading}
           >
-            Solicitar Token
+            {solicitarLoading ? 'Solicitando...' : 'Solicitar Token'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -450,11 +495,25 @@ const LoginForm = () => {
       <Dialog 
         open={openRestablecerPassword} 
         onClose={() => setOpenRestablecerPassword(false)}
-        maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            minWidth: '300px',
+            maxWidth: '400px',
+            width: '100%',
+            margin: '24px auto',
+          },
+        }}
       >
         <DialogTitle>Restablecer Contraseña</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{
+          backgroundColor: '#ffffff',
+          padding: (theme) => theme.spacing(4),
+          borderRadius: '10px',
+           '&.MuiDialogContent-root': {
+            padding: (theme) => theme.spacing(4),
+          },
+        }}>
           <TextField
             fullWidth
             label="Token"
@@ -488,11 +547,18 @@ const LoginForm = () => {
             margin="normal"
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{
+          backgroundColor: '#ffffff',
+          padding: (theme) => theme.spacing(2),
+          justifyContent: 'center',
+          borderBottomLeftRadius: '10px',
+          borderBottomRightRadius: '10px',
+        }}>
           <Button 
             onClick={() => setOpenRestablecerPassword(false)}
             color="error"
             variant="contained"
+            disabled={restablecerLoading}
           >
             Cancelar
           </Button>
@@ -500,8 +566,9 @@ const LoginForm = () => {
             onClick={handleRestablecerPassword} 
             color="success"
             variant="contained"
+            disabled={restablecerLoading}
           >
-            Cambiar Contraseña
+            {restablecerLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
           </Button>
         </DialogActions>
       </Dialog>
