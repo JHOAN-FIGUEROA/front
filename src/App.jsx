@@ -25,7 +25,7 @@ const MainContent = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
   alignItems: 'flex-start',
   gap: theme.spacing(4),
-  padding: theme.spacing(32.3, 2, 17.1),
+  padding: theme.spacing(27, 2, 12.1),
   minHeight: 'calc(100vh - 64px - 80px)',
   width: '100%',
   maxWidth: '1200px',
