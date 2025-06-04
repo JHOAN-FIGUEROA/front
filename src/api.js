@@ -321,3 +321,160 @@ export const restablecerPassword = async (token, nuevaPassword) => {
 
 // Asegúrate de que la instancia de axios se exporta correctamente
 export { api };
+
+
+
+
+// CATEGORÍAS
+
+/**
+ * Obtiene listado de categorías con paginación y búsqueda
+ * @param {number} page - Página actual
+ * @param {number} limit - Límite por página
+ * @param {string} searchTerm - Término de búsqueda
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getCategorias = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/categoria', {
+      params: {
+        page,
+        limit,
+        search: searchTerm
+      }
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error al obtener categorías:', error);
+    if (error.response) {
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error al conectar con el servidor'
+      };
+    }
+  }
+};
+
+/**
+ * Crea una nueva categoría
+ * @param {FormData} formData - Datos de la categoría (incluye imagen)
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const createCategoria = async (formData) => {
+  try {
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+
+    const response = await api.post('/api/categoria', formData, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error al crear categoría:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Actualiza una categoría existente
+ * @param {number} id - ID de la categoría
+ * @param {FormData} formData - Datos actualizados
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateCategoria = async (id, formData) => {
+  try {
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+
+    const response = await api.put(`/api/categoria/${id}`, formData, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar categoría:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Elimina una categoría
+ * @param {number} id - ID de la categoría
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const deleteCategoria = async (id) => {
+  try {
+    const response = await api.delete(`/api/categoria/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar categoría:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Cambia el estado de una categoría (activo/inactivo)
+ * @param {number} id - ID de la categoría
+ * @param {boolean|string} estado - Nuevo estado (booleano real o string)
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateEstadoCategoria = async (id, estado) => {
+  try {
+    const estadoBooleano = estado === true || estado === 'true';
+    const response = await api.patch(`/api/categoria/estado/${id}`, {
+      estado: estadoBooleano
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error al cambiar estado de categoría:', error);
+    if (error.response) {
+      throw new Error(
+        error.response.data.detalles ||
+        error.response.data.error ||
+        `Error HTTP ${error.response.status}`
+      );
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Obtiene todas las categorías (sin paginación)
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getTodasCategorias = async () => {
+  try {
+    const response = await api.get('/api/categoria/todas');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener todas las categorías:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
