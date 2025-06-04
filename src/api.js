@@ -28,9 +28,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Limpiar datos de sesión
       localStorage.removeItem('token');
-      localStorage.removeItem('user'); // Asumiendo que guardas el usuario aquí también
-      // Redirigir al login
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      // Ya no redirigimos automáticamente
     }
     return Promise.reject(error);
   }
