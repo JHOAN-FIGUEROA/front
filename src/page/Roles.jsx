@@ -533,38 +533,38 @@ const Roles = () => {
             {rolesFiltrados.map((rol, idx) => {
               const rolActivo = rol.estado === true || rol.estado === 1 || rol.estado === 'true';
               return (
-                <TableRow key={rol.idrol || idx}>
-                  <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
-                  <TableCell>{rol.nombre}</TableCell>
-                  <TableCell align="center">
-                    <CambiarEstado
-                      id={rol.idrol}
+              <TableRow key={rol.idrol || idx}>
+                <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
+                <TableCell>{rol.nombre}</TableCell>
+                <TableCell align="center">
+                  <CambiarEstado
+                    id={rol.idrol}
                       estadoActual={rolActivo}
-                      onEstadoCambiado={(idRol, nuevoEstado, errorMsg) => {
-                        if (errorMsg) {
-                          showAlert(`Error al cambiar estado: ${errorMsg}`, 'error');
-                        } else {
-                          setRoles((prev) => prev.map(r => r.idrol === idRol ? { ...r, estado: nuevoEstado } : r));
-                          showAlert(`Estado del rol ${rol.nombre} cambiado.`, 'success');
-                        }
-                      }}
-                      updateEstadoApi={updateEstadoRol}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
+                    onEstadoCambiado={(idRol, nuevoEstado, errorMsg) => {
+                      if (errorMsg) {
+                        showAlert(`Error al cambiar estado: ${errorMsg}`, 'error');
+                      } else {
+                        setRoles((prev) => prev.map(r => r.idrol === idRol ? { ...r, estado: nuevoEstado } : r));
+                        showAlert(`Estado del rol ${rol.nombre} cambiado.`, 'success');
+                      }
+                    }}
+                    updateEstadoApi={updateEstadoRol}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
                       {rolActivo && (
                         <>
-                          <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
-                          {rol.idrol !== 1 && (
-                            <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
+                    <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
+                    {rol.idrol !== 1 && (
+                      <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
                           )}
                         </>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
+                    )}
+                  </Stack>
+                </TableCell>
+              </TableRow>
               );
             })}
           </TableBody>
@@ -633,29 +633,29 @@ const Roles = () => {
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
                   </Box>
                   <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Nombre del Rol"
-                        name="nombre"
-                        value={nuevoRol.nombre}
-                        onChange={e => setNuevoRol(prev => ({ ...prev, nombre: e.target.value }))}
-                        fullWidth
-                        required
-                        autoFocus
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Descripción del Rol"
-                        name="descripcion"
-                        value={nuevoRol.descripcion}
-                        onChange={e => setNuevoRol(prev => ({ ...prev, descripcion: e.target.value }))}
-                        fullWidth
-                        multiline
-                        rows={3}
-                        placeholder="Ingrese una descripción detallada del rol..."
-                      />
-                    </Grid>
+              <Grid item xs={12}> 
+                <TextField
+                  label="Nombre del Rol"
+                  name="nombre"
+                  value={nuevoRol.nombre}
+                  onChange={e => setNuevoRol(prev => ({ ...prev, nombre: e.target.value }))}
+                  fullWidth
+                  required
+                  autoFocus
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Descripción del Rol"
+                  name="descripcion"
+                  value={nuevoRol.descripcion}
+                  onChange={e => setNuevoRol(prev => ({ ...prev, descripcion: e.target.value }))}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Ingrese una descripción detallada del rol..."
+                />
+              </Grid>
                   </Grid>
                 </Paper>
               </Grid>
@@ -667,7 +667,7 @@ const Roles = () => {
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asignados</Typography>
                   </Box>
                   <Grid container spacing={2}>
-                    {PERMISOS_DISPONIBLES.map(permiso => (
+                  {PERMISOS_DISPONIBLES.map(permiso => (
                       <Grid item xs={12} sm={6} md={6} key={permiso.id}>
                         <Paper
                           elevation={nuevoRol.permisos_ids.includes(permiso.id) ? 3 : 0}
@@ -690,10 +690,10 @@ const Roles = () => {
                         >
                           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                             {permiso.nombre} (ID: {permiso.id})
-                          </Typography>
+                        </Typography>
                         </Paper>
-                      </Grid>
-                    ))}
+                    </Grid>
+                  ))}
                   </Grid>
                 </Paper>
               </Grid>
@@ -737,7 +737,7 @@ const Roles = () => {
           <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
             {detalleLoading && <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px"><CircularProgress size={40} /></Box>}
             {detalleError && <Alert severity="error" sx={{ mb: 2 }}>{detalleError}</Alert>}
-            {!detalleLoading && !detalleError && rolDetalle && (
+                {!detalleLoading && !detalleError && rolDetalle && (
               <Box mt={2}>
                 <Grid container spacing={3}>
                   {/* Información General */}
@@ -782,7 +782,7 @@ const Roles = () => {
                         <SecurityIcon color="primary" sx={{ fontSize: 24 }} />
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asociados</Typography>
                       </Box>
-                      {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (
+                        {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (
                         <Grid container spacing={2}>
                           {rolDetalle.permisos_asociados.map((p, idx) => (
                             <Grid item xs={12} sm={6} md={6} key={p.permisos_idpermisos || p.id || idx}>
@@ -795,7 +795,7 @@ const Roles = () => {
                                 </Typography>
                               </Paper>
                             </Grid>
-                          ))}
+                                ))}
                         </Grid>
                       ) : (
                         <Typography variant="body2" color="text.secondary" sx={{ backgroundColor: '#fff', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
@@ -805,14 +805,14 @@ const Roles = () => {
                     </Paper>
                   </Grid>
                 </Grid>
-              </Box>
-            )}
-          </DialogContent>
+                    </Box>
+                )}
+            </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
             <Button onClick={() => setVerDetalleOpen(false)} variant="contained" color="primary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
               Cerrar
             </Button>
-          </DialogActions>
+            </DialogActions>
         </Dialog>
        )}
 
@@ -841,7 +841,7 @@ const Roles = () => {
         <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
           {editRolLoading && <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px"><CircularProgress size={40} /></Box>}
           {editRolError && <Alert severity="error" sx={{ mb: 2 }}>{editRolError}</Alert>}
-          {!editRolLoading && !editRolError && rolAEditar && (
+            {!editRolLoading && !editRolError && rolAEditar && (
             <Box component="form" onSubmit={handleGuardarEdicionRol} noValidate>
               <Grid container spacing={3}>
                 {/* Información General */}
@@ -852,29 +852,29 @@ const Roles = () => {
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
                     </Box>
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="Nombre del Rol"
-                          name="nombre"
-                          value={editRolData.nombre}
-                          onChange={handleEditRolFormChange}
-                          fullWidth
-                          required
-                          autoFocus
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="Descripción del Rol"
-                          name="descripcion"
-                          value={editRolData.descripcion}
-                          onChange={handleEditRolFormChange}
-                          fullWidth
-                          multiline
-                          rows={3}
-                          placeholder="Ingrese una descripción detallada del rol..."
-                        />
-                      </Grid>
+                <Grid item xs={12}> 
+                  <TextField
+                    label="Nombre del Rol"
+                    name="nombre"
+                    value={editRolData.nombre}
+                    onChange={handleEditRolFormChange}
+                    fullWidth
+                    required
+                    autoFocus
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Descripción del Rol"
+                    name="descripcion"
+                    value={editRolData.descripcion}
+                    onChange={handleEditRolFormChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="Ingrese una descripción detallada del rol..."
+                  />
+                </Grid>
                     </Grid>
                   </Paper>
                 </Grid>
@@ -908,26 +908,26 @@ const Roles = () => {
                             onClick={() => handleEditRolPermisoToggle(permiso.id)}
                           >
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {permiso.nombre} (ID: {permiso.id})
-                            </Typography>
+                                  {permiso.nombre} (ID: {permiso.id})
+                              </Typography>
                           </Paper>
-                        </Grid>
+                          </Grid>
                       ))}
-                    </Grid>
-                  </Paper>
-                </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
               </Grid>
             </Box>
-          )}
-        </DialogContent>
+            )}
+          </DialogContent>
         <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
           <Button onClick={handleCerrarEdicionRol} color="secondary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
             Cancelar
-          </Button>
+              </Button>
           <Button type="submit" color="primary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
             Guardar Cambios
           </Button>
-        </DialogActions>
+          </DialogActions>
       </Dialog>
       <Eliminar
         id={rolEliminar?.idrol}

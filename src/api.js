@@ -478,3 +478,16 @@ export const getTodasCategorias = async () => {
     }
   }
 };
+
+export const createProveedor = async (data) => {
+  try {
+    const response = await api.post('/api/proveedores', data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
