@@ -575,41 +575,48 @@ const Usuarios = () => {
                 </TableCell>
               </TableRow>
             )}
-            {usuariosFiltrados.map((usuario, idx) => (
-              <TableRow key={usuario.idusuario || idx} hover>
-                <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
-                <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
-                <TableCell>{usuario.email}</TableCell>
-                <TableCell align="center">
-                  <CambiarEstado
-                    id={usuario.idusuario} 
-                    estadoActual={usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1'}
-                    onEstadoCambiado={(idUsuario, nuevoEstado, errorMsg) => { 
-                      if (errorMsg) {
-                        openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
-                      } else {
-                        setUsuarios((prevUsuarios) => 
-                          prevUsuarios.map(u => 
-                            u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u
-                          )
-                        );
-                        openSnackbar(`Estado del usuario ${usuario.nombre} cambiado.`, 'success');
-                      }
-                    }}
-                    updateEstadoApi={updateEstadoUsuario} 
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
-                    <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
-                    {usuario.rol_idrol !== 1 && (
-                      <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
-                    )}
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
+            {usuariosFiltrados.map((usuario, idx) => {
+              const usuarioActivo = usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1';
+              return (
+                <TableRow key={usuario.idusuario || idx} hover>
+                  <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
+                  <TableCell>{usuario.email}</TableCell>
+                  <TableCell align="center">
+                    <CambiarEstado
+                      id={usuario.idusuario} 
+                      estadoActual={usuarioActivo}
+                      onEstadoCambiado={(idUsuario, nuevoEstado, errorMsg) => { 
+                        if (errorMsg) {
+                          openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
+                        } else {
+                          setUsuarios((prevUsuarios) => 
+                            prevUsuarios.map(u => 
+                              u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u
+                            )
+                          );
+                          openSnackbar(`Estado del usuario ${usuario.nombre} cambiado.`, 'success');
+                        }
+                      }}
+                      updateEstadoApi={updateEstadoUsuario} 
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
+                      {usuarioActivo && (
+                        <>
+                          <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
+                          {usuario.rol_idrol !== 1 && (
+                            <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
+                          )}
+                        </>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

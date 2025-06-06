@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, Checkbox
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, Checkbox, Chip
 } from '@mui/material';
 import { getRoles, createRol, updateRol, deleteRol, updateEstadoRol, getRolById } from '../api';
 import EditIcon from '@mui/icons-material/Edit';
@@ -13,6 +13,10 @@ import AddIcon from '@mui/icons-material/Add';
 import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import InfoIcon from '@mui/icons-material/Info';
+import SecurityIcon from '@mui/icons-material/Security';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const ROLES_POR_PAGINA = 5;
 
@@ -526,36 +530,43 @@ const Roles = () => {
                 </TableCell>
               </TableRow>
             )}
-            {rolesFiltrados.map((rol, idx) => (
-              <TableRow key={rol.idrol || idx}>
-                <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
-                <TableCell>{rol.nombre}</TableCell>
-                <TableCell align="center">
-                  <CambiarEstado
-                    id={rol.idrol}
-                    estadoActual={rol.estado === true || rol.estado === 1 || rol.estado === 'true'}
-                    onEstadoCambiado={(idRol, nuevoEstado, errorMsg) => {
-                      if (errorMsg) {
-                        showAlert(`Error al cambiar estado: ${errorMsg}`, 'error');
-                      } else {
-                        setRoles((prev) => prev.map(r => r.idrol === idRol ? { ...r, estado: nuevoEstado } : r));
-                        showAlert(`Estado del rol ${rol.nombre} cambiado.`, 'success');
-                      }
-                    }}
-                    updateEstadoApi={updateEstadoRol}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
-                    <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
-                    {rol.idrol !== 1 && (
-                      <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
-                    )}
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
+            {rolesFiltrados.map((rol, idx) => {
+              const rolActivo = rol.estado === true || rol.estado === 1 || rol.estado === 'true';
+              return (
+                <TableRow key={rol.idrol || idx}>
+                  <TableCell>{(pagina - 1) * ROLES_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>{rol.nombre}</TableCell>
+                  <TableCell align="center">
+                    <CambiarEstado
+                      id={rol.idrol}
+                      estadoActual={rolActivo}
+                      onEstadoCambiado={(idRol, nuevoEstado, errorMsg) => {
+                        if (errorMsg) {
+                          showAlert(`Error al cambiar estado: ${errorMsg}`, 'error');
+                        } else {
+                          setRoles((prev) => prev.map(r => r.idrol === idRol ? { ...r, estado: nuevoEstado } : r));
+                          showAlert(`Estado del rol ${rol.nombre} cambiado.`, 'success');
+                        }
+                      }}
+                      updateEstadoApi={updateEstadoRol}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(rol)}><VisibilityIcon /></IconButton>
+                      {rolActivo && (
+                        <>
+                          <IconButton color="warning" size="small" onClick={() => handleEditarRol(rol)}><EditIcon /></IconButton>
+                          {rol.idrol !== 1 && (
+                            <IconButton color="error" size="small" onClick={() => { setRolEliminar(rol); setEliminarOpen(true); }}><DeleteIcon /></IconButton>
+                          )}
+                        </>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -652,105 +663,222 @@ const Roles = () => {
       </Dialog>
       
        {rolDetalle && (
-        <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Detalle del Rol: {rolDetalle.nombre}</DialogTitle>
-            <DialogContent dividers>
-                {detalleLoading && <CircularProgress />}
-                {detalleError && <Alert severity="error">{detalleError}</Alert>}
-                {!detalleLoading && !detalleError && rolDetalle && (
-                    <Box>
-                        <Typography variant="subtitle1">ID: {rolDetalle.idrol}</Typography>
-                        <Typography variant="subtitle1">Nombre: {rolDetalle.nombre}</Typography>
-                        <Typography variant="subtitle1">Descripción: {rolDetalle.descripcion}</Typography>
-                        <Typography variant="subtitle1">Estado: {rolDetalle.estado ? 'Activo' : 'Inactivo'}</Typography>
-                        <Typography variant="subtitle1" sx={{mt: 1}}>Permisos Asociados:</Typography>
-                        {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (
-                            <ul>
-                                {rolDetalle.permisos_asociados.map(p => (
-                                    <li key={p.permisos_idpermisos || p.id}>{p.permiso?.nombre || `ID: ${p.permisos_idpermisos || p.id}`}</li>
-                                ))}
-                            </ul>
-                        ) : <Typography>Ninguno</Typography>}
-                    </Box>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => setVerDetalleOpen(false)}>Cerrar</Button>
-            </DialogActions>
-        </Dialog>
-       )}
-
-      <Dialog open={editRolOpen} onClose={handleCerrarEdicionRol} maxWidth="sm" fullWidth>
-        <form onSubmit={handleGuardarEdicionRol} autoComplete="off">
-          <DialogTitle>Editar Rol: {rolAEditar?.nombre}</DialogTitle>
-          <DialogContent dividers>
-            {editRolLoading && <Box sx={{display: 'flex', justifyContent: 'center', my: 2}}><CircularProgress /></Box>}
-            {editRolError && <Alert severity="error" sx={{mb:2}}>{editRolError}</Alert>}
-            {!editRolLoading && !editRolError && rolAEditar && (
-              <Grid container spacing={2} sx={{mt:1}}>
-                <Grid item xs={12}> 
-                  <TextField
-                    label="Nombre del Rol"
-                    name="nombre"
-                    value={editRolData.nombre}
-                    onChange={handleEditRolFormChange}
-                    fullWidth
-                    required
-                    autoFocus
-                    
-                  />
-                </Grid>
-                {/* Mostrar Descripción para todos los roles */}
-                <Grid item xs={12}>
-                  <TextField
-                    label="Descripción del Rol"
-                    name="descripcion"
-                    value={editRolData.descripcion}
-                    onChange={handleEditRolFormChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder="Ingrese una descripción detallada del rol..."
-                  />
-                </Grid>
-                {rolAEditar?.idrol !== 1 && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>Permisos Asignados:</Typography>
-                    <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', p:1 }}>
-                      <Grid container spacing={1}>
-                      {PERMISOS_DISPONIBLES.map(permiso => (
-                          <Grid item xs={12} sm={6} md={4} key={permiso.id}>
-                          <Box display="flex" alignItems="center">
-                              <Checkbox
-                                  checked={editRolData.permisos_ids.includes(permiso.id)}
-                                  onChange={() => handleEditRolPermisoToggle(permiso.id)}
-                                  color="primary"
-                                  size="small"
-                                  id={`permiso-editar-${permiso.id}`}
-                              />
-                              <Typography component="label" htmlFor={`permiso-editar-${permiso.id}`} sx={{cursor: 'pointer', userSelect: 'none'}}>
-                                  {permiso.nombre} (ID: {permiso.id})
-                              </Typography>
-                          </Box>
-                          </Grid>
-                      ))}
+        <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="md" fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            backgroundColor: '#f8f9fa',
+            borderBottom: '1px solid #e0e0e0',
+            py: 2.5
+          }}>
+            <EditIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Detalle de Rol
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+            {detalleLoading && <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px"><CircularProgress size={40} /></Box>}
+            {detalleError && <Alert severity="error" sx={{ mb: 2 }}>{detalleError}</Alert>}
+            {!detalleLoading && !detalleError && rolDetalle && (
+              <Box mt={2}>
+                <Grid container spacing={3}>
+                  {/* Información General */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <InfoIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>ID del Rol</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>{rolDetalle.idrol}</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Nombre del Rol</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>{rolDetalle.nombre}</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Estado</Typography>
+                          <Chip
+                            icon={rolDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                            label={rolDetalle.estado ? 'Activo' : 'Inactivo'}
+                            color={rolDetalle.estado ? 'success' : 'error'}
+                            size="small"
+                            sx={{ mt: 0.5, '& .MuiChip-label': { fontWeight: 500 } }}
+                          />
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Descripción</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500, backgroundColor: '#fff', p: 2, borderRadius: 1, border: '1px solid #e0e0e0', minHeight: '60px' }}>
+                            {rolDetalle.descripcion || 'Sin descripción'}
+                          </Typography>
+                        </Grid>
                       </Grid>
                     </Paper>
                   </Grid>
-                )}
-              </Grid>
+                  {/* Permisos Asociados */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <SecurityIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asociados</Typography>
+                      </Box>
+                      {rolDetalle.permisos_asociados && rolDetalle.permisos_asociados.length > 0 ? (
+                        <Grid container spacing={2}>
+                          {rolDetalle.permisos_asociados.map((p, idx) => (
+                            <Grid item xs={12} sm={6} md={6} key={p.permisos_idpermisos || p.id || idx}>
+                              <Paper elevation={0} sx={{ p: 2, backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: 1, height: '100%', transition: 'transform 0.2s, box-shadow 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                                  {p.permiso?.nombre || `ID: ${p.permisos_idpermisos || p.id}`}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {p.permiso?.descripcion || 'Sin descripción'}
+                                </Typography>
+                              </Paper>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ backgroundColor: '#fff', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                          No hay permisos asociados.
+                        </Typography>
+                      )}
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCerrarEdicionRol} color="secondary" disabled={editRolLoading}>Cancelar</Button>
-            {/* Mostrar Guardar Cambios para todos los roles */}
-            
-              <Button type="submit" color="primary" disabled={editRolLoading}>
-                {editRolLoading ? <CircularProgress size={18} /> : 'Guardar Cambios'}
-              </Button>
-            
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={() => setVerDetalleOpen(false)} variant="contained" color="primary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+              Cerrar
+            </Button>
           </DialogActions>
-        </form>
+        </Dialog>
+       )}
+
+      <Dialog open={editRolOpen} onClose={handleCerrarEdicionRol} maxWidth="md" fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          backgroundColor: '#f8f9fa',
+          borderBottom: '1px solid #e0e0e0',
+          py: 2.5
+        }}>
+          <EditIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Editar Rol
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+          {editRolLoading && <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px"><CircularProgress size={40} /></Box>}
+          {editRolError && <Alert severity="error" sx={{ mb: 2 }}>{editRolError}</Alert>}
+          {!editRolLoading && !editRolError && rolAEditar && (
+            <Box component="form" onSubmit={handleGuardarEdicionRol} noValidate>
+              <Grid container spacing={3}>
+                {/* Información General */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <InfoIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <TextField
+                          label="Nombre del Rol"
+                          name="nombre"
+                          value={editRolData.nombre}
+                          onChange={handleEditRolFormChange}
+                          fullWidth
+                          required
+                          autoFocus
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          label="Descripción del Rol"
+                          name="descripcion"
+                          value={editRolData.descripcion}
+                          onChange={handleEditRolFormChange}
+                          fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Ingrese una descripción detallada del rol..."
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+                {/* Permisos Asignados */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <SecurityIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asignados</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      {PERMISOS_DISPONIBLES.map(permiso => (
+                        <Grid item xs={12} sm={6} md={6} key={permiso.id}>
+                          <Paper
+                            elevation={editRolData.permisos_ids.includes(permiso.id) ? 3 : 0}
+                            sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              border: editRolData.permisos_ids.includes(permiso.id) ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                              backgroundColor: editRolData.permisos_ids.includes(permiso.id) ? '#e3f2fd' : '#fff',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
+                                borderColor: '#1976d2',
+                              },
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 2,
+                            }}
+                            onClick={() => handleEditRolPermisoToggle(permiso.id)}
+                          >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              {permiso.nombre} (ID: {permiso.id})
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={handleCerrarEdicionRol} color="secondary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            Cancelar
+          </Button>
+          <Button type="submit" color="primary" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            Guardar Cambios
+          </Button>
+        </DialogActions>
       </Dialog>
       <Eliminar
         id={rolEliminar?.idrol}

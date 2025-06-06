@@ -9,6 +9,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
+import GroupIcon from '@mui/icons-material/Group';
 
 const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor }) => {
   const esRol = usuarioDetalle && 'permisos_asociados' in usuarioDetalle;
@@ -219,13 +220,28 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                       <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Tipo de Documento</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {usuarioDetalle.tipodocumento}
-                        </Typography>
+                    <Box mb={2}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={4} sm={3}>
+                          <Paper
+                            elevation={3}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 2,
+                              border: '2px solid #1976d2',
+                              backgroundColor: '#e3f2fd',
+                              textAlign: 'center',
+                              fontWeight: 600,
+                            }}
+                          >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: 16 }}>
+                              {usuarioDetalle.tipodocumento}
+                            </Typography>
+                          </Paper>
+                        </Grid>
                       </Grid>
+                    </Box>
+                    <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Número de Documento</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
