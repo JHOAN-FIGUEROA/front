@@ -5,6 +5,10 @@ import SecurityIcon from '@mui/icons-material/Security';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BadgeIcon from '@mui/icons-material/Badge';
 
 const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor }) => {
   const esRol = usuarioDetalle && 'permisos_asociados' in usuarioDetalle;
@@ -26,59 +30,85 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
   }, [nitproveedor]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          overflow: 'hidden'
+        }
+      }}
+    >
       <DialogTitle sx={{ 
         display: 'flex', 
         alignItems: 'center', 
         gap: 1,
-        backgroundColor: '#f5f5f5',
-        borderBottom: '1px solid #e0e0e0'
+        backgroundColor: '#f8f9fa',
+        borderBottom: '1px solid #e0e0e0',
+        py: 2.5
       }}>
-        <SecurityIcon color="primary" />
-        {esRol ? 'Detalle de Rol' : 'Detalle de Usuario'}
+        <SecurityIcon color="primary" sx={{ fontSize: 28 }} />
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {esRol ? 'Detalle de Rol' : 'Detalle de Usuario'}
+        </Typography>
       </DialogTitle>
-      <DialogContent dividers>
-        {loading && <Box display="flex" justifyContent="center" my={4}><CircularProgress /></Box>}
-        {error && <Alert severity="error">{error}</Alert>}
+      <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+        {loading && (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress size={40} />
+          </Box>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         {usuarioDetalle && !loading && !error && (
-          <Box mt={2}> {/* Contenedor principal con margen superior */}
-            {/* --- Layout para Detalle de Rol --- */}
-            {esRol && (
+          <Box mt={2}>
+            {esRol ? (
               <>
                 <Paper elevation={0} sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                   <Grid container spacing={3}>
                     <Grid item xs={12}>
                       <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <InfoIcon color="primary" />
-                        <Typography variant="h6">Información General</Typography>
+                        <InfoIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
                       </Box>
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary">ID del Rol</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{usuarioDetalle.idrol}</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>ID del Rol</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>{usuarioDetalle.idrol}</Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary">Nombre del Rol</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{usuarioDetalle.nombre}</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Nombre del Rol</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>{usuarioDetalle.nombre}</Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary">Estado</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Estado</Typography>
                           <Chip
                             icon={usuarioDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
                             label={usuarioDetalle.estado ? 'Activo' : 'Inactivo'}
                             color={usuarioDetalle.estado ? 'success' : 'error'}
                             size="small"
-                            sx={{ mt: 0.5 }}
+                            sx={{ 
+                              mt: 0.5,
+                              '& .MuiChip-label': { fontWeight: 500 }
+                            }}
                           />
                         </Grid>
                         <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="text.secondary">Descripción</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Descripción</Typography>
                           <Typography variant="body1" sx={{ 
-                            fontWeight: 'medium',
+                            fontWeight: 500,
                             backgroundColor: '#fff',
-                            p: 1.5,
+                            p: 2,
                             borderRadius: 1,
-                            border: '1px solid #e0e0e0'
+                            border: '1px solid #e0e0e0',
+                            minHeight: '60px'
                           }}>
                             {usuarioDetalle.descripcion || 'Sin descripción'}
                           </Typography>
@@ -90,8 +120,8 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
 
                 <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <SecurityIcon color="primary" />
-                    <Typography variant="h6">Permisos Asociados</Typography>
+                    <SecurityIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asociados</Typography>
                   </Box>
                   {usuarioDetalle.permisos_asociados && usuarioDetalle.permisos_asociados.length > 0 ? (
                     <Grid container spacing={2}>
@@ -104,10 +134,15 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                               backgroundColor: '#fff',
                               border: '1px solid #e0e0e0',
                               borderRadius: 1,
-                              height: '100%'
+                              height: '100%',
+                              transition: 'transform 0.2s, box-shadow 0.2s',
+                              '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                              }
                             }}
                           >
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'medium', mb: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                               {permiso.permiso.nombre}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -129,71 +164,123 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                   )}
                 </Paper>
               </>
-            )}
-
-            {/* --- Layout para Detalle de Usuario --- */}
-            {!esRol && (
-              <Grid container spacing={3}> {/* Contenedor principal para el layout del usuario */}
-                {/* Información General del Usuario */}
+            ) : (
+              <Grid container spacing={3}>
                 <Grid item xs={12}>
-                   <Typography variant="h6" gutterBottom>Información General</Typography>
-                   <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}> {/* Nombre Completo */}
-                          <Typography variant="body1"><b>Nombre:</b> {usuarioDetalle.nombre} {usuarioDetalle.apellido}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}> {/* Estado */}
-                         <Typography variant="body1"><b>Estado:</b> {usuarioDetalle.estado === true || usuarioDetalle.estado === 'true' || usuarioDetalle.estado === 1 || usuarioDetalle.estado === '1' ? 'Activo' : 'Inactivo'}</Typography>
-                      </Grid>
-                   </Grid>
-                </Grid>
-
-                 {/* Contacto */}
-                 <Grid item xs={12}>
-                    <Divider sx={{ my: 1 }} />
-                   <Typography variant="h6" gutterBottom>Contacto</Typography>
-                   <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}> {/* Email */}
-                         <Typography variant="body1"><b>Email:</b> {usuarioDetalle.email}</Typography>
-                      </Grid>
-                   </Grid>
-                 </Grid>
-
-                 {/* Identificación */}
-                 <Grid item xs={12}>
-                    <Divider sx={{ my: 1 }} />
-                   <Typography variant="h6" gutterBottom>Identificación</Typography>
-                   <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}> {/* Tipo Documento */}
-                         <Typography variant="body1"><b>Tipo Documento:</b> {usuarioDetalle.tipodocumento}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}> {/* Documento */}
-                         <Typography variant="body1"><b>Documento:</b> {usuarioDetalle.documento}</Typography>
-                      </Grid>
-                   </Grid>
-                 </Grid>
-
-                 {/* Ubicación */}
-                  <Grid item xs={12}>
-                     <Divider sx={{ my: 1 }} />
-                    <Typography variant="h6" gutterBottom>Ubicación</Typography>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                    </Box>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}> {/* Municipio */}
-                         <Typography variant="body1"><b>Municipio:</b> {usuarioDetalle.municipio}</Typography>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Nombre Completo</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.nombre} {usuarioDetalle.apellido}
+                        </Typography>
                       </Grid>
-                      <Grid item xs={12} sm={6}> {/* Barrio */}
-                         <Typography variant="body1"><b>Barrio:</b> {usuarioDetalle.barrio}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={12}> {/* Dirección Completa */}
-                         <Typography variant="body1"><b>Dirección:</b> {usuarioDetalle.dirrecion} {usuarioDetalle.complemento}</Typography>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Estado</Typography>
+                        <Chip
+                          icon={usuarioDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                          label={usuarioDetalle.estado ? 'Activo' : 'Inactivo'}
+                          color={usuarioDetalle.estado ? 'success' : 'error'}
+                          size="small"
+                          sx={{ 
+                            mt: 0.5,
+                            '& .MuiChip-label': { fontWeight: 500 }
+                          }}
+                        />
                       </Grid>
                     </Grid>
-                   </Grid>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Email</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.email}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Tipo de Documento</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.tipodocumento}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Número de Documento</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.documento}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Municipio</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.municipio || 'No especificado'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Barrio</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {usuarioDetalle.barrio || 'No especificado'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Dirección Completa</Typography>
+                        <Typography variant="body1" sx={{ 
+                          fontWeight: 500,
+                          backgroundColor: '#fff',
+                          p: 2,
+                          borderRadius: 1,
+                          border: '1px solid #e0e0e0',
+                          minHeight: '60px'
+                        }}>
+                          {usuarioDetalle.dirrecion} {usuarioDetalle.complemento || ''}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
               </Grid>
             )}
           </Box>
         )}
       </DialogContent>
-      <DialogActions sx={{ p: 2, backgroundColor: '#f5f5f5', borderTop: '1px solid #e0e0e0' }}>
+      <DialogActions sx={{ 
+        p: 2.5, 
+        backgroundColor: '#f8f9fa', 
+        borderTop: '1px solid #e0e0e0' 
+      }}>
         <Button 
           onClick={onClose} 
           variant="contained" 
@@ -201,7 +288,13 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
           sx={{ 
             borderRadius: 2,
             textTransform: 'none',
-            px: 3
+            px: 3,
+            py: 1,
+            fontWeight: 600,
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }
           }}
         >
           Cerrar
