@@ -599,63 +599,112 @@ const Roles = () => {
         </Alert>
       </Snackbar>
 
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          backgroundColor: '#f8f9fa',
+          borderBottom: '1px solid #e0e0e0',
+          py: 2.5
+        }}>
+          <AddIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Registrar Nuevo Rol
+          </Typography>
+        </DialogTitle>
         <form onSubmit={handleCrearRol} autoComplete="off">
-          <DialogTitle>Registrar Nuevo Rol</DialogTitle>
-          <DialogContent dividers>
-            <Grid container spacing={2} sx={{mt:1}}>
-              <Grid item xs={12}> 
-                <TextField
-                  label="Nombre del Rol"
-                  name="nombre"
-                  value={nuevoRol.nombre}
-                  onChange={e => setNuevoRol(prev => ({ ...prev, nombre: e.target.value }))}
-                  fullWidth
-                  required
-                  autoFocus
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Descripción del Rol"
-                  name="descripcion"
-                  value={nuevoRol.descripcion}
-                  onChange={e => setNuevoRol(prev => ({ ...prev, descripcion: e.target.value }))}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  placeholder="Ingrese una descripción detallada del rol..."
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>Permisos Asignados:</Typography>
-                <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', p:1 }}>
-                  <Grid container spacing={1}>
-                  {PERMISOS_DISPONIBLES.map(permiso => (
-                    <Grid item xs={12} sm={6} md={4} key={permiso.id}>
-                       <Box display="flex" alignItems="center">
-                        <Checkbox
-                          checked={nuevoRol.permisos_ids.includes(permiso.id)}
-                          onChange={() => handlePermisoToggle(permiso.id)}
-                          color="primary"
-                          size="small"
-                          id={`permiso-crear-${permiso.id}`}
-                        />
-                        <Typography component="label" htmlFor={`permiso-crear-${permiso.id}`} sx={{cursor: 'pointer', userSelect: 'none'}}>
-                            {permiso.nombre} (ID: {permiso.id})
-                        </Typography>
-                       </Box>
+          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff', maxHeight: '70vh', overflowY: 'auto' }}>
+            <Grid container spacing={3}>
+              {/* Información General */}
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <InfoIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información General</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Nombre del Rol"
+                        name="nombre"
+                        value={nuevoRol.nombre}
+                        onChange={e => setNuevoRol(prev => ({ ...prev, nombre: e.target.value }))}
+                        fullWidth
+                        required
+                        autoFocus
+                      />
                     </Grid>
-                  ))}
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Descripción del Rol"
+                        name="descripcion"
+                        value={nuevoRol.descripcion}
+                        onChange={e => setNuevoRol(prev => ({ ...prev, descripcion: e.target.value }))}
+                        fullWidth
+                        multiline
+                        rows={3}
+                        placeholder="Ingrese una descripción detallada del rol..."
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              {/* Permisos Asignados */}
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <SecurityIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Permisos Asignados</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    {PERMISOS_DISPONIBLES.map(permiso => (
+                      <Grid item xs={12} sm={6} md={6} key={permiso.id}>
+                        <Paper
+                          elevation={nuevoRol.permisos_ids.includes(permiso.id) ? 3 : 0}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            border: nuevoRol.permisos_ids.includes(permiso.id) ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                            backgroundColor: nuevoRol.permisos_ids.includes(permiso.id) ? '#e3f2fd' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
+                              borderColor: '#1976d2',
+                            },
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                          onClick={() => handlePermisoToggle(permiso.id)}
+                        >
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {permiso.nombre} (ID: {permiso.id})
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    ))}
                   </Grid>
                 </Paper>
               </Grid>
             </Grid>
             {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading}>Cancelar</Button>
-            <Button type="submit" color="primary" disabled={crearLoading}>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+              Cancelar
+            </Button>
+            <Button type="submit" color="primary" disabled={crearLoading} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
               {crearLoading ? <CircularProgress size={18} /> : 'Registrar Rol'}
             </Button>
           </DialogActions>
