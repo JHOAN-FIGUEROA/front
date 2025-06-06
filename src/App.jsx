@@ -32,7 +32,7 @@ const MainContent = styled(Box)(({ theme }) => ({
   margin: '0 auto',
 
   // Cuando están en columna, todos los hijos tendrán el mismo ancho
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down('md')]: {
     flexDirection: 'column',
     alignItems: 'center',
 
@@ -44,9 +44,9 @@ const MainContent = styled(Box)(({ theme }) => ({
 }));
 
 const HomePage = () => (
-  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+  <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Navbar />
-    <MainContent>
+    <MainContent sx={{ flex: 1 }}>
       <ImageCarousel />
       <LoginForm />
     </MainContent>
