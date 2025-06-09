@@ -98,6 +98,124 @@ const Editar = ({
             {SECCIONES.map(seccion => {
               const camposSeccion = camposEditables.filter(c => seccion.fields.includes(c.name));
               if (camposSeccion.length === 0) return null;
+              if (seccion.key === 'personal') {
+                const nombreCampo = camposSeccion.find(c => c.name === 'nombre');
+                const apellidoCampo = camposSeccion.find(c => c.name === 'apellido');
+                const rolCampo = camposSeccion.find(c => c.name === 'rol_idrol');
+                const rolesOptions = Array.isArray(rolCampo?.options) ? rolCampo.options : [];
+                return (
+                  <Grid item xs={12} md={6} key={seccion.key}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        {seccion.icon}
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{seccion.title}</Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            label={nombreCampo.label}
+                            name={nombreCampo.name}
+                            value={form?.[nombreCampo.name] || ''}
+                            onChange={onFormChange}
+                            fullWidth
+                            margin="normal"
+                            required={nombreCampo.required}
+                            error={!!validationErrors[nombreCampo.name]}
+                            helperText={validationErrors[nombreCampo.name]}
+                            disabled={nombreCampo.disabled}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1,
+                                backgroundColor: '#fff',
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'primary.main',
+                                },
+                              },
+                              '& .MuiInputLabel-root': {
+                                color: 'text.secondary',
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: 'primary.main',
+                              },
+                            }}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            label={apellidoCampo.label}
+                            name={apellidoCampo.name}
+                            value={form?.[apellidoCampo.name] || ''}
+                            onChange={onFormChange}
+                            fullWidth
+                            margin="normal"
+                            required={apellidoCampo.required}
+                            error={!!validationErrors[apellidoCampo.name]}
+                            helperText={validationErrors[apellidoCampo.name]}
+                            disabled={apellidoCampo.disabled}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1,
+                                backgroundColor: '#fff',
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'primary.main',
+                                },
+                              },
+                              '& .MuiInputLabel-root': {
+                                color: 'text.secondary',
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: 'primary.main',
+                              },
+                            }}
+                          />
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Box mt={2}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Rol</Typography>
+                            <Grid container spacing={2}>
+                              {rolesOptions.length === 0 && (
+                                <Grid item xs={12}>
+                                  <Alert severity="info">No hay roles disponibles</Alert>
+                                </Grid>
+                              )}
+                              {rolesOptions.map(opt => (
+                                <Grid item xs={12} sm={6} key={opt.value || opt}>
+                                  <Paper
+                                    elevation={form?.rol_idrol === (opt.value || opt) ? 3 : 0}
+                                    sx={{
+                                      p: 2,
+                                      borderRadius: 2,
+                                      border: form?.rol_idrol === (opt.value || opt) ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                                      backgroundColor: form?.rol_idrol === (opt.value || opt) ? '#e3f2fd' : '#fff',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      '&:hover': {
+                                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
+                                        borderColor: '#1976d2',
+                                      },
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 2,
+                                    }}
+                                    onClick={() => onFormChange({ target: { name: 'rol_idrol', value: opt.value || opt } })}
+                                  >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                      {opt.label || opt}
+                                    </Typography>
+                                  </Paper>
+                                </Grid>
+                              ))}
+                            </Grid>
+                            {validationErrors['rol_idrol'] && (
+                              <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
+                            )}
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                );
+              }
               return (
                 <Grid item xs={12} md={seccion.key === 'personal' || seccion.key === 'identificacion' ? 6 : 12} key={seccion.key}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
