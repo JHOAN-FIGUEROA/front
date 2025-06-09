@@ -139,20 +139,20 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
         const campo = campos.find(c => c.name === name);
         if (!campo) return null;
         const { label, select, options, type = 'text', required = true } = campo;
-        return (
-          <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
-            {select ? (
-              <TextField
-                select
-                label={label}
-                name={name}
-                value={form[name] || ''}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-                required={required}
-                error={!!validationErrors[name]}
-                helperText={validationErrors[name]}
+  return (
+                <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
+                  {select ? (
+                    <TextField
+                      select
+                      label={label}
+                      name={name}
+                      value={form[name] || ''}
+                      onChange={handleChange}
+                      fullWidth
+                      margin="normal"
+                      required={required}
+                      error={!!validationErrors[name]}
+                      helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -168,8 +168,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                     color: 'primary.main',
                   },
                 }}
-              >
-                {Array.isArray(options) && options.map(opt => (
+                    >
+                      {Array.isArray(options) && options.map(opt => (
                   <MenuItem 
                     key={opt.value || opt} 
                     value={opt.value || opt}
@@ -185,22 +185,22 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                       },
                     }}
                   >
-                    {opt.label || opt}
-                  </MenuItem>
-                ))}
-              </TextField>
-            ) : (
-              <TextField
-                label={label}
-                name={name}
-                value={form[name] || ''}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-                type={type}
-                required={required}
-                error={!!validationErrors[name]}
-                helperText={validationErrors[name]}
+                          {opt.label || opt}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <TextField
+                      label={label}
+                      name={name}
+                      value={form[name] || ''}
+                      onChange={handleChange}
+                      fullWidth
+                      margin="normal"
+                      type={type}
+                      required={required}
+                      error={!!validationErrors[name]}
+                      helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -369,8 +369,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                             {opt.label || opt}
                           </Typography>
                         </Paper>
-                      </Grid>
-                    ))}
+                </Grid>
+              ))}
                   </Grid>
                   {validationErrors['rol_idrol'] && (
                     <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
