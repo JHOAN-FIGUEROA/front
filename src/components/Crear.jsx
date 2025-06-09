@@ -28,38 +28,142 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
     }
   }, [open, campos]);
 
+  const validateEmail = (email) => {
+    const newErrors = {};
+    if (!email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = 'El formato del email no es válido';
+      } else if (email.length > 100) {
+        newErrors.email = 'El email excede la longitud máxima permitida';
+      } else if (/[<>()[\]\\,;:\s"]+/.test(email)) {
+        newErrors.email = 'El email contiene caracteres no permitidos';
+      }
+    }
+    return newErrors;
+  };
+
+  const validatePassword = (password) => {
+    const newErrors = {};
+    if (!password) {
+      newErrors.password = 'La contraseña es requerida';
+    } else {
+      if (password.length < 8 || password.length > 15) {
+        newErrors.password = 'La contraseña debe tener entre 8 y 15 caracteres';
+      } else if (!/[A-Z]/.test(password)) {
+        newErrors.password = 'La contraseña debe contener al menos una mayúscula';
+      } else if (!/[0-9]/.test(password)) {
+        newErrors.password = 'La contraseña debe contener al menos un número';
+      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        newErrors.password = 'La contraseña debe contener al menos un carácter especial';
+      }
+    }
+    return newErrors;
+  };
+
+  const validateDocumento = (documento) => {
+    const newErrors = {};
+    if (!documento.trim()) {
+      newErrors.documento = 'El documento es requerido';
+    } else if (!/^\d{10}$/.test(documento)) {
+      newErrors.documento = 'El documento debe tener exactamente 10 dígitos numéricos';
+    }
+    return newErrors;
+  };
+
+  const validateNombre = (nombre) => {
+    const newErrors = {};
+    if (!nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(nombre)) {
+      newErrors.nombre = 'El nombre debe tener entre 3 y 10 letras';
+    }
+    return newErrors;
+  };
+
+  const validateApellido = (apellido) => {
+    const newErrors = {};
+    if (!apellido.trim()) {
+      newErrors.apellido = 'El apellido es requerido';
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(apellido)) {
+      newErrors.apellido = 'El apellido debe tener entre 3 y 10 letras';
+    }
+    return newErrors;
+  };
+
+  const validateUbicacion = (valor, campo) => {
+    const newErrors = {};
+    if (valor && valor.trim()) {
+      if (valor.length < 3 || valor.length > 50) {
+        newErrors[campo] = `El campo debe tener entre 3 y 50 caracteres`;
+      } else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+        newErrors[campo] = `Solo se permiten letras, números y espacios`;
+      } else if (campo === 'dirrecion' && (valor.match(/\d/g) || []).length < 2) {
+        newErrors[campo] = `La dirección debe contener al menos 2 números`;
+      }
+    }
+    return newErrors;
+  };
+
+  const validateRol = (rol) => {
+    const newErrors = {};
+    if (!rol) {
+      newErrors.rol_idrol = 'El rol es requerido';
+    }
+    return newErrors;
+  };
+
+  const validateTipoDocumento = (tipoDocumento) => {
+    const newErrors = {};
+    if (!tipoDocumento) {
+      newErrors.tipodocumento = 'El tipo de documento es requerido';
+    }
+    return newErrors;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({ ...prev, [name]: undefined }));
+    let newErrors = {};
+    if (name === 'email') {
+      newErrors = validateEmail(value);
+    } else if (name === 'password') {
+      newErrors = validatePassword(value);
+    } else if (name === 'documento') {
+      newErrors = validateDocumento(value);
+    } else if (name === 'nombre') {
+      newErrors = validateNombre(value);
+    } else if (name === 'apellido') {
+      newErrors = validateApellido(value);
+    } else if (['municipio','barrio','dirrecion','complemento'].includes(name)) {
+      newErrors = validateUbicacion(value, name);
+    } else if (name === 'rol_idrol') {
+      newErrors = validateRol(value);
+    } else if (name === 'tipodocumento') {
+      newErrors = validateTipoDocumento(value);
     }
+    setValidationErrors(prev => ({ ...prev, ...newErrors, [name]: Object.values(newErrors)[0] }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    let isValid = true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    campos.forEach(campo => {
-      const value = form[campo.name];
-      const trimmedValue = typeof value === 'string' ? value.trim() : value;
-
-      if (campo.required !== false) {
-        if (typeof trimmedValue === 'string' && !trimmedValue) {
-          newErrors[campo.name] = `${campo.label} es requerido`;
-          isValid = false;
-        }
-      }
-
-      if (campo.name === 'email' && trimmedValue && !emailRegex.test(trimmedValue)) {
-        newErrors[campo.name] = 'Formato de email inválido';
-        isValid = false;
-      }
-    });
-
+    Object.assign(newErrors,
+      validateEmail(form.email),
+      validatePassword(form.password),
+      validateDocumento(form.documento),
+      validateNombre(form.nombre),
+      validateApellido(form.apellido),
+      validateUbicacion(form.municipio, 'municipio'),
+      validateUbicacion(form.barrio, 'barrio'),
+      validateUbicacion(form.dirrecion, 'dirrecion'),
+      validateUbicacion(form.complemento, 'complemento'),
+      validateRol(form.rol_idrol),
+      validateTipoDocumento(form.tipodocumento)
+    );
     setValidationErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -115,17 +219,15 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
   const handleSeleccionarRol = (id) => {
     setRolSeleccionado(id);
     setForm(prev => ({ ...prev, rol_idrol: id }));
-    if (validationErrors['rol_idrol']) {
-      setValidationErrors(prev => ({ ...prev, rol_idrol: undefined }));
-    }
+    const newErrors = validateRol(id);
+    setValidationErrors(prev => ({ ...prev, rol_idrol: newErrors.rol_idrol }));
   };
 
   // Handler para seleccionar tipo de documento
   const handleSeleccionarTipoDocumento = (tipo) => {
     setForm(prev => ({ ...prev, tipodocumento: tipo }));
-    if (validationErrors['tipodocumento']) {
-      setValidationErrors(prev => ({ ...prev, tipodocumento: undefined }));
-    }
+    const newErrors = validateTipoDocumento(tipo);
+    setValidationErrors(prev => ({ ...prev, tipodocumento: newErrors.tipodocumento }));
   };
 
   // Obtener las opciones de tipo de documento
@@ -139,20 +241,20 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
         const campo = campos.find(c => c.name === name);
         if (!campo) return null;
         const { label, select, options, type = 'text', required = true } = campo;
-  return (
-                <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
-                  {select ? (
-                    <TextField
-                      select
-                      label={label}
-                      name={name}
-                      value={form[name] || ''}
-                      onChange={handleChange}
-                      fullWidth
-                      margin="normal"
-                      required={required}
-                      error={!!validationErrors[name]}
-                      helperText={validationErrors[name]}
+        return (
+          <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
+            {select ? (
+              <TextField
+                select
+                label={label}
+                name={name}
+                value={form[name] || ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={required}
+                error={!!validationErrors[name]}
+                helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -168,8 +270,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                     color: 'primary.main',
                   },
                 }}
-                    >
-                      {Array.isArray(options) && options.map(opt => (
+              >
+                {Array.isArray(options) && options.map(opt => (
                   <MenuItem 
                     key={opt.value || opt} 
                     value={opt.value || opt}
@@ -185,22 +287,22 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                       },
                     }}
                   >
-                          {opt.label || opt}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  ) : (
-                    <TextField
-                      label={label}
-                      name={name}
-                      value={form[name] || ''}
-                      onChange={handleChange}
-                      fullWidth
-                      margin="normal"
-                      type={type}
-                      required={required}
-                      error={!!validationErrors[name]}
-                      helperText={validationErrors[name]}
+                    {opt.label || opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <TextField
+                label={label}
+                name={name}
+                value={form[name] || ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                type={type}
+                required={required}
+                error={!!validationErrors[name]}
+                helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -369,8 +471,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                             {opt.label || opt}
                           </Typography>
                         </Paper>
-                </Grid>
-              ))}
+                      </Grid>
+                    ))}
                   </Grid>
                   {validationErrors['rol_idrol'] && (
                     <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>

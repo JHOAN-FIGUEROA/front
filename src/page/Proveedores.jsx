@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, TextField, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem
 } from '@mui/material';
-import { getProveedores, createProveedor } from '../api';
+import { getProveedores, createProveedor, deleteProveedor } from '../api';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -15,6 +15,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
+import Eliminar from '../components/Eliminar';
 
 const PROVEEDORES_POR_PAGINA = 5;
 
@@ -47,6 +48,8 @@ const Proveedores = () => {
   const [crearError, setCrearError] = useState('');
   const [crearForm, setCrearForm] = useState(() => Object.fromEntries(CAMPOS_CREAR.map(c => [c.name, c.default || ''])));
   const [crearValidation, setCrearValidation] = useState({});
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [proveedorEliminar, setProveedorEliminar] = useState(null);
 
   const fetchProveedores = useCallback(async (currentPage) => {
     setLoading(true);
@@ -132,6 +135,18 @@ const Proveedores = () => {
     }
   };
 
+  const handleEliminarProveedor = async (nitproveedor) => {
+    try {
+      await deleteProveedor(nitproveedor);
+      setEliminarOpen(false);
+      setProveedorEliminar(null);
+      setSuccessMsg('Proveedor eliminado correctamente');
+      fetchProveedores(pagina);
+    } catch (err) {
+      setSuccessMsg('Error al eliminar proveedor: ' + (err.message || ''));
+    }
+  };
+
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Proveedores Registrados</Typography>
@@ -189,7 +204,7 @@ const Proveedores = () => {
                     <IconButton color="warning" size="small" onClick={() => { /* Lógica para editar */ }} title="Editar">
                       <EditIcon fontSize="small" />
                     </IconButton>
-                    <IconButton color="error" size="small" onClick={() => { /* Lógica para eliminar */ }} title="Eliminar">
+                    <IconButton color="error" size="small" onClick={() => { setProveedorEliminar(proveedor); setEliminarOpen(true); }} title="Eliminar">
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Stack>
@@ -444,6 +459,16 @@ const Proveedores = () => {
           </DialogActions>
         </form>
       </Dialog>
+      <Eliminar
+        id={proveedorEliminar?.documento || proveedorEliminar?.nitproveedor}
+        open={eliminarOpen}
+        onClose={() => setEliminarOpen(false)}
+        onEliminado={() => handleEliminarProveedor(proveedorEliminar?.documento || proveedorEliminar?.nitproveedor)}
+        onError={(errorMessage) => setSuccessMsg(errorMessage)}
+        nombre={proveedorEliminar ? proveedorEliminar.nombre : ''}
+        tipoEntidad="proveedor"
+        deleteApi={deleteProveedor}
+      />
     </Box>
   );
 };

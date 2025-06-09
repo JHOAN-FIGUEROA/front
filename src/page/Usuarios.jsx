@@ -302,39 +302,125 @@ const Usuarios = () => {
     }
   };
 
+  // VALIDACIONES ROBUSTAS PARA EDITAR USUARIO
+  const validateEditEmail = (email) => {
+    const newErrors = {};
+    if (!email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = 'El formato del email no es válido';
+      } else if (email.length > 100) {
+        newErrors.email = 'El email excede la longitud máxima permitida';
+      } else if (/[<>()[\]\\,;:\s"]+/.test(email)) {
+        newErrors.email = 'El email contiene caracteres no permitidos';
+      }
+    }
+    return newErrors;
+  };
+  const validateEditDocumento = (documento) => {
+    const newErrors = {};
+    if (!documento.trim()) {
+      newErrors.documento = 'El documento es requerido';
+    } else if (!/^\d{10}$/.test(documento)) {
+      newErrors.documento = 'El documento debe tener exactamente 10 dígitos numéricos';
+    }
+    return newErrors;
+  };
+  const validateEditNombre = (nombre) => {
+    const newErrors = {};
+    if (!nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(nombre)) {
+      newErrors.nombre = 'El nombre debe tener entre 3 y 10 letras';
+    }
+    return newErrors;
+  };
+  const validateEditApellido = (apellido) => {
+    const newErrors = {};
+    if (!apellido.trim()) {
+      newErrors.apellido = 'El apellido es requerido';
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(apellido)) {
+      newErrors.apellido = 'El apellido debe tener entre 3 y 10 letras';
+    }
+    return newErrors;
+  };
+  const validateEditUbicacion = (valor, campo) => {
+    const newErrors = {};
+    if (["municipio", "barrio", "dirrecion"].includes(campo)) {
+      if (!valor || !valor.trim()) {
+        newErrors[campo] = `El campo es obligatorio`;
+        return newErrors;
+      }
+    }
+    if (valor && valor.trim()) {
+      if (valor.length < 3 || valor.length > 50) {
+        newErrors[campo] = `El campo debe tener entre 3 y 50 caracteres`;
+      } else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+        newErrors[campo] = `Solo se permiten letras, números y espacios`;
+      } else if (campo === 'dirrecion' && (valor.match(/\d/g) || []).length < 2) {
+        newErrors[campo] = `La dirección debe contener al menos 2 números`;
+      }
+    }
+    return newErrors;
+  };
+  const validateEditRol = (rol) => {
+    const newErrors = {};
+    if (!rol) {
+      newErrors.rol_idrol = 'El rol es requerido';
+    }
+    return newErrors;
+  };
+  const validateEditTipoDocumento = (tipoDocumento) => {
+    const newErrors = {};
+    if (!tipoDocumento) {
+      newErrors.tipodocumento = 'El tipo de documento es requerido';
+    }
+    return newErrors;
+  };
+
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({ ...prev, [name]: value }));
-    if (editValidationErrors[name]) {
-      setEditValidationErrors(prev => ({ ...prev, [name]: undefined }));
+    let newErrors = {};
+    if (name === 'email') {
+      newErrors = validateEditEmail(value);
+    } else if (name === 'documento') {
+      newErrors = validateEditDocumento(value);
+    } else if (name === 'nombre') {
+      newErrors = validateEditNombre(value);
+    } else if (name === 'apellido') {
+      newErrors = validateEditApellido(value);
+    } else if (["municipio","barrio","dirrecion","complemento"].includes(name)) {
+      newErrors = validateEditUbicacion(value, name);
+    } else if (name === 'rol_idrol') {
+      newErrors = validateEditRol(value);
+    } else if (name === 'tipodocumento') {
+      newErrors = validateEditTipoDocumento(value);
     }
+    setEditValidationErrors(prev => ({ ...prev, ...newErrors, [name]: Object.values(newErrors)[0] }));
   };
 
   const validateEditForm = (formData) => {
     const newErrors = {};
-    let isValid = true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    CAMPOS_EDITABLES.forEach(campo => {
-        const value = formData[campo.name];
-        const trimmedValue = typeof value === 'string' ? value.trim() : value;
-        if (campo.required) {
-            if (typeof trimmedValue === 'string' && !trimmedValue) {
-                newErrors[campo.name] = `${campo.label} es requerido`;
-                isValid = false;
-            } else if (trimmedValue === null || trimmedValue === undefined || (typeof trimmedValue !== 'string' && !trimmedValue && trimmedValue !== 0) ) {
-                 if (!(typeof trimmedValue === 'number' && trimmedValue === 0)) {
-                    newErrors[campo.name] = `${campo.label} es requerido`;
-                    isValid = false;
-                }
-            }
-        }
-        if (campo.name === 'email' && trimmedValue && !emailRegex.test(trimmedValue)) {
-            newErrors[campo.name] = 'Formato de email inválido';
-            isValid = false;
-        }
-    });
+    Object.assign(newErrors,
+      validateEditEmail(formData.email),
+      validateEditDocumento(formData.documento),
+      validateEditNombre(formData.nombre),
+      validateEditApellido(formData.apellido),
+      validateEditUbicacion(formData.municipio, 'municipio'),
+      validateEditUbicacion(formData.barrio, 'barrio'),
+      validateEditUbicacion(formData.dirrecion, 'dirrecion'),
+      validateEditUbicacion(formData.complemento, 'complemento'),
+      validateEditRol(formData.rol_idrol),
+      validateEditTipoDocumento(formData.tipodocumento)
+    );
+    if (!formData.complemento || !formData.complemento.trim()) {
+      delete newErrors.complemento;
+    }
     setEditValidationErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleGuardarEdicion = async () => {

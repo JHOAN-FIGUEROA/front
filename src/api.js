@@ -491,3 +491,16 @@ export const createProveedor = async (data) => {
     }
   }
 };
+
+export const deleteProveedor = async (nitproveedor) => {
+  try {
+    const response = await api.delete(`/api/proveedores/${nitproveedor}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
