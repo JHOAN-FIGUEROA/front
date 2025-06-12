@@ -89,29 +89,161 @@ const Proveedores = () => {
     setBusqueda(newSearchTerm);
   };
 
+  // Funciones de validación individuales
+  const validateTipoDocumento = (tipoDocumento) => {
+    if (!tipoDocumento) {
+      return 'El tipo de documento es requerido';
+    }
+    return '';
+  };
+
+  const validateDocumento = (documento) => {
+    if (!documento?.trim()) {
+      return 'El documento es requerido';
+    }
+    if (!/^\d{10}$/.test(documento)) {
+      return 'El documento debe tener exactamente 10 dígitos numéricos';
+    }
+    return '';
+  };
+
+  const validateNombreContacto = (valor, campo) => {
+    if (!valor?.trim()) {
+      return `El ${campo} es requerido`;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(valor)) {
+      return `El ${campo} debe tener entre 3 y 10 letras`;
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email?.trim()) {
+      return 'El email es requerido';
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return 'El formato del email no es válido';
+    }
+    if (email.length > 100) {
+      return 'El email excede la longitud máxima permitida';
+    }
+    if (/[<>()[\]\\,;:\s"]+/.test(email)) {
+      return 'El email contiene caracteres no permitidos';
+    }
+    return '';
+  };
+
+  const validateTelefono = (telefono) => {
+    if (!telefono?.trim()) {
+      return 'El teléfono es requerido';
+    }
+    if (!/^\d{10}$/.test(telefono)) {
+      return 'El teléfono debe tener exactamente 10 dígitos numéricos';
+    }
+    return '';
+  };
+
+  const validateUbicacion = (valor, campo) => {
+    if (!valor?.trim()) {
+      return `El ${campo} es requerido`;
+    }
+    if (valor.length < 3 || valor.length > 50) {
+      return `El ${campo} debe tener entre 3 y 50 caracteres`;
+    }
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+      return `Solo se permiten letras, números y espacios`;
+    }
+    if (campo === 'direccion' && (valor.match(/\d/g) || []).length < 2) {
+      return `La dirección debe contener al menos 2 números`;
+    }
+    return '';
+  };
+
+  const validateComplemento = (complemento) => {
+    if (!complemento?.trim()) {
+      return ''; // Complemento es opcional si está vacío
+    }
+    if (complemento.length < 3 || complemento.length > 50) {
+      return 'El complemento debe tener entre 3 y 50 caracteres';
+    }
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(complemento)) {
+      return 'Solo se permiten letras, números y espacios';
+    }
+    return '';
+  };
+
   const handleCrearChange = (e) => {
     const { name, value } = e.target;
     setCrearForm(prev => ({ ...prev, [name]: value }));
-    if (crearValidation[name]) {
-      setCrearValidation(prev => ({ ...prev, [name]: undefined }));
+
+    let errorMessage = '';
+    switch (name) {
+      case 'tipodocumento':
+        errorMessage = validateTipoDocumento(value);
+        break;
+      case 'documento':
+        errorMessage = validateDocumento(value);
+        break;
+      case 'nombre':
+      case 'contacto':
+        errorMessage = validateNombreContacto(value, name);
+        break;
+      case 'email':
+        errorMessage = validateEmail(value);
+        break;
+      case 'telefono':
+        errorMessage = validateTelefono(value);
+        break;
+      case 'municipio':
+      case 'barrio':
+      case 'direccion':
+        errorMessage = validateUbicacion(value, name);
+        break;
+      case 'complemento':
+        errorMessage = validateComplemento(value);
+        break;
+      default:
+        break;
     }
+    setCrearValidation(prev => ({ ...prev, [name]: errorMessage }));
   };
 
   const validateCrear = () => {
     const newErrors = {};
     let isValid = true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    CAMPOS_CREAR.forEach(campo => {
-      const value = crearForm[campo.name];
-      if (campo.required && (!value || (typeof value === 'string' && !value.trim()))) {
-        newErrors[campo.name] = `${campo.label} es requerido`;
-        isValid = false;
-      }
-      if (campo.name === 'email' && value && !emailRegex.test(value)) {
-        newErrors[campo.name] = 'Formato de email inválido';
-        isValid = false;
-      }
-    });
+
+    // Validar todos los campos
+    const tipoDocumentoError = validateTipoDocumento(crearForm.tipodocumento);
+    if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
+
+    const documentoError = validateDocumento(crearForm.documento);
+    if (documentoError) { newErrors.documento = documentoError; isValid = false; }
+
+    const nombreError = validateNombreContacto(crearForm.nombre, 'nombre');
+    if (nombreError) { newErrors.nombre = nombreError; isValid = false; }
+
+    const contactoError = validateNombreContacto(crearForm.contacto, 'contacto');
+    if (contactoError) { newErrors.contacto = contactoError; isValid = false; }
+
+    const emailError = validateEmail(crearForm.email);
+    if (emailError) { newErrors.email = emailError; isValid = false; }
+
+    const telefonoError = validateTelefono(crearForm.telefono);
+    if (telefonoError) { newErrors.telefono = telefonoError; isValid = false; }
+
+    const municipioError = validateUbicacion(crearForm.municipio, 'municipio');
+    if (municipioError) { newErrors.municipio = municipioError; isValid = false; }
+
+    const barrioError = validateUbicacion(crearForm.barrio, 'barrio');
+    if (barrioError) { newErrors.barrio = barrioError; isValid = false; }
+
+    const direccionError = validateUbicacion(crearForm.direccion, 'direccion');
+    if (direccionError) { newErrors.direccion = direccionError; isValid = false; }
+
+    const complementoError = validateComplemento(crearForm.complemento);
+    if (complementoError) { newErrors.complemento = complementoError; isValid = false; }
+
     setCrearValidation(newErrors);
     return isValid;
   };
@@ -119,7 +251,6 @@ const Proveedores = () => {
   const handleCrearProveedor = async (e) => {
     e.preventDefault();
     setCrearError('');
-    setCrearValidation({});
     if (!validateCrear()) return;
     setCrearLoading(true);
     try {
