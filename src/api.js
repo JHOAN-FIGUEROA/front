@@ -261,7 +261,7 @@ export const getProveedores = async (page = 1, limit = 5) => {
         limit,
       },
     });
-    return { success: true, data: response.data };
+    return { success: true, data: response.data.data };
   } catch (error) {
     // console.error('Error en getProveedores API call:', error); // Comentado para evitar log en consola
     if (error.response) {

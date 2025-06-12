@@ -54,7 +54,7 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
       }}>
         <SecurityIcon color="primary" sx={{ fontSize: 28 }} />
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          {esRol ? 'Detalle de Rol' : 'Detalle de Usuario'}
+        {esRol ? 'Detalle de Rol' : 'Detalle de Usuario'}
         </Typography>
       </DialogTitle>
       <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
@@ -173,7 +173,7 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                       <PersonIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
                     </Box>
-                    <Grid container spacing={2}>
+                   <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Nombre Completo</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
@@ -193,35 +193,35 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                           }}
                         />
                       </Grid>
-                    </Grid>
+                   </Grid>
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12}>
+                 <Grid item xs={12}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <EmailIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
                     </Box>
-                    <Grid container spacing={2}>
+                   <Grid container spacing={2}>
                       <Grid item xs={12}>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>Email</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
                           {usuarioDetalle.email}
                         </Typography>
                       </Grid>
-                    </Grid>
+                   </Grid>
                   </Paper>
-                </Grid>
+                 </Grid>
 
-                <Grid item xs={12}>
+                 <Grid item xs={12}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                     </Box>
                     <Box mb={2}>
-                      <Grid container spacing={2}>
+                   <Grid container spacing={2}>
                         <Grid item xs={4} sm={3}>
                           <Paper
                             elevation={3}
@@ -248,11 +248,11 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                           {usuarioDetalle.documento}
                         </Typography>
                       </Grid>
-                    </Grid>
+                   </Grid>
                   </Paper>
-                </Grid>
+                 </Grid>
 
-                <Grid item xs={12}>
+                  <Grid item xs={12}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
@@ -286,7 +286,7 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                       </Grid>
                     </Grid>
                   </Paper>
-                </Grid>
+                   </Grid>
               </Grid>
             )}
           </Box>

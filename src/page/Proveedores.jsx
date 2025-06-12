@@ -16,6 +16,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 import Eliminar from '../components/Eliminar';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const PROVEEDORES_POR_PAGINA = 5;
 
@@ -50,6 +52,14 @@ const Proveedores = () => {
   const [crearValidation, setCrearValidation] = useState({});
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState(null);
+
+  // Nuevo estado unificado para el Snackbar
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  // Función helper para mostrar el Snackbar
+  const openSnackbar = (message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const fetchProveedores = useCallback(async (currentPage) => {
     setLoading(true);
@@ -89,29 +99,161 @@ const Proveedores = () => {
     setBusqueda(newSearchTerm);
   };
 
+  // Funciones de validación individuales
+  const validateTipoDocumento = (tipoDocumento) => {
+    if (!tipoDocumento) {
+      return 'El tipo de documento es requerido';
+    }
+    return '';
+  };
+
+  const validateDocumento = (documento) => {
+    if (!documento?.trim()) {
+      return 'El documento es requerido';
+    }
+    if (!/^\d{10}$/.test(documento)) {
+      return 'El documento debe tener exactamente 10 dígitos numéricos';
+    }
+    return '';
+  };
+
+  const validateNombreContacto = (valor, campo) => {
+    if (!valor?.trim()) {
+      return `El ${campo} es requerido`;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(valor)) {
+      return `El ${campo} debe tener entre 3 y 10 letras`;
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email?.trim()) {
+      return 'El email es requerido';
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return 'El formato del email no es válido';
+    }
+    if (email.length > 100) {
+      return 'El email excede la longitud máxima permitida';
+    }
+    if (/[<>()[\]\\,;:\s"]+/.test(email)) {
+      return 'El email contiene caracteres no permitidos';
+    }
+    return '';
+  };
+
+  const validateTelefono = (telefono) => {
+    if (!telefono?.trim()) {
+      return 'El teléfono es requerido';
+    }
+    if (!/^\d{10}$/.test(telefono)) {
+      return 'El teléfono debe tener exactamente 10 dígitos numéricos';
+    }
+    return '';
+  };
+
+  const validateUbicacion = (valor, campo) => {
+    if (!valor?.trim()) {
+      return `El ${campo} es requerido`;
+    }
+    if (valor.length < 3 || valor.length > 50) {
+      return `El ${campo} debe tener entre 3 y 50 caracteres`;
+    }
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+      return `Solo se permiten letras, números y espacios`;
+    }
+    if (campo === 'direccion' && (valor.match(/\d/g) || []).length < 2) {
+      return `La dirección debe contener al menos 2 números`;
+    }
+    return '';
+  };
+
+  const validateComplemento = (complemento) => {
+    if (!complemento?.trim()) {
+      return ''; // Complemento es opcional si está vacío
+    }
+    if (complemento.length < 3 || complemento.length > 50) {
+      return 'El complemento debe tener entre 3 y 50 caracteres';
+    }
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(complemento)) {
+      return 'Solo se permiten letras, números y espacios';
+    }
+    return '';
+  };
+
   const handleCrearChange = (e) => {
     const { name, value } = e.target;
     setCrearForm(prev => ({ ...prev, [name]: value }));
-    if (crearValidation[name]) {
-      setCrearValidation(prev => ({ ...prev, [name]: undefined }));
+
+    let errorMessage = '';
+    switch (name) {
+      case 'tipodocumento':
+        errorMessage = validateTipoDocumento(value);
+        break;
+      case 'documento':
+        errorMessage = validateDocumento(value);
+        break;
+      case 'nombre':
+      case 'contacto':
+        errorMessage = validateNombreContacto(value, name);
+        break;
+      case 'email':
+        errorMessage = validateEmail(value);
+        break;
+      case 'telefono':
+        errorMessage = validateTelefono(value);
+        break;
+      case 'municipio':
+      case 'barrio':
+      case 'direccion':
+        errorMessage = validateUbicacion(value, name);
+        break;
+      case 'complemento':
+        errorMessage = validateComplemento(value);
+        break;
+      default:
+        break;
     }
+    setCrearValidation(prev => ({ ...prev, [name]: errorMessage }));
   };
 
   const validateCrear = () => {
     const newErrors = {};
     let isValid = true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    CAMPOS_CREAR.forEach(campo => {
-      const value = crearForm[campo.name];
-      if (campo.required && (!value || (typeof value === 'string' && !value.trim()))) {
-        newErrors[campo.name] = `${campo.label} es requerido`;
-        isValid = false;
-      }
-      if (campo.name === 'email' && value && !emailRegex.test(value)) {
-        newErrors[campo.name] = 'Formato de email inválido';
-        isValid = false;
-      }
-    });
+
+    // Validar todos los campos
+    const tipoDocumentoError = validateTipoDocumento(crearForm.tipodocumento);
+    if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
+
+    const documentoError = validateDocumento(crearForm.documento);
+    if (documentoError) { newErrors.documento = documentoError; isValid = false; }
+
+    const nombreError = validateNombreContacto(crearForm.nombre, 'nombre');
+    if (nombreError) { newErrors.nombre = nombreError; isValid = false; }
+
+    const contactoError = validateNombreContacto(crearForm.contacto, 'contacto');
+    if (contactoError) { newErrors.contacto = contactoError; isValid = false; }
+
+    const emailError = validateEmail(crearForm.email);
+    if (emailError) { newErrors.email = emailError; isValid = false; }
+
+    const telefonoError = validateTelefono(crearForm.telefono);
+    if (telefonoError) { newErrors.telefono = telefonoError; isValid = false; }
+
+    const municipioError = validateUbicacion(crearForm.municipio, 'municipio');
+    if (municipioError) { newErrors.municipio = municipioError; isValid = false; }
+
+    const barrioError = validateUbicacion(crearForm.barrio, 'barrio');
+    if (barrioError) { newErrors.barrio = barrioError; isValid = false; }
+
+    const direccionError = validateUbicacion(crearForm.direccion, 'direccion');
+    if (direccionError) { newErrors.direccion = direccionError; isValid = false; }
+
+    const complementoError = validateComplemento(crearForm.complemento);
+    if (complementoError) { newErrors.complemento = complementoError; isValid = false; }
+
     setCrearValidation(newErrors);
     return isValid;
   };
@@ -119,14 +261,28 @@ const Proveedores = () => {
   const handleCrearProveedor = async (e) => {
     e.preventDefault();
     setCrearError('');
-    setCrearValidation({});
     if (!validateCrear()) return;
     setCrearLoading(true);
     try {
       await createProveedor({ ...crearForm, nitproveedor: crearForm.documento });
       setCrearOpen(false);
       setCrearForm(Object.fromEntries(CAMPOS_CREAR.map(c => [c.name, c.default || ''])));
-      setSuccessMsg('Proveedor creado correctamente');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Proveedor Creado!',
+        text: 'El proveedor ha sido registrado correctamente',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
       fetchProveedores(pagina);
     } catch (err) {
       setCrearError(err.message || 'Error al crear proveedor');
@@ -135,16 +291,33 @@ const Proveedores = () => {
     }
   };
 
-  const handleEliminarProveedor = async (nitproveedor) => {
-    try {
-      await deleteProveedor(nitproveedor);
-      setEliminarOpen(false);
-      setProveedorEliminar(null);
-      setSuccessMsg('Proveedor eliminado correctamente');
-      fetchProveedores(pagina);
-    } catch (err) {
-      setSuccessMsg('Error al eliminar proveedor: ' + (err.message || ''));
+  const handleProveedorEliminadoExitosamente = async () => {
+    setEliminarOpen(false);
+    setProveedorEliminar(null);
+    Swal.fire({
+      icon: 'success',
+      title: '¡Proveedor Eliminado!',
+      text: 'El proveedor ha sido eliminado correctamente',
+      timer: 2000,
+      showConfirmButton: false,
+      position: 'center',
+      background: '#fff',
+      customClass: {
+        popup: 'animated fadeInDown'
+      },
+      zIndex: 9999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 9999;
+      }
+    });
+    fetchProveedores(pagina); // Recargar la lista de proveedores
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
     }
+    setSnackbar({ open: false, message: '', severity: 'info' });
   };
 
   return (
@@ -225,13 +398,13 @@ const Proveedores = () => {
         />
       )}
       <Snackbar
-        open={!!successMsg}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSuccessMsg('')}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert severity="success" onClose={() => setSuccessMsg('')} sx={{ width: '100%' }}>
-          {successMsg}
+        <Alert severity={snackbar.severity} onClose={handleCloseSnackbar} sx={{ width: '100%' }}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
       <VerDetalle
@@ -463,8 +636,8 @@ const Proveedores = () => {
         id={proveedorEliminar?.documento || proveedorEliminar?.nitproveedor}
         open={eliminarOpen}
         onClose={() => setEliminarOpen(false)}
-        onEliminado={() => handleEliminarProveedor(proveedorEliminar?.documento || proveedorEliminar?.nitproveedor)}
-        onError={(errorMessage) => setSuccessMsg(errorMessage)}
+        onEliminado={handleProveedorEliminadoExitosamente}
+        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
         nombre={proveedorEliminar ? proveedorEliminar.nombre : ''}
         tipoEntidad="proveedor"
         deleteApi={deleteProveedor}

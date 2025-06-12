@@ -383,23 +383,28 @@ const Usuarios = () => {
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({ ...prev, [name]: value }));
-    let newErrors = {};
+    let fieldSpecificError = ''; 
+
     if (name === 'email') {
-      newErrors = validateEditEmail(value);
+      fieldSpecificError = validateEditEmail(value).email;
     } else if (name === 'documento') {
-      newErrors = validateEditDocumento(value);
+      fieldSpecificError = validateEditDocumento(value).documento;
     } else if (name === 'nombre') {
-      newErrors = validateEditNombre(value);
+      fieldSpecificError = validateEditNombre(value).nombre;
     } else if (name === 'apellido') {
-      newErrors = validateEditApellido(value);
+      fieldSpecificError = validateEditApellido(value).apellido;
     } else if (["municipio","barrio","dirrecion","complemento"].includes(name)) {
-      newErrors = validateEditUbicacion(value, name);
+      fieldSpecificError = validateEditUbicacion(value, name)[name];
     } else if (name === 'rol_idrol') {
-      newErrors = validateEditRol(value);
+      fieldSpecificError = validateEditRol(value).rol_idrol;
     } else if (name === 'tipodocumento') {
-      newErrors = validateEditTipoDocumento(value);
+      fieldSpecificError = validateEditTipoDocumento(value).tipodocumento;
     }
-    setEditValidationErrors(prev => ({ ...prev, ...newErrors, [name]: Object.values(newErrors)[0] }));
+
+    setEditValidationErrors(prev => ({
+      ...prev,
+      [name]: fieldSpecificError || '' 
+    }));
   };
 
   const validateEditForm = (formData) => {
@@ -419,16 +424,16 @@ const Usuarios = () => {
     if (!formData.complemento || !formData.complemento.trim()) {
       delete newErrors.complemento;
     }
-    setEditValidationErrors(newErrors);
+    setEditValidationErrors(newErrors); // Asegura que los errores se actualicen para todos los campos
     return Object.keys(newErrors).length === 0;
   };
 
   const handleGuardarEdicion = async () => {
     if (!editUsuario) return;
     setEditError('');
-    setEditValidationErrors({});
+    // Llama a validateEditForm para actualizar los errores de validación antes de la comprobación
     if (!validateEditForm(editForm)) {
-        return;
+        return; // Si hay errores de validación, detén la ejecución
     }
     const dataToSend = {};
     let hasChanges = false;
@@ -664,43 +669,43 @@ const Usuarios = () => {
             {usuariosFiltrados.map((usuario, idx) => {
               const usuarioActivo = usuario.estado === true || usuario.estado === 'true' || usuario.estado === 1 || usuario.estado === '1';
               return (
-                <TableRow key={usuario.idusuario || idx} hover>
-                  <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
-                  <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
-                  <TableCell>{usuario.email}</TableCell>
-                  <TableCell align="center">
-                    <CambiarEstado
-                      id={usuario.idusuario} 
+              <TableRow key={usuario.idusuario || idx} hover>
+                <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
+                <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
+                <TableCell>{usuario.email}</TableCell>
+                <TableCell align="center">
+                  <CambiarEstado
+                    id={usuario.idusuario} 
                       estadoActual={usuarioActivo}
-                      onEstadoCambiado={(idUsuario, nuevoEstado, errorMsg) => { 
-                        if (errorMsg) {
-                          openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
-                        } else {
-                          setUsuarios((prevUsuarios) => 
-                            prevUsuarios.map(u => 
-                              u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u
-                            )
-                          );
-                          openSnackbar(`Estado del usuario ${usuario.nombre} cambiado.`, 'success');
-                        }
-                      }}
-                      updateEstadoApi={updateEstadoUsuario} 
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
+                    onEstadoCambiado={(idUsuario, nuevoEstado, errorMsg) => { 
+                      if (errorMsg) {
+                        openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
+                      } else {
+                        setUsuarios((prevUsuarios) => 
+                          prevUsuarios.map(u => 
+                            u.idusuario === idUsuario ? { ...u, estado: nuevoEstado } : u
+                          )
+                        );
+                        openSnackbar(`Estado del usuario ${usuario.nombre} cambiado.`, 'success');
+                      }
+                    }}
+                    updateEstadoApi={updateEstadoUsuario} 
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <IconButton color="info" size="small" onClick={() => handleVerDetalle(usuario.idusuario)} title="Ver Detalle"><VisibilityIcon fontSize="small"/></IconButton>
                       {usuarioActivo && (
                         <>
-                          <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
-                          {usuario.rol_idrol !== 1 && (
-                            <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
+                    <IconButton color="warning" size="small" onClick={() => handleEditarUsuario(usuario)} title="Editar"><EditIcon fontSize="small"/></IconButton>
+                    {usuario.rol_idrol !== 1 && (
+                      <IconButton color="error" size="small" onClick={() => { setUsuarioEliminar(usuario); setEliminarOpen(true); }} title="Eliminar"><DeleteIcon fontSize="small"/></IconButton>
                           )}
                         </>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
+                    )}
+                  </Stack>
+                </TableCell>
+              </TableRow>
               );
             })}
           </TableBody>
