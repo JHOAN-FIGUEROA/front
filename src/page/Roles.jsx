@@ -108,22 +108,45 @@ const Roles = () => {
     async (currentPage, currentSearch) => {
       setLoading(true)
       setError("")
+
+      // Asegurarse de que la página sea al menos 1
+      let pageToFetch = Math.max(1, currentPage)
+
       try {
-        const result = await getRoles(currentPage, ROLES_POR_PAGINA, currentSearch)
+        const result = await getRoles(pageToFetch, ROLES_POR_PAGINA, currentSearch)
         if (result.error) {
           setError(result.detalles || "Error al cargar roles.")
           setRoles([])
           setTotalPaginasAPI(1)
+
+          // Si hay un error y la página solicitada no existe, intentar redirigir a la primera página si la página actual es mayor a 1
+          if (pageToFetch > 1) {
+            const newSearchParams = new URLSearchParams(searchParams)
+            newSearchParams.set("page", "1")
+            setSearchParams(newSearchParams, { replace: true })
+            // No establecemos el error aquí, ya que vamos a redirigir
+          } else {
+            // Si ya estamos en la página 1 y hay un error, mostrarlo
+            setError(result.detalles || "Error al cargar roles.")
+          }
+
         } else if (result.success && result.data) {
           setRoles(result.data.roles || [])
-          setTotalPaginasAPI(result.data.totalPaginas || result.data.paginacion?.totalPaginas || 1)
-          if (
-            currentPage > (result.data.totalPaginas || result.data.paginacion.totalPaginas) &&
-            (result.data.totalPaginas || result.data.paginacion.totalPaginas) > 0
-          ) {
-            const newPage = result.data.totalPaginas || result.data.paginacion.totalPaginas
+          const totalPaginas = result.data.totalPaginas || result.data.paginacion?.totalPaginas || 1
+          setTotalPaginasAPI(totalPaginas)
+
+          // Si la página actual es mayor que el total de páginas disponibles y el total de páginas es al menos 1, redirigir a la última página válida.
+          // Esto también maneja el caso de que la página actual sea 0 o negativa y el backend devuelva datos válidos.
+          if (pageToFetch > totalPaginas && totalPaginas > 0) {
             const newSearchParams = new URLSearchParams(searchParams)
-            newSearchParams.set("page", newPage.toString())
+            newSearchParams.set("page", totalPaginas.toString())
+            setSearchParams(newSearchParams, { replace: true })
+            // Opcional: Podríamos re-fetch aquí para mostrar los datos de la página correcta de inmediato
+            // Pero dado que setSearchParams activará un nuevo useEffect, debería funcionar.
+          } else if (pageToFetch !== currentPage) {
+            // Si pageToFetch fue ajustado (ej. de 0 a 1) y es diferente de currentPage, actualizar la URL
+            const newSearchParams = new URLSearchParams(searchParams)
+            newSearchParams.set("page", pageToFetch.toString())
             setSearchParams(newSearchParams, { replace: true })
           }
         } else {

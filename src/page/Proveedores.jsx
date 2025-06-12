@@ -16,6 +16,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 import Eliminar from '../components/Eliminar';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const PROVEEDORES_POR_PAGINA = 5;
 
@@ -50,6 +52,14 @@ const Proveedores = () => {
   const [crearValidation, setCrearValidation] = useState({});
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState(null);
+
+  // Nuevo estado unificado para el Snackbar
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  // Función helper para mostrar el Snackbar
+  const openSnackbar = (message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const fetchProveedores = useCallback(async (currentPage) => {
     setLoading(true);
@@ -257,7 +267,22 @@ const Proveedores = () => {
       await createProveedor({ ...crearForm, nitproveedor: crearForm.documento });
       setCrearOpen(false);
       setCrearForm(Object.fromEntries(CAMPOS_CREAR.map(c => [c.name, c.default || ''])));
-      setSuccessMsg('Proveedor creado correctamente');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Proveedor Creado!',
+        text: 'El proveedor ha sido registrado correctamente',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
       fetchProveedores(pagina);
     } catch (err) {
       setCrearError(err.message || 'Error al crear proveedor');
@@ -266,16 +291,33 @@ const Proveedores = () => {
     }
   };
 
-  const handleEliminarProveedor = async (nitproveedor) => {
-    try {
-      await deleteProveedor(nitproveedor);
-      setEliminarOpen(false);
-      setProveedorEliminar(null);
-      setSuccessMsg('Proveedor eliminado correctamente');
-      fetchProveedores(pagina);
-    } catch (err) {
-      setSuccessMsg('Error al eliminar proveedor: ' + (err.message || ''));
+  const handleProveedorEliminadoExitosamente = async () => {
+    setEliminarOpen(false);
+    setProveedorEliminar(null);
+    Swal.fire({
+      icon: 'success',
+      title: '¡Proveedor Eliminado!',
+      text: 'El proveedor ha sido eliminado correctamente',
+      timer: 2000,
+      showConfirmButton: false,
+      position: 'center',
+      background: '#fff',
+      customClass: {
+        popup: 'animated fadeInDown'
+      },
+      zIndex: 9999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 9999;
+      }
+    });
+    fetchProveedores(pagina); // Recargar la lista de proveedores
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
     }
+    setSnackbar({ open: false, message: '', severity: 'info' });
   };
 
   return (
@@ -356,13 +398,13 @@ const Proveedores = () => {
         />
       )}
       <Snackbar
-        open={!!successMsg}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSuccessMsg('')}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert severity="success" onClose={() => setSuccessMsg('')} sx={{ width: '100%' }}>
-          {successMsg}
+        <Alert severity={snackbar.severity} onClose={handleCloseSnackbar} sx={{ width: '100%' }}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
       <VerDetalle
@@ -594,8 +636,8 @@ const Proveedores = () => {
         id={proveedorEliminar?.documento || proveedorEliminar?.nitproveedor}
         open={eliminarOpen}
         onClose={() => setEliminarOpen(false)}
-        onEliminado={() => handleEliminarProveedor(proveedorEliminar?.documento || proveedorEliminar?.nitproveedor)}
-        onError={(errorMessage) => setSuccessMsg(errorMessage)}
+        onEliminado={handleProveedorEliminadoExitosamente}
+        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
         nombre={proveedorEliminar ? proveedorEliminar.nombre : ''}
         tipoEntidad="proveedor"
         deleteApi={deleteProveedor}
