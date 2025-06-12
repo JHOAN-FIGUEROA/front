@@ -11,6 +11,7 @@ import PointOfSale from '@mui/icons-material/PointOfSale';
 import Groups2 from '@mui/icons-material/Groups2';
 import Category from '@mui/icons-material/Category';
 import Inventory from '@mui/icons-material/Inventory';
+import CreateNewFolder from '@mui/icons-material/CreateNewFolder';
 
 const drawerWidth = 240;
 const closedDrawerWidth = 64; // Ancho cuando el sidebar está cerrado
@@ -243,6 +244,25 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
               <Inventory />
             </ListItemIcon>
             {open && <ListItemText primary="Productos" />}
+          </ListItem>
+        )}
+
+
+        {hasPermission(PERMISSIONS.PRODUCTOS) && (
+          <ListItem
+            {...({ button: 'true' })}
+            selected={location.pathname === '/compras/unidades'}
+            onClick={() => handleNavigate('/compras/unidades')}
+            sx={{
+              pl: openCompras && open ? 4 : 0,
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+            }}
+          >
+            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+              <CreateNewFolder />
+            </ListItemIcon>
+            {open && <ListItemText primary="Presentacion" />}
           </ListItem>
         )}
 

@@ -8,6 +8,8 @@ export const PERMISSIONS = {
   COMPRAS: 'Compras',
   DASHBOARD: 'Dashboard',
   USUARIOS: 'Usuarios',
+  UNIDADES: 'Productos',
+
 } ;
 
 export const ROUTE_PERMISSIONS = {
@@ -15,6 +17,7 @@ export const ROUTE_PERMISSIONS = {
   '/api/clientes': PERMISSIONS.CLIENTES,
   '/api/rol': PERMISSIONS.ROLES,
   '/api/productos': PERMISSIONS.PRODUCTOS,
+  '/api/unidades': PERMISSIONS.PRODUCTOS,
   '/api/categorias': PERMISSIONS.CATEGORÍAS,
   '/api/ventas': PERMISSIONS.VENTAS,
   '/api/compras': PERMISSIONS.COMPRAS,
