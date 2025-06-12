@@ -14,6 +14,7 @@ import Compras from './page/Compras';
 import Categoria from './page/Categoria';
 import Ventas from './page/Ventas';
 import Roles from './page/Roles';
+import Unidades from './page/Unidades';
 import Proveedores from './page/Proveedores';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -92,7 +93,7 @@ function App() {
           <Route 
             path="/compras"
             element={
-              <ProtectedRoute requiredPermission="Roles">
+              <ProtectedRoute requiredPermission="Compras">
                 <DashboardLayout>
                   <Compras />
                 </DashboardLayout>
@@ -101,7 +102,7 @@ function App() {
           <Route 
             path="/compras/categorias"
             element={
-              <ProtectedRoute requiredPermission="Roles">
+              <ProtectedRoute requiredPermission="Categorias">
                 <DashboardLayout>
                   <Categoria />
                 </DashboardLayout>
@@ -119,7 +120,7 @@ function App() {
             }/><Route 
             path="/ventas"
             element={
-              <ProtectedRoute requiredPermission="clientes">
+              <ProtectedRoute requiredPermission="Ventas">
                 <DashboardLayout>
                   <Ventas />
                 </DashboardLayout>
@@ -128,12 +129,21 @@ function App() {
           <Route 
             path="/compras/productos"
             element={
-              <ProtectedRoute requiredPermission="clientes">
+              <ProtectedRoute requiredPermission="Productos">
                 <DashboardLayout>
                   <Productos />
                 </DashboardLayout>
               </ProtectedRoute>
-            }/>
+            }/><Route 
+            path="/compras/unidades"
+            element={
+              <ProtectedRoute requiredPermission="Productos">
+                <DashboardLayout>
+                  < Unidades />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route 
             path="/ventas/clientes"
             element={
