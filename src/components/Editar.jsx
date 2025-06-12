@@ -223,22 +223,22 @@ const Editar = ({
                       {seccion.icon}
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>{seccion.title}</Typography>
                     </Box>
-                    <Grid container spacing={2}>
+          <Grid container spacing={2}>
                       {camposSeccion.map(({ name, label, select, options = [], type = 'text', required = true, disabled = false }) => (
                         <Grid item xs={12} sm={6} key={name}>
-                          {select ? (
-                            <TextField
-                              select
-                              label={label}
-                              name={name}
-                              value={form?.[name] || ''}
-                              onChange={onFormChange}
-                              fullWidth
-                              margin="normal"
-                              required={required}
-                              error={!!validationErrors[name]}
-                              helperText={validationErrors[name]}
-                              disabled={disabled}
+                {select ? (
+                  <TextField
+                    select
+                    label={label}
+                    name={name}
+                    value={form?.[name] || ''}
+                    onChange={onFormChange}
+                    fullWidth
+                    margin="normal"
+                    required={required}
+                    error={!!validationErrors[name]}
+                    helperText={validationErrors[name]}
+                    disabled={disabled}
                               sx={{
                                 '& .MuiOutlinedInput-root': {
                                   borderRadius: 1,
@@ -254,8 +254,8 @@ const Editar = ({
                                   color: 'primary.main',
                                 },
                               }}
-                            >
-                              {Array.isArray(options) && options.map(opt => (
+                  >
+                    {Array.isArray(options) && options.map(opt => (
                                 <MenuItem 
                                   key={typeof opt === 'object' ? opt.value : opt} 
                                   value={typeof opt === 'object' ? opt.value : opt}
@@ -271,23 +271,23 @@ const Editar = ({
                                     },
                                   }}
                                 >
-                                  {typeof opt === 'object' ? opt.label : opt}
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                          ) : (
-                            <TextField
-                              label={label}
-                              name={name}
-                              value={form?.[name] || ''}
-                              onChange={onFormChange}
-                              fullWidth
-                              margin="normal"
-                              type={type}
-                              required={required}
-                              error={!!validationErrors[name]}
-                              helperText={validationErrors[name]}
-                              disabled={disabled}
+                        {typeof opt === 'object' ? opt.label : opt}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                ) : (
+                  <TextField
+                    label={label}
+                    name={name}
+                    value={form?.[name] || ''}
+                    onChange={onFormChange}
+                    fullWidth
+                    margin="normal"
+                    type={type}
+                    required={required}
+                    error={!!validationErrors[name]}
+                    helperText={validationErrors[name]}
+                    disabled={disabled}
                               sx={{
                                 '& .MuiOutlinedInput-root': {
                                   borderRadius: 1,
@@ -303,10 +303,10 @@ const Editar = ({
                                   color: 'primary.main',
                                 },
                               }}
-                            />
-                          )}
-                        </Grid>
-                      ))}
+                  />
+                )}
+              </Grid>
+            ))}
                     </Grid>
                   </Paper>
                 </Grid>
