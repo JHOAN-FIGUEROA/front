@@ -263,7 +263,7 @@ export const getProveedores = async (page = 1, limit = 5) => {
     });
     return { success: true, data: response.data.data };
   } catch (error) {
-    // console.error('Error en getProveedores API call:', error); // Comentado para evitar log en consola
+    // console.error('Error en getProveedores API call:', error);
     if (error.response) {
       return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
     } else {
@@ -277,7 +277,7 @@ export const getProveedorByNit = async (nit) => {
     const response = await api.get(`/api/proveedores/nit/${nit}`);
     return response.data;
   } catch (error) {
-    // console.error('Error al obtener proveedor por NIT:', error); // Comentado para evitar log en consola
+    // console.error('Error al obtener proveedor por NIT:', error);
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
@@ -497,6 +497,22 @@ export const deleteProveedor = async (nitproveedor) => {
     const response = await api.delete(`/api/proveedores/${nitproveedor}`);
     return response.data;
   } catch (error) {
+    // console.error('Error al eliminar proveedor:', error); // Comentado para evitar log en consola
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+// Cambiar estado de proveedor
+export const updateEstadoProveedor = async (nitproveedor, estado) => {
+  try {
+    const response = await api.put(`/api/proveedores/estado/${nitproveedor}`, { estado });
+    return response.data;
+  } catch (error) {
+    // console.error('Error al cambiar estado de proveedor:', error); // Comentado para evitar log en consola
     if (error.response) {
       throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
     } else {
