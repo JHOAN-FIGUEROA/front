@@ -92,20 +92,46 @@ const Usuarios = () => {
   const fetchUsuariosCallback = useCallback(async (currentPage, currentSearchTermFromUrl) => {
     setLoading(true);
     setError('');
+
+    // Asegurarse de que la página sea al menos 1
+    let pageToFetch = Math.max(1, currentPage);
+
     try {
-      const result = await getUsuarios(currentPage, USUARIOS_POR_PAGINA, currentSearchTermFromUrl);
+      const result = await getUsuarios(pageToFetch, USUARIOS_POR_PAGINA, currentSearchTermFromUrl);
       if (result.error) {
         setError(result.detalles || 'Error al cargar usuarios.');
         setUsuarios([]);
         setTotalPaginasAPI(1);
+
+        // Si hay un error y la página solicitada no existe, intentar redirigir a la primera página si la página actual es mayor a 1
+        if (pageToFetch > 1) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', '1');
+          setSearchParams(newSearchParams, { replace: true });
+          // No establecemos el error aquí, ya que vamos a redirigir
+        } else {
+          // Si ya estamos en la página 1 y hay un error, mostrarlo
+          setError(result.detalles || 'Error al cargar usuarios.');
+        }
+
       } else if (result.success && result.data) {
         setUsuarios(result.data.usuarios || []);
-        setTotalPaginasAPI(result.data.paginacion?.totalPaginas || 1);
-        if (currentPage > (result.data.paginacion?.totalPaginas || 1) && (result.data.paginacion?.totalPaginas || 1) > 0) {
-            const newPage = result.data.paginacion.totalPaginas;
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.set('page', newPage.toString());
-            setSearchParams(newSearchParams, { replace: true });
+        const totalPaginas = result.data.paginacion?.totalPaginas || 1;
+        setTotalPaginasAPI(totalPaginas);
+
+        // Si la página actual es mayor que el total de páginas disponibles y el total de páginas es al menos 1, redirigir a la última página válida.
+        // Esto también maneja el caso de que la página actual sea 0 o negativa y el backend devuelva datos válidos.
+        if (pageToFetch > totalPaginas && totalPaginas > 0) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', totalPaginas.toString());
+          setSearchParams(newSearchParams, { replace: true });
+          // Opcional: Podríamos re-fetch aquí para mostrar los datos de la página correcta de inmediato
+          // Pero dado que setSearchParams activará un nuevo useEffect, debería funcionar.
+        } else if (pageToFetch !== currentPage) {
+          // Si pageToFetch fue ajustado (ej. de 0 a 1) y es diferente de currentPage, actualizar la URL
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', pageToFetch.toString());
+          setSearchParams(newSearchParams, { replace: true });
         }
       } else {
          setError('No se recibieron datos de usuarios o el formato es incorrecto.');

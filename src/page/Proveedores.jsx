@@ -1,15 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, TextField, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, TextField, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Chip
 } from '@mui/material';
-import { getProveedores, createProveedor, deleteProveedor } from '../api';
+import { getProveedores, createProveedor, deleteProveedor, updateEstadoProveedor, getProveedorByNit } from '../api';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Buscador from '../components/Buscador';
-import VerDetalle from '../components/VerDetalle';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CambiarEstado from '../components/CambiarEstado';
+import PersonAddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -18,6 +18,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import Eliminar from '../components/Eliminar';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const PROVEEDORES_POR_PAGINA = 5;
 
@@ -42,9 +44,6 @@ const Proveedores = () => {
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [successMsg, setSuccessMsg] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [nitproveedorSeleccionado, setNitproveedorSeleccionado] = useState(null);
-  const [detalleOpen, setDetalleOpen] = useState(false);
-  const [proveedorDetalle, setProveedorDetalle] = useState(null);
   const [crearOpen, setCrearOpen] = useState(false);
   const [crearLoading, setCrearLoading] = useState(false);
   const [crearError, setCrearError] = useState('');
@@ -52,6 +51,12 @@ const Proveedores = () => {
   const [crearValidation, setCrearValidation] = useState({});
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState(null);
+
+  // Nuevos estados para el Dialog de Ver Detalle
+  const [verDetalleOpen, setVerDetalleOpen] = useState(false);
+  const [proveedorDetalle, setProveedorDetalle] = useState(null);
+  const [detalleLoading, setDetalleLoading] = useState(false);
+  const [detalleError, setDetalleError] = useState('');
 
   // Nuevo estado unificado para el Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -81,7 +86,8 @@ const Proveedores = () => {
       setError('Error inesperado al cargar proveedores: ' + (err.message || ''));
       setProveedores([]);
       setTotalPaginasAPI(1);
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   }, []);
@@ -320,6 +326,50 @@ const Proveedores = () => {
     setSnackbar({ open: false, message: '', severity: 'info' });
   };
 
+  const handleEstadoCambiado = (nitproveedor, nuevoEstado, errorMsg) => {
+    if (errorMsg) {
+      openSnackbar(`Error al cambiar estado: ${errorMsg}`, 'error');
+    } else {
+      setProveedores((prev) => prev.map((p) => 
+        p.nitproveedor === nitproveedor ? { ...p, estado: nuevoEstado } : p
+      ));
+      const proveedor = proveedores.find(p => p.nitproveedor === nitproveedor);
+      openSnackbar(`Estado del proveedor ${proveedor?.nombre || 'Proveedor'} cambiado.`, 'success');
+    }
+  };
+
+  const handleVerDetalle = async (proveedor) => {
+    setVerDetalleOpen(true);
+    setDetalleLoading(true);
+    setDetalleError('');
+    try {
+      const data = await getProveedorByNit(proveedor.nitproveedor);
+      if (data.error) {
+        throw new Error(data.detalles || 'Error al cargar detalle del proveedor.');
+      }
+      setProveedorDetalle(data.data);
+    } catch (err) {
+      const errorMsg = err.message || 'Error al cargar detalle del proveedor.';
+      setDetalleError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Cargar Detalle',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown',
+        },
+        zIndex: 99999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 99999;
+        },
+      });
+    } finally {
+      setDetalleLoading(false);
+    }
+  };
+
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Proveedores Registrados</Typography>
@@ -351,39 +401,54 @@ const Proveedores = () => {
             <TableRow>
               <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
+              <TableCell><b>Email</b></TableCell>
               <TableCell><b>Teléfono</b></TableCell>
+              <TableCell align="center"><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!loading && proveedores.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={4} align="center">No hay proveedores registrados.</TableCell>
+                <TableCell colSpan={6} align="center">No hay proveedores registrados.</TableCell>
               </TableRow>
             )}
-            {proveedores.map((proveedor, idx) => (
-              <TableRow key={idx}>
-                <TableCell>{(pagina - 1) * PROVEEDORES_POR_PAGINA + idx + 1}</TableCell>
-                <TableCell>{proveedor.nombre}</TableCell>
-                <TableCell>{proveedor.telefono}</TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <IconButton color="info" size="small" onClick={() => {
-                      setNitproveedorSeleccionado(proveedor.nitproveedor);
-                      setDetalleOpen(true);
-                    }} title="Ver Detalle">
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton color="warning" size="small" onClick={() => { /* Lógica para editar */ }} title="Editar">
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => { setProveedorEliminar(proveedor); setEliminarOpen(true); }} title="Eliminar">
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
+            {proveedores.map((proveedor, idx) => {
+              const proveedorActivo = proveedor.estado === true || proveedor.estado === 1 || proveedor.estado === "true";
+              return (
+                <TableRow key={idx}>
+                  <TableCell>{(pagina - 1) * PROVEEDORES_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>{proveedor.nombre}</TableCell>
+                  <TableCell>{proveedor.email}</TableCell>
+                  <TableCell>{proveedor.telefono}</TableCell>
+                  <TableCell align="center">
+                    <CambiarEstado
+                      id={proveedor.nitproveedor}
+                      estadoActual={proveedorActivo}
+                      onEstadoCambiado={handleEstadoCambiado}
+                      updateEstadoApi={updateEstadoProveedor}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(proveedor)} title="Ver Detalle">
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                      {proveedorActivo && (
+                        <>
+                          <IconButton color="warning" size="small" onClick={() => { /* Lógica para editar */ }} title="Editar">
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton color="error" size="small" onClick={() => { setProveedorEliminar(proveedor); setEliminarOpen(true); }} title="Eliminar">
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -407,14 +472,6 @@ const Proveedores = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <VerDetalle
-        open={detalleOpen}
-        onClose={() => setDetalleOpen(false)}
-        nitproveedor={nitproveedorSeleccionado}
-        loading={loading}
-        error={error}
-        setProveedorDetalle={setProveedorDetalle}
-      />
       {/* Modal Crear Proveedor */}
       <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth scroll="paper"
         PaperProps={{ sx: { borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', overflow: 'hidden' } }}
@@ -632,6 +689,224 @@ const Proveedores = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      {proveedorDetalle && (
+        <Dialog
+          open={verDetalleOpen}
+          onClose={() => setVerDetalleOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              overflow: 'hidden',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: '#f8f9fa',
+              borderBottom: '1px solid #e0e0e0',
+              py: 2.5,
+            }}
+          >
+            <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography component="span" variant="h6" sx={{ fontWeight: 600 }}>
+              Detalle de Proveedor
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+            {detalleLoading && (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <CircularProgress size={40} />
+              </Box>
+            )}
+            {detalleError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {detalleError}
+              </Alert>
+            )}
+            {!detalleLoading && !detalleError && proveedorDetalle && (
+              <Box mt={2}>
+                <Grid container spacing={3}>
+                  {/* Información de Identificación */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          Información de Identificación
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Tipo de Documento
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.tipodocumento}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Número de Documento
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.nitproveedor}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Estado
+                          </Typography>
+                          <Chip
+                            icon={proveedorDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                            label={proveedorDetalle.estado ? 'Activo' : 'Inactivo'}
+                            color={proveedorDetalle.estado ? 'success' : 'error'}
+                            size="small"
+                            sx={{ mt: 0.5, '& .MuiChip-label': { fontWeight: 500 } }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* Información Personal */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          Información Personal
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Nombre
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.nombre}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Contacto
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.contacto}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* Información de Contacto */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          Información de Contacto
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Email
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.email}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Teléfono
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.telefono}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* Información de Ubicación */}
+                  <Grid item xs={12} md={6}>
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          Información de Ubicación
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Municipio
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.municipio}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Barrio
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.barrio}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Dirección
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {proveedorDetalle.direccion}
+                          </Typography>
+                        </Grid>
+                        {proveedorDetalle.complemento && (
+                          <Grid item xs={12}>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                              Complemento
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {proveedorDetalle.complemento}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button
+              onClick={() => setVerDetalleOpen(false)}
+              variant="contained"
+              color="primary"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 3,
+                py: 1,
+                fontWeight: 600,
+                boxShadow: 'none',
+                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+              }}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
       <Eliminar
         id={proveedorEliminar?.documento || proveedorEliminar?.nitproveedor}
         open={eliminarOpen}
