@@ -1,6 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Grid, CircularProgress, Alert, Typography, List, ListItem, ListItemText, Divider, Paper, Chip } from '@mui/material';
-import { useEffect } from 'react';
-import { getProveedorByNit } from '../api'; // Asegúrate de importar la función
+import { useEffect, useState } from 'react';
+import { getProveedorByNit } from '../api';
 import SecurityIcon from '@mui/icons-material/Security';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -13,22 +13,30 @@ import GroupIcon from '@mui/icons-material/Group';
 
 const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor }) => {
   const esRol = usuarioDetalle && 'permisos_asociados' in usuarioDetalle;
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [errorDetalle, setErrorDetalle] = useState('');
 
   useEffect(() => {
     const fetchProveedor = async () => {
       if (nitproveedor) {
+        setLoadingDetalle(true);
+        setErrorDetalle('');
         try {
           const data = await getProveedorByNit(nitproveedor);
           setProveedorDetalle(data);
         } catch (err) {
-          console.error(err);
-          // Manejo de errores si es necesario
+          setErrorDetalle(err.message || 'Error al obtener los detalles del proveedor');
+          console.error('Error al obtener el proveedor:', err);
+        } finally {
+          setLoadingDetalle(false);
         }
       }
     };
 
-    fetchProveedor();
-  }, [nitproveedor]);
+    if (open && nitproveedor) {
+      fetchProveedor();
+    }
+  }, [open, nitproveedor, setProveedorDetalle]);
 
   return (
     <Dialog 
@@ -58,17 +66,17 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
         </Typography>
       </DialogTitle>
       <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
-        {loading && (
+        {loadingDetalle && (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
             <CircularProgress size={40} />
           </Box>
         )}
-        {error && (
+        {errorDetalle && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {errorDetalle}
           </Alert>
         )}
-        {usuarioDetalle && !loading && !error && (
+        {usuarioDetalle && !loadingDetalle && !errorDetalle && (
           <Box mt={2}>
             {esRol ? (
               <>
