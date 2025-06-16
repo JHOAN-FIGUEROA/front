@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, TextField, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Chip
 } from '@mui/material';
-import { getProveedores, createProveedor, deleteProveedor, updateEstadoProveedor } from '../api';
+import { getProveedores, createProveedor, deleteProveedor, updateEstadoProveedor, getProveedorByNit } from '../api';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -15,7 +15,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
-import Eliminar from '../components/Eliminar';
+import Eliminar from '../components/Eliminar';  
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -51,6 +51,10 @@ const Proveedores = () => {
   const [crearValidation, setCrearValidation] = useState({});
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState(null);
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [proveedorDetalle, setProveedorDetalle] = useState(null);
+  const [detalleLoading, setDetalleLoading] = useState(false);
+  const [detalleError, setDetalleError] = useState('');
 
   // Nuevo estado unificado para el Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -107,12 +111,20 @@ const Proveedores = () => {
     return '';
   };
 
-  const validateDocumento = (documento) => {
+  const validateDocumento = (documento, tipoDocumento) => {
     if (!documento?.trim()) {
       return 'El documento es requerido';
     }
-    if (!/^\d{10}$/.test(documento)) {
-      return 'El documento debe tener exactamente 10 dígitos numéricos';
+    
+    // Validar según el tipo de documento
+    if (tipoDocumento === 'NIT') {
+      if (!/^\d{9}$/.test(documento)) {
+        return 'El NIT debe tener exactamente 9 dígitos numéricos';
+      }
+    } else if (tipoDocumento === 'CC' || tipoDocumento === 'CE') {
+      if (!/^\d{10}$/.test(documento)) {
+        return 'El documento debe tener exactamente 10 dígitos numéricos';
+      }
     }
     return '';
   };
@@ -191,9 +203,14 @@ const Proveedores = () => {
     switch (name) {
       case 'tipodocumento':
         errorMessage = validateTipoDocumento(value);
+        // Validar documento cuando cambia el tipo de documento
+        if (crearForm.documento) {
+          const docError = validateDocumento(crearForm.documento, value);
+          setCrearValidation(prev => ({ ...prev, documento: docError }));
+        }
         break;
       case 'documento':
-        errorMessage = validateDocumento(value);
+        errorMessage = validateDocumento(value, crearForm.tipodocumento);
         break;
       case 'nombre':
       case 'contacto':
@@ -227,7 +244,7 @@ const Proveedores = () => {
     const tipoDocumentoError = validateTipoDocumento(crearForm.tipodocumento);
     if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
 
-    const documentoError = validateDocumento(crearForm.documento);
+    const documentoError = validateDocumento(crearForm.documento, crearForm.tipodocumento);
     if (documentoError) { newErrors.documento = documentoError; isValid = false; }
 
     const nombreError = validateNombreContacto(crearForm.nombre, 'nombre');
@@ -332,6 +349,25 @@ const Proveedores = () => {
     }
   };
 
+  const handleVerDetalleProveedor = async (nitproveedor) => {
+    setDetalleLoading(true);
+    setDetalleError('');
+    try {
+      const response = await getProveedorByNit(nitproveedor);
+      if (response && response.data) {
+        setProveedorDetalle(response.data);
+      } else {
+        throw new Error('Formato de respuesta de API inesperado');
+      }
+      setDetalleOpen(true);
+    } catch (error) {
+      setDetalleError(error.message || 'Error al cargar los detalles del proveedor');
+      openSnackbar(error.message || 'Error al cargar los detalles del proveedor', 'error');
+    } finally {
+      setDetalleLoading(false);
+    }
+  };
+
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Proveedores Registrados</Typography>
@@ -393,8 +429,18 @@ const Proveedores = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <IconButton color="info" size="small" title="Ver Detalle">
-                        <VisibilityIcon fontSize="small" />
+                      <IconButton 
+                        color="info" 
+                        size="small" 
+                        title="Ver Detalle"
+                        onClick={() => handleVerDetalleProveedor(proveedor.nitproveedor)}
+                        disabled={detalleLoading}
+                      >
+                        {detalleLoading && proveedorDetalle?.nitproveedor === proveedor.nitproveedor ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <VisibilityIcon fontSize="small" />
+                        )}
                       </IconButton>
                       {proveedorActivo && (
                         <>
@@ -662,6 +708,160 @@ const Proveedores = () => {
         tipoEntidad="proveedor"
         deleteApi={deleteProveedor}
       />
+
+      {/* Modal de Detalle */}
+      <Dialog 
+        open={detalleOpen} 
+        onClose={() => setDetalleOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          backgroundColor: '#f8f9fa',
+          borderBottom: '1px solid #e0e0e0',
+          py: 2.5
+        }}>
+          <PersonIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Detalles del Proveedor
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+          {detalleError ? (
+            <Alert severity="error" sx={{ mt: 2 }}>{detalleError}</Alert>
+          ) : detalleLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : proveedorDetalle ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Tipo de Documento</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.tipodocumento}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Documento</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nitproveedor}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Nombre</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nombre}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Contacto</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.contacto}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Email</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.email}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Teléfono</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.telefono}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" color="text.secondary">Municipio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.municipio}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" color="text.secondary">Barrio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.barrio}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Dirección</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.direccion}</Typography>
+                    </Grid>
+                    {proveedorDetalle.complemento && (
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle1" color="text.secondary">Complemento</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.complemento}</Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <CheckCircleIcon color={proveedorDetalle.estado ? "success" : "error"} sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
+                  </Box>
+                  <Chip 
+                    label={proveedorDetalle.estado ? "Activo" : "Inactivo"} 
+                    color={proveedorDetalle.estado ? "success" : "error"}
+                    icon={proveedorDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Paper>
+              </Grid>
+            </Grid>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={() => setDetalleOpen(false)} 
+            color="primary" 
+            sx={{ 
+              borderRadius: 2, 
+              textTransform: 'none', 
+              px: 3, 
+              py: 1, 
+              fontWeight: 600, 
+              boxShadow: 'none', 
+              '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
+            }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

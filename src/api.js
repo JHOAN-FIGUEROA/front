@@ -507,9 +507,10 @@ export const updateEstadoProveedor = async (nitproveedor, estado) => {
   }
 };
 
-export const getProveedorByNit = async (nitproveedor) => {
+// Obtener detalle de proveedor por NIT
+export const getProveedorByNit = async (nit) => {
   try {
-    const response = await api.get(`/api/proveedores/${nitproveedor}`);
+    const response = await api.get(`/api/proveedores/${nit}`);
     return response.data;
   } catch (error) {
     if (error.response) {
