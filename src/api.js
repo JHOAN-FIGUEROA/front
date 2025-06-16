@@ -13,7 +13,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    config.headers['Content-Type'] = 'application/json'; // Asegurar Content-Type por defecto
+    // Solo poner Content-Type si NO es FormData
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    // Si es FormData, NO poner Content-Type, el navegador lo hace solo
     return config;
   },
   (error) => {
@@ -356,13 +360,7 @@ export const getCategorias = async (page = 1, limit = 5, searchTerm = '') => {
  */
 export const createCategoria = async (formData) => {
   try {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    };
-
-    const response = await api.post('/api/categoria', formData, config);
+    const response = await api.post('/api/categoria', formData);
     return response.data;
   } catch (error) {
     console.error('Error al crear categoría:', error);
@@ -382,13 +380,7 @@ export const createCategoria = async (formData) => {
  */
 export const updateCategoria = async (id, formData) => {
   try {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    };
-
-    const response = await api.put(`/api/categoria/${id}`, formData, config);
+    const response = await api.put(`/api/categoria/${id}`, formData);
     return response.data;
   } catch (error) {
     console.error('Error al actualizar categoría:', error);
