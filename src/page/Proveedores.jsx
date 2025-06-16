@@ -2,11 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, TextField, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Chip
 } from '@mui/material';
-import { getProveedores, createProveedor, deleteProveedor, updateEstadoProveedor, getProveedorByNit } from '../api';
+import { getProveedores, createProveedor, deleteProveedor, updateEstadoProveedor } from '../api';
 import AddIcon from '@mui/icons-material/Add';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Buscador from '../components/Buscador';
 import CambiarEstado from '../components/CambiarEstado';
 import PersonAddIcon from '@mui/icons-material/Add';
@@ -51,12 +51,6 @@ const Proveedores = () => {
   const [crearValidation, setCrearValidation] = useState({});
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState(null);
-
-  // Nuevos estados para el Dialog de Ver Detalle
-  const [verDetalleOpen, setVerDetalleOpen] = useState(false);
-  const [proveedorDetalle, setProveedorDetalle] = useState(null);
-  const [detalleLoading, setDetalleLoading] = useState(false);
-  const [detalleError, setDetalleError] = useState('');
 
   // Nuevo estado unificado para el Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -338,38 +332,6 @@ const Proveedores = () => {
     }
   };
 
-  const handleVerDetalle = async (proveedor) => {
-    setVerDetalleOpen(true);
-    setDetalleLoading(true);
-    setDetalleError('');
-    try {
-      const data = await getProveedorByNit(proveedor.nitproveedor);
-      if (data.error) {
-        throw new Error(data.detalles || 'Error al cargar detalle del proveedor.');
-      }
-      setProveedorDetalle(data.data);
-    } catch (err) {
-      const errorMsg = err.message || 'Error al cargar detalle del proveedor.';
-      setDetalleError(errorMsg);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error al Cargar Detalle',
-        text: errorMsg,
-        confirmButtonColor: '#2E8B57',
-        background: '#fff',
-        customClass: {
-          popup: 'animated fadeInDown',
-        },
-        zIndex: 99999,
-        didOpen: (popup) => {
-          popup.style.zIndex = 99999;
-        },
-      });
-    } finally {
-      setDetalleLoading(false);
-    }
-  };
-
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Proveedores Registrados</Typography>
@@ -431,7 +393,7 @@ const Proveedores = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <IconButton color="info" size="small" onClick={() => handleVerDetalle(proveedor)} title="Ver Detalle">
+                      <IconButton color="info" size="small" title="Ver Detalle">
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
                       {proveedorActivo && (
@@ -689,223 +651,6 @@ const Proveedores = () => {
           </DialogActions>
         </form>
       </Dialog>
-
-      {proveedorDetalle && (
-        <Dialog
-          open={verDetalleOpen}
-          onClose={() => setVerDetalleOpen(false)}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-              overflow: 'hidden',
-            },
-          }}
-        >
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              backgroundColor: '#f8f9fa',
-              borderBottom: '1px solid #e0e0e0',
-              py: 2.5,
-            }}
-          >
-            <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography component="span" variant="h6" sx={{ fontWeight: 600 }}>
-              Detalle de Proveedor
-            </Typography>
-          </DialogTitle>
-          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
-            {detalleLoading && (
-              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                <CircularProgress size={40} />
-              </Box>
-            )}
-            {detalleError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {detalleError}
-              </Alert>
-            )}
-            {!detalleLoading && !detalleError && proveedorDetalle && (
-              <Box mt={2}>
-                <Grid container spacing={3}>
-                  {/* Información de Identificación */}
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Información de Identificación
-                        </Typography>
-                      </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Tipo de Documento
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.tipodocumento}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Número de Documento
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.nitproveedor}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Estado
-                          </Typography>
-                          <Chip
-                            icon={proveedorDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
-                            label={proveedorDetalle.estado ? 'Activo' : 'Inactivo'}
-                            color={proveedorDetalle.estado ? 'success' : 'error'}
-                            size="small"
-                            sx={{ mt: 0.5, '& .MuiChip-label': { fontWeight: 500 } }}
-                          />
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Grid>
-
-                  {/* Información Personal */}
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Información Personal
-                        </Typography>
-                      </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Nombre
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.nombre}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Contacto
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.contacto}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Grid>
-
-                  {/* Información de Contacto */}
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Información de Contacto
-                        </Typography>
-                      </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Email
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.email}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Teléfono
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.telefono}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Grid>
-
-                  {/* Información de Ubicación */}
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          Información de Ubicación
-                        </Typography>
-                      </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Municipio
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.municipio}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Barrio
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.barrio}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Dirección
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {proveedorDetalle.direccion}
-                          </Typography>
-                        </Grid>
-                        {proveedorDetalle.complemento && (
-                          <Grid item xs={12}>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                              Complemento
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {proveedorDetalle.complemento}
-                            </Typography>
-                          </Grid>
-                        )}
-                      </Grid>
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
-            <Button
-              onClick={() => setVerDetalleOpen(false)}
-              variant="contained"
-              color="primary"
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: 'none',
-                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-              }}
-            >
-              Cerrar
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
 
       <Eliminar
         id={proveedorEliminar?.documento || proveedorEliminar?.nitproveedor}

@@ -272,20 +272,6 @@ export const getProveedores = async (page = 1, limit = 5) => {
   }
 };
 
-export const getProveedorByNit = async (nit) => {
-  try {
-    const response = await api.get(`/api/proveedores/nit/${nit}`);
-    return response.data;
-  } catch (error) {
-    // console.error('Error al obtener proveedor por NIT:', error);
-    if (error.response) {
-      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
-    } else {
-      throw new Error(error.message || 'Error al conectar con el servidor');
-    }
-  }
-};
-
 export const solicitarTokenRecuperacion = async (data) => {
   try {
     const response = await api.post('/api/usuarios/auth/recuperar-password', data);
