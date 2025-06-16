@@ -21,6 +21,7 @@ import Eliminar from '../components/Eliminar';
 import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import axios from 'axios';
 
 const CATEGORIAS_POR_PAGINA = 5;
 
@@ -169,9 +170,14 @@ const Categorias = () => {
       const formData = new FormData();
       formData.append('nombre', editCategoriaData.nombre);
       formData.append('descripcion', editCategoriaData.descripcion || '');
-      if (editCategoriaData.imagen) {
+      
+      // Solo enviamos la imagen si es un archivo nuevo
+      if (editCategoriaData.imagen instanceof File) {
         formData.append('imagen', editCategoriaData.imagen);
       }
+      // Si no enviamos imagen, el backend mantendrá la existente
+      
+      console.log('editCategoriaData.imagen:', editCategoriaData.imagen);
       
       await updateCategoria(categoriaAEditar.id, formData);
       
@@ -215,8 +221,24 @@ const Categorias = () => {
     setVerDetalleOpen(true);
   };
 
+  const handleImagenChange = (e) => {
+    console.log('handleImagenChange ejecutado');
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log('Archivo seleccionado:', file);
+      setNuevaCategoria(prev => ({ ...prev, imagen: file }));
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewImagen(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCrearCategoria = async (e) => {
     e.preventDefault();
+    console.log('handleCrearCategoria ejecutado');
     setCrearLoading(true);
     setCrearError('');
     
@@ -224,15 +246,37 @@ const Categorias = () => {
       if (!nuevaCategoria.nombre) { 
         throw new Error('El nombre es obligatorio');
       }
+
+      if (nuevaCategoria.nombre.length > 15) {
+        throw new Error('El nombre debe tener máximo 15 caracteres');
+      }
+
+      if (nuevaCategoria.descripcion && nuevaCategoria.descripcion.length > 45) {
+        throw new Error('La descripción debe tener máximo 45 caracteres');
+      }
       
       const formData = new FormData();
       formData.append('nombre', nuevaCategoria.nombre);
       formData.append('descripcion', nuevaCategoria.descripcion || '');
-      if (nuevaCategoria.imagen) {
-        formData.append('imagen', nuevaCategoria.imagen);
+      
+      // Asegurarnos de que la imagen se envíe correctamente
+      if (nuevaCategoria.imagen instanceof File) {
+        console.log('Enviando imagen:', nuevaCategoria.imagen); // Para debugging
+        formData.append('imagen', nuevaCategoria.imagen, nuevaCategoria.imagen.name);
       }
       
-      await createCategoria(formData);
+      // Verificar el contenido del FormData
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]); // Para debugging
+      }
+      
+      console.log('nuevaCategoria.imagen:', nuevaCategoria.imagen);
+      
+      const response = await createCategoria(formData);
+      
+      if (response.error) {
+        throw new Error(response.detalles || 'Error al crear la categoría');
+      }
       
       Swal.fire({
         icon: 'success',
@@ -247,10 +291,8 @@ const Categorias = () => {
       setNuevaCategoria({ nombre: '', descripcion: '', imagen: null });
       setPreviewImagen(null);
       
-      // Refrescar lista y volver a primera página
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.set('page', '1');
-      setSearchParams(newSearchParams);
+      // Recargar la lista de categorías
+      fetchCategoriasCallback(1, busqueda);
     } catch (err) {
       const errorMsg = err.message || 'Error al crear la categoría';
       setCrearError(errorMsg);
@@ -263,19 +305,6 @@ const Categorias = () => {
       });
     } finally {
       setCrearLoading(false);
-    }
-  };
-
-  const handleImagenChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setNuevaCategoria(prev => ({ ...prev, imagen: file }));
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewImagen(event.target.result);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
