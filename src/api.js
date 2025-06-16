@@ -506,3 +506,16 @@ export const updateEstadoProveedor = async (nitproveedor, estado) => {
     }
   }
 };
+
+export const getProveedorByNit = async (nitproveedor) => {
+  try {
+    const response = await api.get(`/api/proveedores/${nitproveedor}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
