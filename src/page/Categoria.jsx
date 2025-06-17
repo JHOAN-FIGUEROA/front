@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, 
   CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, Dialog, 
-  DialogTitle, DialogContent, DialogActions, Grid, TextField
+  DialogTitle, DialogContent, DialogActions, Grid, TextField, Chip
 } from '@mui/material';
 import { 
   getCategorias,
@@ -22,6 +22,11 @@ import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import axios from 'axios';
+import InfoIcon from '@mui/icons-material/Info';
+import ImageIcon from '@mui/icons-material/Image';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+
 
 const CATEGORIAS_POR_PAGINA = 5;
 
@@ -55,6 +60,9 @@ const Categorias = () => {
 
   const [verDetalleOpen, setVerDetalleOpen] = useState(false);
   const [categoriaDetalle, setCategoriaDetalle] = useState(null);
+
+  const [crearValidation, setCrearValidation] = useState({ nombre: '', descripcion: '' });
+  const [editValidation, setEditValidation] = useState({ nombre: '', descripcion: '' });
 
   const showAlert = (message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -308,14 +316,67 @@ const Categorias = () => {
     }
   };
 
-  const handleEliminadoExitoso = () => {
+  const handleEliminadoExitoso = (mensaje) => {
     setEliminarOpen(false);
-    showAlert('Categoría eliminada correctamente', 'success');
-    
+    Swal.fire({
+      icon: "success",
+      title: "¡Categoría Eliminada!",
+      text: mensaje || "La categoría ha sido eliminada correctamente",
+      timer: 2000,
+      showConfirmButton: false,
+      position: "center",
+      background: "#fff",
+      customClass: {
+        popup: "animated fadeInDown",
+      },
+      zIndex: 99999,
+      didOpen: (popup) => {
+        popup.style.zIndex = 99999;
+      },
+    });
+
     const currentPage = parseInt(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
     fetchCategoriasCallback(currentPage, currentSearch);
   };
+
+  const handleEliminarCategoria = async (id) => {
+    try {
+      const response = await deleteCategoria(id);
+      // Accede al mensaje correctamente:
+      const mensaje = response.data?.data?.mensaje || 'Categoría eliminada correctamente';
+      showAlert(mensaje, 'success');
+      // Aquí puedes refrescar la tabla o hacer otras acciones
+    } catch (error) {
+      showAlert(error.message || 'Error al eliminar la categoría', 'error');
+    }
+  };
+
+  // VALIDACIONES EN TIEMPO REAL
+  const validateNombreCategoria = (nombre) => {
+    if (!nombre.trim()) return 'El nombre es obligatorio';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,15}$/.test(nombre)) return 'El nombre debe tener entre 3 y 15 letras';
+    return '';
+  };
+  const validateDescripcionCategoria = (descripcion) => {
+    if (!descripcion) return '';
+    if (descripcion.length > 45) return 'La descripción debe tener máximo 45 caracteres';
+    return '';
+  };
+
+  useEffect(() => {
+    setCrearValidation({
+      nombre: validateNombreCategoria(nuevaCategoria.nombre),
+      descripcion: validateDescripcionCategoria(nuevaCategoria.descripcion),
+    });
+  }, [nuevaCategoria]);
+
+  useEffect(() => {
+    setEditValidation({
+      nombre: validateNombreCategoria(editCategoriaData.nombre),
+      descripcion: validateDescripcionCategoria(editCategoriaData.descripcion),
+    });
+  }, [editCategoriaData]);
 
   return (
     <Box p={3} sx={{ position: 'relative' }}>
@@ -400,18 +461,21 @@ const Categorias = () => {
                       <VisibilityIcon />
                     </IconButton>
                     
-                    <IconButton color="warning" size="small" 
-                      onClick={() => handleEditarCategoria(categoria)}>
-                      <EditIcon />
-                    </IconButton>
-                    
-                    <IconButton color="error" size="small" 
-                      onClick={() => { 
-                        setCategoriaEliminar(categoria); 
-                        setEliminarOpen(true); 
-                      }}>
-                      <DeleteIcon />
-                    </IconButton>
+                    {categoria.estado && (
+                      <>
+                        <IconButton color="warning" size="small" 
+                          onClick={() => handleEditarCategoria(categoria)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton color="error" size="small" 
+                          onClick={() => { 
+                            setCategoriaEliminar(categoria); 
+                            setEliminarOpen(true); 
+                          }}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </>
+                    )}
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -435,7 +499,7 @@ const Categorias = () => {
       
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
@@ -446,63 +510,86 @@ const Categorias = () => {
 
       {/* Diálogo Crear */}
       <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
-        <form onSubmit={handleCrearCategoria}>
-          <DialogTitle>Registrar Nueva Categoría</DialogTitle>
-          <DialogContent dividers>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Nombre"
-                  name="nombre"
-                  value={nuevaCategoria.nombre}
-                  onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
-                  fullWidth
-                  required
-                  autoFocus
-                />
+        <form onSubmit={handleCrearCategoria} autoComplete="off" noValidate>
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: '#f8f9fa',
+              borderBottom: '1px solid #e0e0e0',
+              py: 2.5,
+            }}
+          >
+            <AddIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Registrar Nueva Categoría
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoIcon color="primary" sx={{ fontSize: 22 }} />
+                Información General
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Nombre"
+                    name="nombre"
+                    value={nuevaCategoria.nombre}
+                    onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
+                    fullWidth
+                    required
+                    autoFocus
+                    error={!!crearValidation.nombre}
+                    helperText={crearValidation.nombre}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={nuevaCategoria.descripcion}
+                    onChange={e => setNuevaCategoria(prev => ({ ...prev, descripcion: e.target.value }))}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!crearValidation.descripcion}
+                    helperText={crearValidation.descripcion}
+                  />
+                </Grid>
               </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  label="Descripción"
-                  name="descripcion"
-                  value={nuevaCategoria.descripcion}
-                  onChange={e => setNuevaCategoria(prev => ({ ...prev, descripcion: e.target.value }))}
-                  fullWidth
-                  multiline
-                  rows={3}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
+              <Box mt={3}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                  Imagen de la Categoría
+                </Typography>
                 <Button variant="outlined" component="label" fullWidth>
                   Subir Imagen
-                  <input 
-                    type="file" 
-                    hidden 
+                  <input
+                    type="file"
+                    hidden
                     accept="image/*"
                     onChange={handleImagenChange}
                   />
                 </Button>
-                
                 {previewImagen && (
                   <Box mt={2} textAlign="center">
-                    <img 
-                      src={previewImagen} 
-                      alt="Preview" 
-                      style={{ maxWidth: '100%', maxHeight: 200 }} 
+                    <img
+                      src={previewImagen}
+                      alt="Preview"
+                      style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }}
                     />
                   </Box>
                 )}
-              </Grid>
-            </Grid>
-            
-            {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
+              </Box>
+              {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
+            </Paper>
           </DialogContent>
-          
-          <DialogActions>
-            <Button onClick={() => setCrearOpen(false)} color="secondary">Cancelar</Button>
-            <Button type="submit" color="primary" disabled={crearLoading}>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={() => setCrearOpen(false)} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={crearLoading || !!crearValidation.nombre || !!crearValidation.descripcion}>
               {crearLoading ? <CircularProgress size={24} /> : 'Registrar'}
             </Button>
           </DialogActions>
@@ -511,63 +598,73 @@ const Categorias = () => {
       
       {/* Diálogo Editar */}
       <Dialog open={editCategoriaOpen} onClose={handleCerrarEdicionCategoria} maxWidth="sm" fullWidth>
-        <form onSubmit={handleGuardarEdicionCategoria}>
-          <DialogTitle>Editar Categoría: {categoriaAEditar?.nombre}</DialogTitle>
-          <DialogContent dividers>
-            {editCategoriaLoading && <CircularProgress sx={{ display: 'block', mx: 'auto' }} />}
-            {editCategoriaError && <Alert severity="error">{editCategoriaError}</Alert>}
-            
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Nombre"
-                  name="nombre"
-                  value={editCategoriaData.nombre}
-                  onChange={handleEditCategoriaFormChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  label="Descripción"
-                  name="descripcion"
-                  value={editCategoriaData.descripcion}
-                  onChange={handleEditCategoriaFormChange}
-                  fullWidth
-                  multiline
-                  rows={3}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Button variant="outlined" component="label" fullWidth>
-                  Cambiar Imagen
-                  <input 
-                    type="file" 
-                    hidden 
-                    accept="image/*"
-                    onChange={handleEditImagenChange}
+        <form onSubmit={handleGuardarEdicionCategoria} autoComplete="off" noValidate>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+            <EditIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Editar Categoría: {categoriaAEditar?.nombre}
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
+              {editCategoriaLoading && <CircularProgress sx={{ display: 'block', mx: 'auto' }} />}
+              {editCategoriaError && <Alert severity="error">{editCategoriaError}</Alert>}
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Nombre</Typography>
+                  <TextField
+                    label="Nombre"
+                    name="nombre"
+                    value={editCategoriaData.nombre}
+                    onChange={handleEditCategoriaFormChange}
+                    fullWidth
+                    required
+                    autoFocus
+                    error={!!editValidation.nombre}
+                    helperText={editValidation.nombre}
                   />
-                </Button>
-                
-                {(editPreviewImagen || categoriaAEditar?.imagen) && (
-                  <Box mt={2} textAlign="center">
-                    <img 
-                      src={editPreviewImagen || categoriaAEditar.imagen} 
-                      alt="Preview" 
-                      style={{ maxWidth: '100%', maxHeight: 200 }} 
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Descripción</Typography>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={editCategoriaData.descripcion}
+                    onChange={handleEditCategoriaFormChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!editValidation.descripcion}
+                    helperText={editValidation.descripcion}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Imagen</Typography>
+                  <Button variant="outlined" component="label" fullWidth>
+                    Cambiar Imagen
+                    <input 
+                      type="file" 
+                      hidden 
+                      accept="image/*"
+                      onChange={handleEditImagenChange}
                     />
-                  </Box>
-                )}
+                  </Button>
+                  {(editPreviewImagen || categoriaAEditar?.imagen) && (
+                    <Box mt={2} textAlign="center">
+                      <img 
+                        src={editPreviewImagen || categoriaAEditar.imagen} 
+                        alt="Preview" 
+                        style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }} 
+                      />
+                    </Box>
+                  )}
+                </Grid>
               </Grid>
-            </Grid>
+            </Paper>
           </DialogContent>
-          
-          <DialogActions>
-            <Button onClick={handleCerrarEdicionCategoria} color="secondary">Cancelar</Button>
-            <Button type="submit" color="primary" disabled={editCategoriaLoading}>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={handleCerrarEdicionCategoria} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={editCategoriaLoading || !!editValidation.nombre || !!editValidation.descripcion}>
               {editCategoriaLoading ? <CircularProgress size={24} /> : 'Guardar'}
             </Button>
           </DialogActions>
@@ -576,44 +673,76 @@ const Categorias = () => {
       
       {/* Diálogo Ver Detalle */}
       <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Detalles de Categoría</DialogTitle>
-        <DialogContent dividers>
-          {categoriaDetalle ? (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><b>ID:</b> {categoriaDetalle.id}</Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><b>Nombre:</b> {categoriaDetalle.nombre}</Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle1"><b>Descripción:</b> {categoriaDetalle.descripcion || 'N/A'}</Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle1">
-                  <b>Estado:</b> {categoriaDetalle.estado ? 'Activo' : 'Inactivo'}
-                </Typography>
-              </Grid>
-              
-              {categoriaDetalle.imagen && (
-                <Grid item xs={12} textAlign="center">
-                  <img 
-                    src={categoriaDetalle.imagen} 
-                    alt="Categoría" 
-                    style={{ maxWidth: '100%', maxHeight: 300 }} 
-                  />
-                </Grid>
-              )}
-            </Grid>
-          ) : (
-            <Typography>No se encontraron detalles</Typography>
-          )}
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            backgroundColor: '#f8f9fa',
+            borderBottom: '1px solid #e0e0e0',
+            py: 2.5,
+          }}
+        >
+          <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Detalles de Categoría
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
+            {categoriaDetalle ? (
+              <>
+                {/* Información General */}
+                <Box mb={3}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <InfoIcon color="primary" sx={{ fontSize: 22 }} />
+                    Información General
+                  </Typography>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>ID</Typography></Grid>
+                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.id}</Typography></Grid>
+                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Nombre</Typography></Grid>
+                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.nombre}</Typography></Grid>
+                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Descripción</Typography></Grid>
+                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.descripcion || 'N/A'}</Typography></Grid>
+                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Estado</Typography></Grid>
+                    <Grid item xs={9}>
+                      <Chip
+                        label={categoriaDetalle.estado ? 'Activo' : 'Inactivo'}
+                        color={categoriaDetalle.estado ? 'success' : 'error'}
+                        size="small"
+                        icon={categoriaDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+                {/* Imagen */}
+                {categoriaDetalle.imagen && (
+                  <Box mb={2}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                      Imagen de la Categoría
+                    </Typography>
+                    <Box textAlign="center">
+                      <img
+                        src={categoriaDetalle.imagen}
+                        alt="Categoría"
+                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid #e0e0e0' }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Typography>No se encontraron detalles</Typography>
+            )}
+          </Paper>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setVerDetalleOpen(false)}>Cerrar</Button>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={() => setVerDetalleOpen(false)} variant="contained" color="primary">
+            Cerrar
+          </Button>
         </DialogActions>
       </Dialog>
       
