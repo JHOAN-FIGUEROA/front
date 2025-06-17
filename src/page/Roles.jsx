@@ -264,14 +264,14 @@ const Roles = () => {
   // VALIDACIONES EN TIEMPO REAL PARA EDITAR ROL
   const validateEditNombreRol = (nombre) => {
     if (!nombre.trim()) return "El nombre es obligatorio"
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]{3,10}$/.test(nombre)) return "El nombre debe tener entre 3 y 10 letras, sin números"
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]{3,15}$/.test(nombre)) return "El nombre debe tener entre 3 y 15 letras, sin números"
     return ""
   }
 
   const validateEditDescripcionRol = (descripcion) => {
     if (!descripcion) return ""
     if (descripcion.length < 3) return "La descripción debe tener al menos 3 caracteres"
-    if (descripcion.length > 20) return "La descripción no debe exceder 20 caracteres"
+    if (descripcion.length > 30) return "La descripción no debe exceder 30 caracteres"
     return ""
   }
 
@@ -565,13 +565,13 @@ const Roles = () => {
   // VALIDACIONES EN TIEMPO REAL PARA CREAR ROL
   const validateNombreRol = (nombre) => {
     if (!nombre.trim()) return "El nombre es obligatorio"
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]{3,10}$/.test(nombre)) return "El nombre debe tener entre 3 y 10 letras, sin números"
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]{3,15}$/.test(nombre)) return "El nombre debe tener entre 3 y 15 letras, sin números"
     return ""
   }
   const validateDescripcionRol = (descripcion) => {
     if (!descripcion) return ""
     if (descripcion.length < 3) return "La descripción debe tener al menos 3 caracteres"
-    if (descripcion.length > 20) return "La descripción no debe exceder 20 caracteres"
+    if (descripcion.length > 30) return "La descripción no debe exceder 30 caracteres"
     return ""
   }
   const validatePermisosRol = (permisos_ids) => {
@@ -1103,6 +1103,7 @@ const Roles = () => {
         onClose={handleCerrarEdicionRol}
         maxWidth="md"
         fullWidth
+        scroll="paper"
         PaperProps={{
           sx: {
             borderRadius: 2,
@@ -1134,7 +1135,7 @@ const Roles = () => {
               Editar Rol
             </Typography>
           </DialogTitle>
-          <DialogContent dividers sx={{ p: 3, backgroundColor: "#fff" }}>
+          <DialogContent dividers sx={{ p: 3, backgroundColor: "#fff", maxHeight: "70vh", overflowY: "auto" }}>
             {editRolLoading && (
               <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress size={40} />
