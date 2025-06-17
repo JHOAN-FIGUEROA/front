@@ -5,19 +5,19 @@ import { deleteUsuario } from '../api';
 const Eliminar = ({ id, open, onClose, onEliminado, nombre = '', loading: loadingProp = false, tipoEntidad = 'usuario', deleteApi }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const handleEliminar = async () => {
     setLoading(true);
     setError('');
     try {
+      let response;
       if (deleteApi) {
-        await deleteApi(id);
+        response = await deleteApi(id);
       } else {
-        await deleteUsuario(id);
+        response = await deleteUsuario(id);
       }
-      setSuccess(true);
-      if (onEliminado) onEliminado();
+      const mensaje = response?.data?.mensaje || response?.data?.data?.mensaje || 'Categoría eliminada correctamente';
+      if (onEliminado) onEliminado(mensaje);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,9 +41,6 @@ const Eliminar = ({ id, open, onClose, onEliminado, nombre = '', loading: loadin
       </Dialog>
       <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError('')} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert severity="error" onClose={() => setError('')}>{error}</Alert>
-      </Snackbar>
-      <Snackbar open={success} autoHideDuration={2000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert severity="success" onClose={() => setSuccess(false)}>Eliminado correctamente</Alert>
       </Snackbar>
     </>
   );
