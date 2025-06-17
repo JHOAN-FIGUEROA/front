@@ -512,3 +512,17 @@ export const getProveedorByNit = async (nit) => {
     }
   }
 };
+
+// Actualizar proveedor
+export const updateProveedor = async (nit, data) => {
+  try {
+    const response = await api.put(`/api/proveedores/${nit}`, data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
