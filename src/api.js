@@ -526,3 +526,123 @@ export const updateProveedor = async (nit, data) => {
     }
   }
 };
+
+// CLIENTES
+
+/**
+ * Obtiene listado de clientes con paginación y búsqueda
+ * @param {number} page - Página actual
+ * @param {number} limit - Límite por página
+ * @param {string} searchTerm - Término de búsqueda
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getClientes = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/clientes', {
+      params: {
+        page,
+        limit,
+        search: searchTerm,
+      },
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    if (error.response) {
+      return { error: true, status: error.response.status, detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` };
+    } else {
+      return { error: true, status: 500, detalles: error.message || 'Error desconocido al obtener clientes' };
+    }
+  }
+};
+
+/**
+ * Cambia el estado de un cliente (activo/inactivo)
+ * @param {number} id - ID del cliente
+ * @param {boolean} estado - Nuevo estado
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateEstadoCliente = async (id, estado) => {
+  try {
+    const response = await api.patch(`/api/clientes/${id}/estado`, { estado });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Crea un nuevo cliente
+ * @param {Object} data - Datos del cliente
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const createCliente = async (data) => {
+  try {
+    const response = await api.post('/api/clientes/registro', data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Obtiene un cliente por ID
+ * @param {number} id - ID del cliente
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getClienteById = async (id) => {
+  try {
+    const response = await api.get(`/api/clientes/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Actualiza un cliente existente
+ * @param {number} id - ID del cliente
+ * @param {Object} data - Datos actualizados
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateCliente = async (id, data) => {
+  try {
+    const response = await api.put(`/api/clientes/${id}`, data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Elimina un cliente
+ * @param {number} id - ID del cliente
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const deleteCliente = async (id) => {
+  try {
+    const response = await api.delete(`/api/clientes/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
