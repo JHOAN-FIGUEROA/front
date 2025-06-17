@@ -526,3 +526,172 @@ export const updateProveedor = async (nit, data) => {
     }
   }
 };
+
+// PRODUCTOS
+
+/**
+ * Obtiene listado de productos con paginación y búsqueda
+ * @param {number} page - Página actual
+ * @param {number} limit - Límite por página
+ * @param {string} searchTerm - Término de búsqueda
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getProductos = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/productos', {
+      params: {
+        page,
+        limit,
+        search: searchTerm
+      }
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error al obtener productos:', error);
+    if (error.response) {
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error al conectar con el servidor'
+      };
+    }
+  }
+};
+
+/**
+ * Crea un nuevo producto
+ * @param {FormData} formData - Datos del producto
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const createProducto = async (formData) => {
+  try {
+    const response = await api.post('/api/productos', formData);
+    return response.data;
+  } catch (error) {
+    console.error('Error al crear producto:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Actualiza un producto existente
+ * @param {number} id - ID del producto
+ * @param {FormData} formData - Datos actualizados
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateProducto = async (id, formData) => {
+  try {
+    const response = await api.put(`/api/productos/${id}`, formData);
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar producto:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Elimina un producto
+ * @param {number} id - ID del producto
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const deleteProducto = async (id) => {
+  try {
+    const response = await api.delete(`/api/productos/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar producto:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Cambia el estado de un producto (activo/inactivo)
+ * @param {number} id - ID del producto
+ * @param {boolean|string} estado - Nuevo estado
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const updateEstadoProducto = async (id, estado) => {
+  try {
+    const estadoBooleano = estado === true || estado === 'true';
+    const response = await api.patch(`/api/productos/${id}/estado`, {
+      estado: estadoBooleano
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error al cambiar estado de producto:', error);
+    if (error.response) {
+      throw new Error(
+        error.response.data.detalles ||
+        error.response.data.error ||
+        `Error HTTP ${error.response.status}`
+      );
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Obtiene un producto por su ID
+ * @param {number} id - ID del producto
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getProductoById = async (id) => {
+  try {
+    const response = await api.get(`/api/productos/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener producto por ID:', error);
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+/**
+ * Obtiene todas las categorías activas para el selector
+ * @returns {Promise<Object>} - Respuesta de la API
+ */
+export const getCategoriasActivas = async () => {
+  try {
+    const response = await api.get('/api/categoria/todas');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    console.error('Error al obtener categorías activas:', error);
+    if (error.response) {
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error al conectar con el servidor'
+      };
+    }
+  }
+};
