@@ -1469,8 +1469,8 @@ const Clientes = () => {
         tipoEntidad="cliente"
         deleteApi={deleteCliente}
       />
-    </Box>
-  );
+  </Box>
+);
 };
 
 export default Clientes; 
