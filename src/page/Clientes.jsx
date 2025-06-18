@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, MenuItem
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, MenuItem, Chip
 } from '@mui/material';
 import { getClientes, updateEstadoCliente, createCliente, getClienteById, updateCliente, deleteCliente } from '../api';
 import AddIcon from '@mui/icons-material/Add';
@@ -17,9 +17,10 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
-import VerDetalle from '../components/VerDetalle';
 import Editar from '../components/Editar';
 import Eliminar from '../components/Eliminar';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const CLIENTES_POR_PAGINA = 5;
 
@@ -56,18 +57,20 @@ const Clientes = () => {
   const [crearForm, setCrearForm] = useState(() => Object.fromEntries(CAMPOS_CREAR.map(c => [c.name, c.default || ''])));
   const [crearValidation, setCrearValidation] = useState({});
 
-  // Estados para ver detalle, editar y eliminar
+  // Estados para ver detalle de cliente
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [clienteDetalle, setClienteDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [detalleError, setDetalleError] = useState('');
 
+  // Estados para editar cliente
   const [editOpen, setEditOpen] = useState(false);
   const [clienteAEditar, setClienteAEditar] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editValidation, setEditValidation] = useState({});
+  const [originalEditData, setOriginalEditData] = useState(null);
 
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [clienteEliminar, setClienteEliminar] = useState(null);
@@ -181,10 +184,10 @@ const Clientes = () => {
   };
 
   const validateDocumento = (documento) => {
-    if (!documento?.trim()) {
+    if (!String(documento).trim()) {
       return 'El documento es requerido';
     }
-    if (!/^\d{10}$/.test(documento)) {
+    if (!/^\d{10}$/.test(String(documento))) {
       return 'El documento debe tener exactamente 10 dígitos numéricos';
     }
     return '';
@@ -284,13 +287,17 @@ const Clientes = () => {
   const handleVerDetalleCliente = async (id) => {
     setDetalleLoading(true);
     setDetalleError('');
+    setClienteDetalle(null);
     setDetalleOpen(true);
     try {
-      const data = await getClienteById(id);
-      setClienteDetalle(data.data || data);
-    } catch (err) {
-      setDetalleError(err.message || 'Error al cargar los detalles del cliente');
-      openSnackbar(err.message || 'Error al cargar los detalles del cliente', 'error');
+      const response = await getClienteById(id);
+      if (response && response.data && response.data.cliente) {
+        setClienteDetalle(response.data.cliente);
+      } else {
+        throw new Error('No se encontraron datos del cliente');
+      }
+    } catch (error) {
+      setDetalleError(error.message || 'Error al cargar los detalles del cliente');
     } finally {
       setDetalleLoading(false);
     }
@@ -298,17 +305,45 @@ const Clientes = () => {
 
   // Editar Cliente
   const handleEditarCliente = async (cliente) => {
-    setEditOpen(true);
     setClienteAEditar(cliente);
+    setEditOpen(true);
     setEditLoading(true);
     setEditError('');
     setEditValidation({});
     try {
-      const data = await getClienteById(cliente.id);
-      setEditForm(data.data || data);
+      const response = await getClienteById(cliente.id);
+      const data = response.data?.cliente || response.data;
+      const fetchedData = {
+        tipodocumento: data.tipodocumento || '',
+        documentocliente: data.id || data.documentocliente || '',
+        nombre: data.nombre || '',
+        apellido: data.apellido || '',
+        email: data.email || '',
+        municipio: data.direccion?.municipio || '',
+        complemento: data.direccion?.complemento || '',
+        direccion: data.direccion?.direccion || '',
+        telefono: data.telefono || '',
+        barrio: data.direccion?.barrio || '',
+        // No se edita password aquí
+      };
+      setEditForm(fetchedData);
+      setOriginalEditData(fetchedData);
     } catch (err) {
-      setEditError(err.message || 'Error al cargar los datos del cliente para editar');
-      openSnackbar(err.message || 'Error al cargar los datos del cliente para editar', 'error');
+      setEditError('Error al cargar los datos del cliente para editar: ' + (err.message || ''));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Cargar Datos',
+        text: err.message || 'Error al cargar los datos del cliente para editar',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 99999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 99999;
+        }
+      });
     } finally {
       setEditLoading(false);
     }
@@ -317,22 +352,128 @@ const Clientes = () => {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
+
+    let errorMessage = '';
+    switch (name) {
+      case 'tipodocumento':
+        errorMessage = validateTipoDocumento(value);
+        break;
+      case 'documentocliente':
+        errorMessage = validateDocumento(value);
+        break;
+      case 'nombre':
+      case 'apellido':
+        errorMessage = validateNombreApellido(value, name);
+        break;
+      case 'email':
+        errorMessage = validateEmail(value);
+        break;
+      case 'telefono':
+        errorMessage = validateTelefono(value);
+        break;
+      case 'municipio':
+      case 'barrio':
+      case 'direccion':
+        errorMessage = validateUbicacion(value, name);
+        break;
+      case 'complemento':
+        errorMessage = validateComplemento(value);
+        break;
+      default:
+        break;
+    }
+    setEditValidation(prev => ({ ...prev, [name]: errorMessage }));
   };
 
-  const handleGuardarEdicion = async () => {
-    setEditLoading(true);
+  const handleGuardarEdicion = async (e) => {
+    e.preventDefault();
+    if (!clienteAEditar || !originalEditData) return;
     setEditError('');
+    if (!validateEdit()) {
+      setEditLoading(false);
+      return;
+    }
+    const datosParaEnviar = {};
+    let huboCambio = false;
+    Object.keys(editForm).forEach(key => {
+      const originalValue = originalEditData[key] || '';
+      const currentValue = editForm[key] || '';
+      if (originalValue !== currentValue) {
+        huboCambio = true;
+        datosParaEnviar[key] = currentValue;
+      }
+    });
+    if (!huboCambio || Object.keys(datosParaEnviar).length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin Cambios',
+        text: 'No hay cambios para guardar',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 99999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 99999;
+        }
+      });
+      setEditLoading(false);
+      return;
+    }
+    // Log temporal para depuración
+    console.log('Payload enviado a la API:', datosParaEnviar);
+    setEditLoading(true);
     try {
-      await updateCliente(clienteAEditar.id, editForm);
+      await updateCliente(clienteAEditar.id, datosParaEnviar);
+      Swal.fire({
+        icon: 'success',
+        title: '¡Cliente Actualizado!',
+        text: 'Los cambios han sido guardados correctamente',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'center',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 99999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 99999;
+        }
+      });
       setEditOpen(false);
+      setClienteAEditar(null);
       fetchClientes(pagina, busqueda);
-      openSnackbar('Cliente actualizado correctamente', 'success');
     } catch (err) {
-      setEditError(err.message || 'Error al guardar el cliente.');
-      openSnackbar(err.message || 'Error al guardar el cliente.', 'error');
+      const errorMsg = err.message || 'Error al guardar el cliente.';
+      setEditError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Actualizar',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 99999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 99999;
+        }
+      });
     } finally {
       setEditLoading(false);
     }
+  };
+
+  const handleCerrarEdicion = () => {
+    setEditOpen(false);
+    setClienteAEditar(null);
+    setEditForm({});
+    setOriginalEditData(null);
+    setEditError('');
+    setEditValidation({});
   };
 
   // Eliminar Cliente
@@ -494,6 +635,74 @@ const Clientes = () => {
     }
   };
 
+  const validateEdit = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    // Validar todos los campos (excepto password)
+    const tipoDocumentoError = validateTipoDocumento(editForm.tipodocumento);
+    if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
+
+    const documentoError = validateDocumento(editForm.documentocliente);
+    if (documentoError) { newErrors.documentocliente = documentoError; isValid = false; }
+
+    const nombreError = validateNombreApellido(editForm.nombre, 'nombre');
+    if (nombreError) { newErrors.nombre = nombreError; isValid = false; }
+
+    const apellidoError = validateNombreApellido(editForm.apellido, 'apellido');
+    if (apellidoError) { newErrors.apellido = apellidoError; isValid = false; }
+
+    const emailError = validateEmail(editForm.email);
+    if (emailError) { newErrors.email = emailError; isValid = false; }
+
+    const telefonoError = validateTelefono(editForm.telefono);
+    if (telefonoError) { newErrors.telefono = telefonoError; isValid = false; }
+
+    const municipioError = validateUbicacion(editForm.municipio, 'municipio');
+    if (municipioError) { newErrors.municipio = municipioError; isValid = false; }
+
+    const barrioError = validateUbicacion(editForm.barrio, 'barrio');
+    if (barrioError) { newErrors.barrio = barrioError; isValid = false; }
+
+    const direccionError = validateUbicacion(editForm.direccion, 'direccion');
+    if (direccionError) { newErrors.direccion = direccionError; isValid = false; }
+
+    const complementoError = validateComplemento(editForm.complemento);
+    if (complementoError) { newErrors.complemento = complementoError; isValid = false; }
+
+    setEditValidation(newErrors);
+    return isValid;
+  };
+
+  const hasEditChanges = () => {
+    if (!originalEditData) return false;
+    return Object.keys(editForm).some(key => {
+      const originalValue = originalEditData[key] || '';
+      const currentValue = editForm[key] || '';
+      return originalValue !== currentValue;
+    });
+  };
+
+  // Filtrado local EXACTAMENTE igual que en proveedores
+  const clientesFiltrados = clientes.filter(cliente => {
+    if (!busqueda) return true;
+    const terminoBusquedaLower = busqueda.toLowerCase().trim();
+
+    if (terminoBusquedaLower === 'activo') {
+      return cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true';
+    }
+    if (terminoBusquedaLower === 'inactivo') {
+      return !(cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true');
+    }
+
+    const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.toLowerCase();
+    return (
+      nombreCompleto.includes(terminoBusquedaLower) ||
+      (cliente.email || '').toLowerCase().includes(terminoBusquedaLower) ||
+      (cliente.telefono || '').toLowerCase().includes(terminoBusquedaLower)
+    );
+  });
+
   return (
   <Box p={3}>
       <Typography variant="h5" gutterBottom>Clientes Registrados</Typography>
@@ -531,12 +740,12 @@ const Clientes = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && clientes.length === 0 && !error && (
+            {!loading && clientesFiltrados.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={5} align="center">No hay clientes registrados.</TableCell>
               </TableRow>
             )}
-            {clientes.map((cliente, idx) => {
+            {clientesFiltrados.map((cliente, idx) => {
               const clienteActivo = cliente.estado === true || cliente.estado === 1 || cliente.estado === "true";
               const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
               
@@ -782,55 +991,20 @@ const Clientes = () => {
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Municipio"
-                        name="municipio"
-                        value={crearForm.municipio}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.municipio}
-                        helperText={crearValidation.municipio}
-                      />
+                      <Typography variant="subtitle1" color="text.secondary">Municipio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{crearForm.municipio}</Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Barrio"
-                        name="barrio"
-                        value={crearForm.barrio}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.barrio}
-                        helperText={crearValidation.barrio}
-                      />
+                      <Typography variant="subtitle1" color="text.secondary">Barrio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{crearForm.barrio}</Typography>
                     </Grid>
                     <Grid item xs={12}>
-                      <TextField
-                        label="Dirección"
-                        name="direccion"
-                        value={crearForm.direccion}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.direccion}
-                        helperText={crearValidation.direccion}
-                      />
+                      <Typography variant="subtitle1" color="text.secondary">Dirección</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{crearForm.direccion}</Typography>
                     </Grid>
                     <Grid item xs={12}>
-                      <TextField
-                        label="Complemento"
-                        name="complemento"
-                        value={crearForm.complemento}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        error={!!crearValidation.complemento}
-                        helperText={crearValidation.complemento}
-                      />
+                      <Typography variant="subtitle1" color="text.secondary">Complemento</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{crearForm.complemento}</Typography>
                     </Grid>
                   </Grid>
                 </Paper>
@@ -849,30 +1023,443 @@ const Clientes = () => {
         </form>
       </Dialog>
 
+      {/* Modal de Detalle de Cliente */}
+      <Dialog 
+        open={detalleOpen} 
+        onClose={() => setDetalleOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          backgroundColor: '#f8f9fa',
+          borderBottom: '1px solid #e0e0e0',
+          py: 2.5
+        }}>
+          <PersonIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Detalles del Cliente
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+          {detalleError ? (
+            <Alert severity="error" sx={{ mt: 2 }}>{detalleError}</Alert>
+          ) : detalleLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : clienteDetalle ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Tipo de Documento</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.tipodocumento}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Documento</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.id || clienteDetalle.documentocliente}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                  </Box>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={8}>
+                      <Typography variant="subtitle1" color="text.secondary">Nombre Completo</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.nombre} {clienteDetalle.apellido}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle1" color="text.secondary">Estado</Typography>
+                      <Chip
+                        label={clienteDetalle.estado ? 'Activo' : 'Inactivo'}
+                        color={clienteDetalle.estado ? 'success' : 'error'}
+                        icon={clienteDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Email</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.email}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Teléfono</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.telefono}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" color="text.secondary">Municipio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.direccion?.municipio}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" color="text.secondary">Barrio</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.direccion?.barrio}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary">Dirección</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.direccion?.direccion}</Typography>
+                    </Grid>
+                    {clienteDetalle.direccion?.complemento && (
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle1" color="text.secondary">Complemento</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{clienteDetalle.direccion?.complemento}</Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Paper>
+              </Grid>
+              {clienteDetalle.usuario && (
+                <Grid item xs={12}>
+                  <Box display="flex" justifyContent="flex-end">
+                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, minWidth: 320, maxWidth: 400 }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Usuario Asociado</Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">Email: <b>{clienteDetalle.usuario.email}</b></Typography>
+                      <Typography variant="body2" color="text.secondary">Rol: <b>{clienteDetalle.usuario.rol}</b></Typography>
+                      <Box display="flex" alignItems="center" gap={1} mt={1}>
+                        <Typography variant="body2" color="text.secondary">Estado:</Typography>
+                        <Chip
+                          label={clienteDetalle.usuario.estado ? 'Activo' : 'Inactivo'}
+                          color={clienteDetalle.usuario.estado ? 'success' : 'error'}
+                          icon={clienteDetalle.usuario.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </Box>
+                    </Paper>
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={() => setDetalleOpen(false)} 
+            color="primary" 
+            sx={{ 
+              borderRadius: 2, 
+              textTransform: 'none', 
+              px: 3, 
+              py: 1, 
+              fontWeight: 600, 
+              boxShadow: 'none', 
+              '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
+            }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Edición de Cliente */}
+      <Dialog 
+        open={editOpen} 
+        onClose={handleCerrarEdicion} 
+        maxWidth="md" 
+        fullWidth 
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <form onSubmit={handleGuardarEdicion} autoComplete="off">
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+            <EditIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>Editar Cliente</Typography>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff', maxHeight: '70vh', overflowY: 'auto' }}>
+            {editLoading && (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <CircularProgress size={40} />
+              </Box>
+            )}
+            {editError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>
+            )}
+            {!editLoading && !editError && clienteAEditar && originalEditData && (
+              <Grid container spacing={3}>
+                {/* Identificación */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                    </Box>
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid item xs={12} sm={4} md={4}>
+                        <TextField
+                          label="Tipo de Documento"
+                          name="tipodocumento"
+                          value={editForm.tipodocumento}
+                          fullWidth
+                          margin="normal"
+                          select
+                          disabled
+                          sx={{
+                            '& .MuiInputBase-input.Mui-disabled': {
+                              backgroundColor: '#f5f5f5',
+                              color: 'rgba(0, 0, 0, 0.87)',
+                              WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
+                            },
+                            '& .MuiInputLabel-root.Mui-disabled': {
+                              color: 'rgba(0, 0, 0, 0.6)',
+                            },
+                            '& .MuiSelect-icon.Mui-disabled': {
+                              opacity: 0.5,
+                            }
+                          }}
+                        >
+                          {['CC', 'CE', 'TI'].map(option => (
+                            <MenuItem key={option} value={option}>
+                              {option}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={12} sm={8} md={8}>
+                        <TextField
+                          label="Documento"
+                          name="documentocliente"
+                          value={editForm.documentocliente}
+                          fullWidth
+                          margin="normal"
+                          required
+                          disabled
+                          sx={{
+                            '& .MuiInputBase-input.Mui-disabled': {
+                              backgroundColor: '#f5f5f5',
+                              color: 'rgba(0, 0, 0, 0.87)',
+                              WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
+                            },
+                            '& .MuiInputLabel-root.Mui-disabled': {
+                              color: 'rgba(0, 0, 0, 0.6)',
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+                {/* Información Personal */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Nombre"
+                          name="nombre"
+                          value={editForm.nombre}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.nombre}
+                          helperText={editValidation.nombre}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Apellido"
+                          name="apellido"
+                          value={editForm.apellido}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.apellido}
+                          helperText={editValidation.apellido}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+                {/* Contacto */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Email"
+                          name="email"
+                          value={editForm.email}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.email}
+                          helperText={editValidation.email}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Teléfono"
+                          name="telefono"
+                          value={editForm.telefono}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.telefono}
+                          helperText={editValidation.telefono}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+                {/* Ubicación */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Municipio"
+                          name="municipio"
+                          value={editForm.municipio}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.municipio}
+                          helperText={editValidation.municipio}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Barrio"
+                          name="barrio"
+                          value={editForm.barrio}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.barrio}
+                          helperText={editValidation.barrio}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          label="Dirección"
+                          name="direccion"
+                          value={editForm.direccion}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!editValidation.direccion}
+                          helperText={editValidation.direccion}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          label="Complemento"
+                          name="complemento"
+                          value={editForm.complemento}
+                          onChange={handleEditChange}
+                          fullWidth
+                          margin="normal"
+                          error={!!editValidation.complemento}
+                          helperText={editValidation.complemento}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button 
+              onClick={handleCerrarEdicion} 
+              color="secondary" 
+              disabled={editLoading}
+              sx={{ 
+                borderRadius: 2, 
+                textTransform: 'none', 
+                px: 3, 
+                py: 1, 
+                fontWeight: 600, 
+                boxShadow: 'none', 
+                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              color="primary" 
+              disabled={editLoading || !hasEditChanges()}
+              sx={{ 
+                borderRadius: 2, 
+                textTransform: 'none', 
+                px: 3, 
+                py: 1, 
+                fontWeight: 600, 
+                boxShadow: 'none', 
+                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
+              }}
+            >
+              {editLoading ? <CircularProgress size={18} /> : 'Guardar Cambios'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
       {/* Modales de Detalle, Edición y Eliminación */}
-      <VerDetalle
-        open={detalleOpen}
-        onClose={() => setDetalleOpen(false)}
-        usuarioDetalle={clienteDetalle}
-        loading={detalleLoading}
-        error={detalleError}
-        setProveedorDetalle={setClienteDetalle}
-      />
-      <Editar
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        usuario={clienteAEditar}
-        loading={editLoading}
-        apiError={editError}
-        validationErrors={editValidation}
-        form={editForm}
-        onFormChange={handleEditChange}
-        onSave={handleGuardarEdicion}
-        camposEditables={[]}
-        loadingSave={editLoading}
-        setApiError={setEditError}
-        onError={setEditError}
-      />
       <Eliminar
         id={clienteEliminar?.id}
         open={eliminarOpen}
