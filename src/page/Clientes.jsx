@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, MenuItem
 } from '@mui/material';
-import { getClientes, updateEstadoCliente, createCliente } from '../api';
+import { getClientes, updateEstadoCliente, createCliente, getClienteById, updateCliente, deleteCliente } from '../api';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -17,6 +17,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
+import VerDetalle from '../components/VerDetalle';
+import Editar from '../components/Editar';
+import Eliminar from '../components/Eliminar';
 
 const CLIENTES_POR_PAGINA = 5;
 
@@ -53,6 +56,22 @@ const Clientes = () => {
   const [crearForm, setCrearForm] = useState(() => Object.fromEntries(CAMPOS_CREAR.map(c => [c.name, c.default || ''])));
   const [crearValidation, setCrearValidation] = useState({});
 
+  // Estados para ver detalle, editar y eliminar
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [clienteDetalle, setClienteDetalle] = useState(null);
+  const [detalleLoading, setDetalleLoading] = useState(false);
+  const [detalleError, setDetalleError] = useState('');
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [clienteAEditar, setClienteAEditar] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editValidation, setEditValidation] = useState({});
+
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [clienteEliminar, setClienteEliminar] = useState(null);
+
   // Función helper para mostrar el Snackbar
   const openSnackbar = (message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -72,10 +91,9 @@ const Clientes = () => {
           newSearchParams.set('page', '1');
           setSearchParams(newSearchParams, { replace: true });
         }
-      } else if (result.success && result.data && result.data.data) {
-        // Estructura correcta: result.data.data.clientes
+      } else if (result.success && result.data && result.data.data && result.data.data.clientes) {
         setClientes(result.data.data.clientes || []);
-        const totalPaginas = result.data.data.paginacion?.totalPaginas || 1;
+        const totalPaginas = result.data.data.totalPaginas || 1;
         setTotalPaginasAPI(totalPaginas);
 
         if (currentPage > totalPaginas && totalPaginas > 0) {
@@ -134,25 +152,6 @@ const Clientes = () => {
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
   };
-
-  const clientesFiltrados = clientes.filter(cliente => {
-    if (!busqueda) return true;
-    const terminoBusquedaLower = busqueda.toLowerCase().trim();
-
-    if (terminoBusquedaLower === 'activo') {
-      return cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true';
-    }
-    if (terminoBusquedaLower === 'inactivo') {
-      return !(cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true');
-    }
-
-    // Buscar en nombre completo (nombre + apellido)
-    const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.toLowerCase();
-    
-    return (nombreCompleto.includes(terminoBusquedaLower) ||
-            cliente.email?.toLowerCase().includes(terminoBusquedaLower) ||
-            cliente.telefono?.toLowerCase().includes(terminoBusquedaLower));
-  });
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') {
@@ -281,17 +280,72 @@ const Clientes = () => {
     return '';
   };
 
-  // Funciones placeholder para las acciones (se implementarán después)
-  const handleVerDetalleCliente = (id) => {
-    openSnackbar('Función de ver detalle en desarrollo', 'info');
+  // Ver Detalle
+  const handleVerDetalleCliente = async (id) => {
+    setDetalleLoading(true);
+    setDetalleError('');
+    setDetalleOpen(true);
+    try {
+      const data = await getClienteById(id);
+      setClienteDetalle(data.data || data);
+    } catch (err) {
+      setDetalleError(err.message || 'Error al cargar los detalles del cliente');
+      openSnackbar(err.message || 'Error al cargar los detalles del cliente', 'error');
+    } finally {
+      setDetalleLoading(false);
+    }
   };
 
-  const handleEditarCliente = (cliente) => {
-    openSnackbar('Función de editar en desarrollo', 'info');
+  // Editar Cliente
+  const handleEditarCliente = async (cliente) => {
+    setEditOpen(true);
+    setClienteAEditar(cliente);
+    setEditLoading(true);
+    setEditError('');
+    setEditValidation({});
+    try {
+      const data = await getClienteById(cliente.id);
+      setEditForm(data.data || data);
+    } catch (err) {
+      setEditError(err.message || 'Error al cargar los datos del cliente para editar');
+      openSnackbar(err.message || 'Error al cargar los datos del cliente para editar', 'error');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGuardarEdicion = async () => {
+    setEditLoading(true);
+    setEditError('');
+    try {
+      await updateCliente(clienteAEditar.id, editForm);
+      setEditOpen(false);
+      fetchClientes(pagina, busqueda);
+      openSnackbar('Cliente actualizado correctamente', 'success');
+    } catch (err) {
+      setEditError(err.message || 'Error al guardar el cliente.');
+      openSnackbar(err.message || 'Error al guardar el cliente.', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Eliminar Cliente
   const handleEliminarCliente = (cliente) => {
-    openSnackbar('Función de eliminar en desarrollo', 'info');
+    setClienteEliminar(cliente);
+    setEliminarOpen(true);
+  };
+
+  const handleClienteEliminadoExitosamente = async () => {
+    setEliminarOpen(false);
+    setClienteEliminar(null);
+    fetchClientes(pagina, busqueda);
+    openSnackbar('Cliente eliminado correctamente', 'success');
   };
 
   const handleCrearCliente = () => {
@@ -302,36 +356,40 @@ const Clientes = () => {
 
   const handleCrearChange = (e) => {
     const { name, value } = e.target;
-    setCrearForm(prev => ({ ...prev, [name]: value }));
+    let newValue = value;
+    if (name === 'documentocliente') {
+      newValue = value.replace(/[^0-9]/g, '');
+    }
+    setCrearForm(prev => ({ ...prev, [name]: newValue }));
 
     let errorMessage = '';
     switch (name) {
       case 'tipodocumento':
-        errorMessage = validateTipoDocumento(value);
+        errorMessage = validateTipoDocumento(newValue);
         break;
       case 'documentocliente':
-        errorMessage = validateDocumento(value);
+        errorMessage = validateDocumento(newValue);
         break;
       case 'nombre':
       case 'apellido':
-        errorMessage = validateNombreApellido(value, name);
+        errorMessage = validateNombreApellido(newValue, name);
         break;
       case 'email':
-        errorMessage = validateEmail(value);
+        errorMessage = validateEmail(newValue);
         break;
       case 'telefono':
-        errorMessage = validateTelefono(value);
+        errorMessage = validateTelefono(newValue);
         break;
       case 'municipio':
       case 'barrio':
       case 'direccion':
-        errorMessage = validateUbicacion(value, name);
+        errorMessage = validateUbicacion(newValue, name);
         break;
       case 'complemento':
-        errorMessage = validateComplemento(value);
+        errorMessage = validateComplemento(newValue);
         break;
       case 'password':
-        errorMessage = validatePassword(value);
+        errorMessage = validatePassword(newValue);
         break;
       default:
         break;
@@ -381,6 +439,22 @@ const Clientes = () => {
     return isValid;
   };
 
+  const extractErrorMessage = (err) => {
+    if (!err) return 'Error al crear cliente';
+    if (typeof err === 'string') return err;
+    if (typeof err === 'object') {
+      return (
+        err.message ||
+        err.mensaje ||
+        err.detalles ||
+        err.error ||
+        (err.response && (err.response.data?.message || err.response.data?.mensaje || err.response.data?.detalles || err.response.data?.error)) ||
+        JSON.stringify(err)
+      );
+    }
+    return 'Error al crear cliente';
+  };
+
   const handleCrearClienteSubmit = async (e) => {
     e.preventDefault();
     setCrearError('');
@@ -389,6 +463,7 @@ const Clientes = () => {
     try {
       const datosEnviar = {
         ...crearForm,
+        documentocliente: Number(crearForm.documentocliente),
         telefono: String(crearForm.telefono),
       };
       await createCliente(datosEnviar);
@@ -412,11 +487,7 @@ const Clientes = () => {
       });
       fetchClientes(pagina, busqueda);
     } catch (err) {
-      let msg = err?.message;
-      if (typeof msg === 'object') {
-        msg = msg?.message || msg?.mensaje || msg?.detalles || JSON.stringify(msg);
-      }
-      if (!msg || typeof msg !== 'string') msg = 'Error al crear cliente';
+      const msg = extractErrorMessage(err);
       setCrearError(msg);
     } finally {
       setCrearLoading(false);
@@ -460,12 +531,12 @@ const Clientes = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && clientesFiltrados.length === 0 && !error && (
+            {!loading && clientes.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={5} align="center">No hay clientes registrados.</TableCell>
               </TableRow>
             )}
-            {clientesFiltrados.map((cliente, idx) => {
+            {clientes.map((cliente, idx) => {
               const clienteActivo = cliente.estado === true || cliente.estado === 1 || cliente.estado === "true";
               const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
               
@@ -606,6 +677,8 @@ const Clientes = () => {
                         required
                         error={!!crearValidation.documentocliente}
                         helperText={crearValidation.documentocliente}
+                        type="number"
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 0 }}
                       />
                     </Grid>
                   </Grid>
@@ -775,6 +848,40 @@ const Clientes = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* Modales de Detalle, Edición y Eliminación */}
+      <VerDetalle
+        open={detalleOpen}
+        onClose={() => setDetalleOpen(false)}
+        usuarioDetalle={clienteDetalle}
+        loading={detalleLoading}
+        error={detalleError}
+        setProveedorDetalle={setClienteDetalle}
+      />
+      <Editar
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        usuario={clienteAEditar}
+        loading={editLoading}
+        apiError={editError}
+        validationErrors={editValidation}
+        form={editForm}
+        onFormChange={handleEditChange}
+        onSave={handleGuardarEdicion}
+        camposEditables={[]}
+        loadingSave={editLoading}
+        setApiError={setEditError}
+        onError={setEditError}
+      />
+      <Eliminar
+        id={clienteEliminar?.id}
+        open={eliminarOpen}
+        onClose={() => setEliminarOpen(false)}
+        onEliminado={handleClienteEliminadoExitosamente}
+        nombre={clienteEliminar ? clienteEliminar.nombre : ''}
+        tipoEntidad="cliente"
+        deleteApi={deleteCliente}
+      />
     </Box>
   );
 };
