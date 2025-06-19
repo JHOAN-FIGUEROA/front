@@ -978,11 +978,11 @@ const Productos = () => {
                   </Typography>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>ID</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.id}</Typography></Grid>
+                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.idproducto}</Typography></Grid>
                     <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Nombre</Typography></Grid>
                     <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.nombre}</Typography></Grid>
                     <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Descripción</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.descripcion || 'N/A'}</Typography></Grid>
+                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.detalleproducto || 'N/A'}</Typography></Grid>
                     <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Estado</Typography></Grid>
                     <Grid item xs={9}>
                       <Chip
