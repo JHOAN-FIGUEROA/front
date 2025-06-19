@@ -370,16 +370,16 @@ export const getCategorias = async (page = 1, limit = 5, searchTerm = '') => {
     return { success: true, data: response.data };
   } catch (error) {
     if (error.response) {
-      return { 
-        error: true, 
-        status: error.response.status, 
-        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` 
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
       };
     } else {
-      return { 
-        error: true, 
-        status: 500, 
-        detalles: error.message || 'Error al conectar con el servidor' 
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error al conectar con el servidor'
       };
     }
   }
@@ -543,22 +543,22 @@ export const deleteCliente = async (id) => {
 };
 
 // Productos ==================================================================
-export const getProductos = async (page = 1, limit = 5, searchTerm = '') => {
+export const getProductos = async (page = 1, limit = 100) => {
   try {
-    const response = await api.get('/api/productos', { params: { page, limit, search: searchTerm } });
+    const response = await api.get('/api/productos', { params: { page, limit } });
     return { success: true, data: response.data };
   } catch (error) {
     if (error.response) {
-      return { 
-        error: true, 
-        status: error.response.status, 
-        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` 
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
       };
     } else {
-      return { 
-        error: true, 
-        status: 500, 
-        detalles: error.message || 'Error al conectar con el servidor' 
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error al conectar con el servidor'
       };
     }
   }
@@ -651,6 +651,67 @@ export const getCategoriasActivas = async () => {
         status: 500, 
         detalles: error.message || 'Error al conectar con el servidor' 
       };
+    }
+  }
+};
+
+// Unidades ===================================================================
+export const getUnidades = async (page = 1, limit = 5) => {
+  try {
+    const response = await api.get('/api/unidades', { params: { pagina: page, limit } });
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    if (error.response) {
+      return {
+        error: true,
+        status: error.response.status,
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return {
+        error: true,
+        status: 500,
+        detalles: error.message || 'Error desconocido al obtener unidades'
+      };
+    }
+  }
+};
+
+export const createUnidad = async (data) => {
+  try {
+    const response = await api.post('/api/unidades', data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const deleteUnidad = async (id) => {
+  try {
+    const response = await api.delete(`/api/unidades/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const updateUnidad = async (idpresentacion, data) => {
+  try {
+    const response = await api.put(`/api/unidades/${idpresentacion}`, data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
     }
   }
 };
