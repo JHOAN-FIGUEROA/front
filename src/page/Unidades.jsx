@@ -6,9 +6,7 @@ import { getUnidades, getProductos, createUnidad, deleteUnidad, updateUnidad } f
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import Buscador from '../components/Buscador';
-import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -388,7 +386,7 @@ const Unidades = () => {
               <TableCell><b>#</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
               <TableCell><b>Producto</b></TableCell>
-              <TableCell align="center"><b>Estado</b></TableCell>
+              <TableCell align="center"><b>Factor de Conversión</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
@@ -403,12 +401,9 @@ const Unidades = () => {
                 <TableCell>{(pagina - 1) * UNIDADES_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{unidad.nombre}</TableCell>
                 <TableCell>{unidad.producto_nombre || unidad.producto?.nombre || '-'}</TableCell>
-                <TableCell align="center">{unidad.estado ? 'Activo' : 'Inactivo'}</TableCell>
+                <TableCell align="center">{unidad.factor_conversion}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <IconButton color="info" size="small" title="Ver Detalle">
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
                     <IconButton color="warning" size="small" title="Editar" onClick={() => handleEditarUnidad(unidad)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
