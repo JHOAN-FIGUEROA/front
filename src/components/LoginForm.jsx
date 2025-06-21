@@ -509,9 +509,9 @@ const LoginForm = () => {
   return (
     <>
       <StyledPaper elevation={3}>
-        <Typography variant="h6" gutterBottom>
+        <span style={{ fontWeight: 600 }}>
           Iniciar Sesión
-        </Typography>
+        </span>
         <form onSubmit={handleSubmit}>
           <Box sx={{ '& > :not(style)': { mb: 2 } }}>
             <TextField

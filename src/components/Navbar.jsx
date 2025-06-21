@@ -12,17 +12,18 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
 }));
 
 const Logo = styled('img')({
-  height: '72px',
+  height: 'calc(100% - 16px)',
+  maxHeight: '56px',
   marginRight: '10px',
 });
 
 const StyledToolbar = styled(Toolbar)({
-  minHeight: '72px', // Ajusta la altura mínima del Toolbar para el logo
+  height: '100%',
   display: 'flex',
   alignItems: 'center',
 });
 
-const Navbar = ({ onMenuToggle, navbarHeight, desktopDrawerWidth, isMobile }) => {
+const Navbar = ({ onMenuToggle, navbarHeight = '72px', desktopDrawerWidth = 0, isMobile = false }) => {
   // Removed isAuthenticated and logout as the logout is now handled in the sidebar
   // const { isAuthenticated, logout } = useAuth();
 
@@ -65,7 +66,7 @@ const Navbar = ({ onMenuToggle, navbarHeight, desktopDrawerWidth, isMobile }) =>
         )}
         {/* Eliminar ícono de menú para desktop de aquí */}
         <Logo src={PostWareLogo} alt="PostWare Logo" />
-        <Typography variant="h4" component="div" sx={{ flexGrow: 3, textAlign: 'start', color: 'white' }}>
+        <Typography variant={isMobile ? 'h6' : 'h4'} component="div" sx={{ flexGrow: 1, textAlign: 'start', color: 'white' }}>
           POSTWARE
         </Typography>
       </StyledToolbar>

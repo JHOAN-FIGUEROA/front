@@ -359,7 +359,6 @@ const Proveedores = () => {
         customClass: {
           popup: 'animated fadeInDown'
         },
-        zIndex: 9999,
         didOpen: (popup) => {
           popup.style.zIndex = 9999;
         }
@@ -386,7 +385,6 @@ const Proveedores = () => {
       customClass: {
         popup: 'animated fadeInDown'
       },
-      zIndex: 9999,
       didOpen: (popup) => {
         popup.style.zIndex = 9999;
       }
@@ -440,7 +438,6 @@ const Proveedores = () => {
     setEditValidation({});
     try {
       const response = await getProveedorByNit(proveedor.nitproveedor);
-      console.log('Datos del proveedor para editar:', response);
       const fetchedData = {
         tipodocumento: response.data.tipodocumento || '',
         documento: response.data.nitproveedor || '',
@@ -467,9 +464,8 @@ const Proveedores = () => {
         customClass: {
           popup: 'animated fadeInDown'
         },
-        zIndex: 99999,
         didOpen: (popup) => {
-          popup.style.zIndex = 99999;
+          popup.style.zIndex = 9999;
         }
       });
     } finally {
@@ -602,9 +598,8 @@ const Proveedores = () => {
         customClass: {
           popup: 'animated fadeInDown'
         },
-        zIndex: 99999,
         didOpen: (popup) => {
-          popup.style.zIndex = 99999;
+          popup.style.zIndex = 9999;
         }
       });
       setEditLoading(false);
@@ -625,9 +620,8 @@ const Proveedores = () => {
         customClass: {
           popup: 'animated fadeInDown'
         },
-        zIndex: 99999,
         didOpen: (popup) => {
-          popup.style.zIndex = 99999;
+          popup.style.zIndex = 9999;
         }
       });
       setEditOpen(false);
@@ -645,9 +639,8 @@ const Proveedores = () => {
         customClass: {
           popup: 'animated fadeInDown'
         },
-        zIndex: 99999,
         didOpen: (popup) => {
-          popup.style.zIndex = 99999;
+          popup.style.zIndex = 9999;
         }
       });
     } finally {
@@ -777,218 +770,163 @@ const Proveedores = () => {
         </Alert>
       </Snackbar>
       {/* Modal Crear Proveedor */}
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth scroll="paper"
-        PaperProps={{ sx: { borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', overflow: 'hidden' } }}
-      >
+      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
-          <PersonAddIcon color="primary" sx={{ fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>Registrar Proveedor</Typography>
+          <AddIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Registrar Proveedor</Typography>
         </DialogTitle>
         <form onSubmit={handleCrearProveedor} autoComplete="off">
-          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff', maxHeight: '70vh', overflowY: 'auto' }}>
-            <Grid container spacing={3}>
-              {/* Identificación */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+          <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PersonAddIcon color="primary" sx={{ fontSize: 32 }} />
+                Información del Proveedor
+              </Typography>
+              <Grid container spacing={3}>
+                {/* Tipo de documento y documento */}
+                <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
                   </Box>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={4} md={4}>
-                      <Grid container spacing={1}>
-                        {['NIT', 'CC', 'CE'].map(opt => (
-                          <Grid item xs={4} key={opt}>
-                            <Paper
-                              elevation={crearForm.tipodocumento === opt ? 3 : 0}
-                              sx={{
-                                p: 1.5,
-                                borderRadius: 2,
-                                border: crearForm.tipodocumento === opt ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                                backgroundColor: crearForm.tipodocumento === opt ? '#e3f2fd' : '#fff',
-                                cursor: 'pointer',
-                                textAlign: 'center',
-                                fontWeight: 600,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                  boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
-                                  borderColor: '#1976d2',
-                                },
-                              }}
-                              onClick={() => setCrearForm(prev => ({ ...prev, tipodocumento: opt }))}
-                            >
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: 16 }}>
-                                {opt}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                      {crearValidation.tipodocumento && (
-                        <Alert severity="error" sx={{ mt: 2 }}>{crearValidation.tipodocumento}</Alert>
-                      )}
-                    </Grid>
-                    <Grid item xs={12} sm={8} md={8}>
-                      <TextField
-                        label="Documento"
-                        name="documento"
-                        value={crearForm.documento}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.documento}
-                        helperText={crearValidation.documento}
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              {/* Información Personal */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Box display="flex" gap={1} mb={2}>
+                    {['NIT', 'CC', 'CE'].map(opt => (
+                      <Button
+                        key={opt}
+                        variant={crearForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                        color={crearForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                        size="small"
+                        sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                        onClick={() => setCrearForm(prev => ({ ...prev, tipodocumento: opt }))}
+                      >
+                        {opt}
+                      </Button>
+                    ))}
+                  </Box>
+                  <TextField
+                    label="Documento"
+                    name="documento"
+                    value={crearForm.documento}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.documento}
+                    helperText={crearValidation.documento}
+                  />
+                </Grid>
+                {/* Información personal */}
+                <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Nombre"
-                        name="nombre"
-                        value={crearForm.nombre}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.nombre}
-                        helperText={crearValidation.nombre}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Contacto"
-                        name="contacto"
-                        value={crearForm.contacto}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.contacto}
-                        helperText={crearValidation.contacto}
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              {/* Contacto */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <TextField
+                    label="Nombre"
+                    name="nombre"
+                    value={crearForm.nombre}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.nombre}
+                    helperText={crearValidation.nombre}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Contacto"
+                    name="contacto"
+                    value={crearForm.contacto}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.contacto}
+                    helperText={crearValidation.contacto}
+                  />
+                </Grid>
+                {/* Contacto */}
+                <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Email"
-                        name="email"
-                        value={crearForm.email}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.email}
-                        helperText={crearValidation.email}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Teléfono"
-                        name="telefono"
-                        value={crearForm.telefono}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.telefono}
-                        helperText={crearValidation.telefono}
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              {/* Ubicación */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <TextField
+                    label="Email"
+                    name="email"
+                    value={crearForm.email}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.email}
+                    helperText={crearValidation.email}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Teléfono"
+                    name="telefono"
+                    value={crearForm.telefono}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.telefono}
+                    helperText={crearValidation.telefono}
+                  />
+                </Grid>
+                {/* Ubicación */}
+                <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Municipio"
-                        name="municipio"
-                        value={crearForm.municipio}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.municipio}
-                        helperText={crearValidation.municipio}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Barrio"
-                        name="barrio"
-                        value={crearForm.barrio}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.barrio}
-                        helperText={crearValidation.barrio}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Dirección"
-                        name="direccion"
-                        value={crearForm.direccion}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.direccion}
-                        helperText={crearValidation.direccion}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Complemento"
-                        name="complemento"
-                        value={crearForm.complemento}
-                        onChange={handleCrearChange}
-                        fullWidth
-                        margin="normal"
-                        error={!!crearValidation.complemento}
-                        helperText={crearValidation.complemento}
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
+                  <TextField
+                    label="Municipio"
+                    name="municipio"
+                    value={crearForm.municipio}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.municipio}
+                    helperText={crearValidation.municipio}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Barrio"
+                    name="barrio"
+                    value={crearForm.barrio}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.barrio}
+                    helperText={crearValidation.barrio}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Dirección"
+                    name="direccion"
+                    value={crearForm.direccion}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!crearValidation.direccion}
+                    helperText={crearValidation.direccion}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Complemento"
+                    name="complemento"
+                    value={crearForm.complemento}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    error={!!crearValidation.complemento}
+                    helperText={crearValidation.complemento}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
-            {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
+              {crearError && <Alert severity="error" sx={{ mt: 3 }}>{crearError}</Alert>}
+            </Paper>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
-            <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
-              Cancelar
-            </Button>
-            <Button type="submit" color="primary" disabled={crearLoading} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
-              {crearLoading ? <CircularProgress size={18} /> : 'Registrar'}
+            <Button onClick={() => setCrearOpen(false)} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={crearLoading || Object.values(crearValidation).some(v => v)}>
+              {crearLoading ? <CircularProgress size={24} /> : 'Registrar'}
             </Button>
           </DialogActions>
         </form>
@@ -1006,423 +944,268 @@ const Proveedores = () => {
       />
 
       {/* Modal de Detalle */}
-      <Dialog 
-        open={detalleOpen} 
-        onClose={() => setDetalleOpen(false)} 
-        maxWidth="md" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          backgroundColor: '#f8f9fa',
-          borderBottom: '1px solid #e0e0e0',
-          py: 2.5
-        }}>
-          <PersonIcon color="primary" sx={{ fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Detalles del Proveedor
-          </Typography>
+      <Dialog open={detalleOpen} onClose={() => setDetalleOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+          <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Detalles del Proveedor</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
-          {detalleError ? (
-            <Alert severity="error" sx={{ mt: 2 }}>{detalleError}</Alert>
-          ) : detalleLoading ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
+          {detalleLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress size={40} />
             </Box>
+          ) : detalleError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>{detalleError}</Alert>
           ) : proveedorDetalle ? (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Tipo de Documento</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.tipodocumento}</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Documento</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nitproveedor}</Typography>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Nombre</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nombre}</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Contacto</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.contacto}</Typography>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Email</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.email}</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Teléfono</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.telefono}</Typography>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle1" color="text.secondary">Municipio</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.municipio}</Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle1" color="text.secondary">Barrio</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.barrio}</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" color="text.secondary">Dirección</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.direccion}</Typography>
-                    </Grid>
+            <>
+              <Grid container spacing={3}>
+                {/* Identificación */}
+                <Grid item xs={12} sm={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                    </Box>
+                    <Typography variant="subtitle1" color="text.secondary">Tipo de Documento</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.tipodocumento}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">Documento</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nitproveedor || proveedorDetalle.documento}</Typography>
+                  </Paper>
+                </Grid>
+                {/* Información personal */}
+                <Grid item xs={12} sm={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                    </Box>
+                    <Typography variant="subtitle1" color="text.secondary">Nombre</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.nombre}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">Contacto</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.contacto}</Typography>
+                  </Paper>
+                </Grid>
+                {/* Contacto */}
+                <Grid item xs={12} sm={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                    </Box>
+                    <Typography variant="subtitle1" color="text.secondary">Email</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.email}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">Teléfono</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.telefono}</Typography>
+                  </Paper>
+                </Grid>
+                {/* Ubicación */}
+                <Grid item xs={12} sm={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                    </Box>
+                    <Typography variant="subtitle1" color="text.secondary">Municipio</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.municipio}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">Barrio</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.barrio}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">Dirección</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.direccion}</Typography>
                     {proveedorDetalle.complemento && (
-                      <Grid item xs={12}>
+                      <>
                         <Typography variant="subtitle1" color="text.secondary">Complemento</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>{proveedorDetalle.complemento}</Typography>
-                      </Grid>
+                      </>
                     )}
-                  </Grid>
-                </Paper>
-              </Grid>
-              <Grid item xs={12}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  </Paper>
+                </Grid>
+                {/* Estado */}
+                <Grid item xs={12} sm={6}>
+                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <CheckCircleIcon color={proveedorDetalle.estado ? "success" : "error"} sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
-                  </Box>
-                  <Chip 
-                    label={proveedorDetalle.estado ? "Activo" : "Inactivo"} 
-                    color={proveedorDetalle.estado ? "success" : "error"}
-                    icon={proveedorDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Paper>
+                    <Chip 
+                      label={proveedorDetalle.estado ? "Activo" : "Inactivo"} 
+                      color={proveedorDetalle.estado ? "success" : "error"}
+                      icon={proveedorDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                      sx={{ fontWeight: 600, ml: 2 }}
+                    />
+                  </Paper>
+                </Grid>
               </Grid>
-            </Grid>
+            </>
           ) : null}
         </DialogContent>
         <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
-          <Button 
-            onClick={() => setDetalleOpen(false)} 
-            color="primary" 
-            sx={{ 
-              borderRadius: 2, 
-              textTransform: 'none', 
-              px: 3, 
-              py: 1, 
-              fontWeight: 600, 
-              boxShadow: 'none', 
-              '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
-            }}
-          >
+          <Button onClick={() => setDetalleOpen(false)} variant="contained" color="primary">
             Cerrar
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal de Edición */}
-      <Dialog 
-        open={editOpen} 
-        onClose={handleCerrarEdicion} 
-        maxWidth="md" 
-        fullWidth 
-        scroll="paper"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }
-        }}
-      >
+      <Dialog open={editOpen} onClose={handleCerrarEdicion} maxWidth="md" fullWidth>
         <form onSubmit={handleGuardarEdicion} autoComplete="off">
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
             <EditIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>Editar Proveedor</Typography>
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Editar Proveedor</Typography>
           </DialogTitle>
           <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff', maxHeight: '70vh', overflowY: 'auto' }}>
-            {editLoading && (
+            {editLoading ? (
               <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress size={40} />
               </Box>
-            )}
-            {editError && (
-              <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>
-            )}
-            {!editLoading && !editError && proveedorAEditar && originalEditData && (
+            ) : (
               <Grid container spacing={3}>
                 {/* Identificación */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} sm={6}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                     </Box>
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={4} md={4}>
-                        <TextField
-                          label="Tipo de Documento"
-                          name="tipodocumento"
-                          value={editForm.tipodocumento}
-                          fullWidth
-                          margin="normal"
-                          select
-                          disabled
-                          sx={{
-                            '& .MuiInputBase-input.Mui-disabled': {
-                              backgroundColor: '#f5f5f5',
-                              color: 'rgba(0, 0, 0, 0.87)',
-                              WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
-                            },
-                            '& .MuiInputLabel-root.Mui-disabled': {
-                              color: 'rgba(0, 0, 0, 0.6)',
-                            },
-                            '& .MuiSelect-icon.Mui-disabled': {
-                              opacity: 0.5,
-                            }
-                          }}
-                        >
-                          {['NIT', 'CC', 'CE'].map(option => (
-                            <MenuItem key={option} value={option}>
-                              {option}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      </Grid>
-                      <Grid item xs={12} sm={8} md={8}>
-                        <TextField
-                          label="Documento"
-                          name="documento"
-                          value={editForm.documento}
-                          fullWidth
-                          margin="normal"
-                          required
-                          disabled
-                          sx={{
-                            '& .MuiInputBase-input.Mui-disabled': {
-                              backgroundColor: '#f5f5f5',
-                              color: 'rgba(0, 0, 0, 0.87)',
-                              WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
-                            },
-                            '& .MuiInputLabel-root.Mui-disabled': {
-                              color: 'rgba(0, 0, 0, 0.6)',
-                            }
-                          }}
-                        />
-                      </Grid>
-                    </Grid>
+                    <TextField
+                      label="Tipo de Documento"
+                      name="tipodocumento"
+                      value={editForm.tipodocumento}
+                      fullWidth
+                      select
+                      disabled
+                      sx={{ mb: 2 }}
+                    >
+                      {['NIT', 'CC', 'CE'].map(option => (
+                        <MenuItem key={option} value={option}>{option}</MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Documento"
+                      name="documento"
+                      value={editForm.documento}
+                      fullWidth
+                      required
+                      disabled
+                    />
                   </Paper>
                 </Grid>
-                {/* Información Personal */}
-                <Grid item xs={12} md={6}>
+                {/* Información personal */}
+                <Grid item xs={12} sm={6}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <PersonIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Nombre"
-                          name="nombre"
-                          value={editForm.nombre}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.nombre}
-                          helperText={editValidation.nombre}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Contacto"
-                          name="contacto"
-                          value={editForm.contacto}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.contacto}
-                          helperText={editValidation.contacto}
-                        />
-                      </Grid>
-                    </Grid>
+                    <TextField
+                      label="Nombre"
+                      name="nombre"
+                      value={editForm.nombre}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.nombre}
+                      helperText={editValidation.nombre}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Contacto"
+                      name="contacto"
+                      value={editForm.contacto}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.contacto}
+                      helperText={editValidation.contacto}
+                    />
                   </Paper>
                 </Grid>
                 {/* Contacto */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} sm={6}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <EmailIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Email"
-                          name="email"
-                          value={editForm.email}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.email}
-                          helperText={editValidation.email}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Teléfono"
-                          name="telefono"
-                          value={editForm.telefono}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.telefono}
-                          helperText={editValidation.telefono}
-                        />
-                      </Grid>
-                    </Grid>
+                    <TextField
+                      label="Email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.email}
+                      helperText={editValidation.email}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Teléfono"
+                      name="telefono"
+                      value={editForm.telefono}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.telefono}
+                      helperText={editValidation.telefono}
+                    />
                   </Paper>
                 </Grid>
                 {/* Ubicación */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} sm={6}>
                   <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Municipio"
-                          name="municipio"
-                          value={editForm.municipio}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.municipio}
-                          helperText={editValidation.municipio}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Barrio"
-                          name="barrio"
-                          value={editForm.barrio}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.barrio}
-                          helperText={editValidation.barrio}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="Dirección"
-                          name="direccion"
-                          value={editForm.direccion}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!editValidation.direccion}
-                          helperText={editValidation.direccion}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="Complemento"
-                          name="complemento"
-                          value={editForm.complemento}
-                          onChange={handleEditChange}
-                          fullWidth
-                          margin="normal"
-                          error={!!editValidation.complemento}
-                          helperText={editValidation.complemento}
-                        />
-                      </Grid>
-                    </Grid>
+                    <TextField
+                      label="Municipio"
+                      name="municipio"
+                      value={editForm.municipio}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.municipio}
+                      helperText={editValidation.municipio}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Barrio"
+                      name="barrio"
+                      value={editForm.barrio}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.barrio}
+                      helperText={editValidation.barrio}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Dirección"
+                      name="direccion"
+                      value={editForm.direccion}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.direccion}
+                      helperText={editValidation.direccion}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Complemento"
+                      name="complemento"
+                      value={editForm.complemento}
+                      onChange={handleEditChange}
+                      fullWidth
+                      error={!!editValidation.complemento}
+                      helperText={editValidation.complemento}
+                    />
                   </Paper>
                 </Grid>
               </Grid>
             )}
+            {editError && <Alert severity="error" sx={{ mt: 3 }}>{editError}</Alert>}
           </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
-            <Button 
-              onClick={handleCerrarEdicion} 
-              color="secondary" 
-              disabled={editLoading}
-              sx={{ 
-                borderRadius: 2, 
-                textTransform: 'none', 
-                px: 3, 
-                py: 1, 
-                fontWeight: 600, 
-                boxShadow: 'none', 
-                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              color="primary" 
-              disabled={editLoading || !hasEditChanges()}
-              sx={{ 
-                borderRadius: 2, 
-                textTransform: 'none', 
-                px: 3, 
-                py: 1, 
-                fontWeight: 600, 
-                boxShadow: 'none', 
-                '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } 
-              }}
-            >
-              {editLoading ? <CircularProgress size={18} /> : 'Guardar Cambios'}
+            <Button onClick={handleCerrarEdicion} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={editLoading || Object.values(editValidation).some(v => v)}>
+              {editLoading ? <CircularProgress size={24} /> : 'Guardar Cambios'}
             </Button>
           </DialogActions>
         </form>

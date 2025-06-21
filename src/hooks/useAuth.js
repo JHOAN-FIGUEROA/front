@@ -75,7 +75,7 @@ export const useAuth = () => {
       }
        else {
            // Esto manejaría una estructura de respuesta inesperada que no es ni éxito ni error con success: false
-           console.error('Unexpected response structure from login:', response);
+           // console.error('Unexpected response structure from login:', response);
             return { success: false, error: 'Formato de respuesta de login inesperado.' };
        }
     } catch (error) {
