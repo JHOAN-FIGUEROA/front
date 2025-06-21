@@ -5,6 +5,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
+import GroupIcon from '@mui/icons-material/Group';
 
 const SECCIONES = [
   {
@@ -47,318 +48,230 @@ const Editar = ({
   loadingSave, // Loading para la acción de guardar
   setApiError,
   onError // Asegúrate de que esta prop esté presente
-}) => (
-  <Dialog 
-    open={open} 
-    onClose={onClose} 
-    maxWidth="md" 
-    fullWidth
-    PaperProps={{
-      sx: {
-        borderRadius: 2,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
-      }
-    }}
-  >
-    <DialogTitle sx={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: 1,
-      backgroundColor: '#f8f9fa',
-      borderBottom: '1px solid #e0e0e0',
-      py: 2.5
-    }}>
-      <EditIcon color="primary" sx={{ fontSize: 28 }} />
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-        Editar Usuario
-      </Typography>
-    </DialogTitle>
-    <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
-      {loading && (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress size={40} />
-        </Box>
-      )}
-      
-      <Snackbar
-        open={apiError && !loading}
-        autoHideDuration={3000}
-        onClose={() => setApiError('')}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="error" onClose={() => setApiError('')} sx={{ width: '100%' }}>
-          {apiError}
-        </Alert>
-      </Snackbar>
+}) => {
+  // Opciones de roles y tipo de documento
+  const rolCampo = camposEditables.find(c => c.name === 'rol_idrol');
+  const rolesOptions = Array.isArray(rolCampo?.options) ? rolCampo.options : [];
+  const tipoDocCampo = camposEditables.find(c => c.name === 'tipodocumento');
+  const tipoDocOptions = Array.isArray(tipoDocCampo?.options) ? tipoDocCampo.options : [];
 
-      {usuario && !loading && (
-        <Box component="form" onSubmit={(e) => { e.preventDefault(); onSave(); }} noValidate>
-          <Grid container spacing={3}>
-            {SECCIONES.map(seccion => {
-              const camposSeccion = camposEditables.filter(c => seccion.fields.includes(c.name));
-              if (camposSeccion.length === 0) return null;
-              if (seccion.key === 'personal') {
-                const nombreCampo = camposSeccion.find(c => c.name === 'nombre');
-                const apellidoCampo = camposSeccion.find(c => c.name === 'apellido');
-                const rolCampo = camposSeccion.find(c => c.name === 'rol_idrol');
-                const rolesOptions = Array.isArray(rolCampo?.options) ? rolCampo.options : [];
-                return (
-                  <Grid item xs={12} md={6} key={seccion.key}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        {seccion.icon}
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{seccion.title}</Typography>
-                      </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            label={nombreCampo.label}
-                            name={nombreCampo.name}
-                            value={form?.[nombreCampo.name] || ''}
-                            onChange={onFormChange}
-                            fullWidth
-                            margin="normal"
-                            required={nombreCampo.required}
-                            error={!!validationErrors[nombreCampo.name]}
-                            helperText={validationErrors[nombreCampo.name]}
-                            disabled={nombreCampo.disabled}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 1,
-                                backgroundColor: '#fff',
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: 'primary.main',
-                                },
-                              },
-                              '& .MuiInputLabel-root': {
-                                color: 'text.secondary',
-                              },
-                              '& .MuiInputLabel-root.Mui-focused': {
-                                color: 'primary.main',
-                              },
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            label={apellidoCampo.label}
-                            name={apellidoCampo.name}
-                            value={form?.[apellidoCampo.name] || ''}
-                            onChange={onFormChange}
-                            fullWidth
-                            margin="normal"
-                            required={apellidoCampo.required}
-                            error={!!validationErrors[apellidoCampo.name]}
-                            helperText={validationErrors[apellidoCampo.name]}
-                            disabled={apellidoCampo.disabled}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 1,
-                                backgroundColor: '#fff',
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: 'primary.main',
-                                },
-                              },
-                              '& .MuiInputLabel-root': {
-                                color: 'text.secondary',
-                              },
-                              '& .MuiInputLabel-root.Mui-focused': {
-                                color: 'primary.main',
-                              },
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Box mt={2}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Rol</Typography>
-                            <Grid container spacing={2}>
-                              {rolesOptions.length === 0 && (
-                                <Grid item xs={12}>
-                                  <Alert severity="info">No hay roles disponibles</Alert>
-                                </Grid>
-                              )}
-                              {rolesOptions.map(opt => (
-                                <Grid item xs={12} sm={6} key={opt.value || opt}>
-                                  <Paper
-                                    elevation={form?.rol_idrol === (opt.value || opt) ? 3 : 0}
-                                    sx={{
-                                      p: 2,
-                                      borderRadius: 2,
-                                      border: form?.rol_idrol === (opt.value || opt) ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                                      backgroundColor: form?.rol_idrol === (opt.value || opt) ? '#e3f2fd' : '#fff',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s',
-                                      '&:hover': {
-                                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
-                                        borderColor: '#1976d2',
-                                      },
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 2,
-                                    }}
-                                    onClick={() => onFormChange({ target: { name: 'rol_idrol', value: opt.value || opt } })}
-                                  >
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                      {opt.label || opt}
-                                    </Typography>
-                                  </Paper>
-                                </Grid>
-                              ))}
-                            </Grid>
-                            {validationErrors['rol_idrol'] && (
-                              <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
-                            )}
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Grid>
-                );
-              }
-              return (
-                <Grid item xs={12} md={seccion.key === 'personal' || seccion.key === 'identificacion' ? 6 : 12} key={seccion.key}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      {seccion.icon}
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>{seccion.title}</Typography>
-                    </Box>
-          <Grid container spacing={2}>
-                      {camposSeccion.map(({ name, label, select, options = [], type = 'text', required = true, disabled = false }) => (
-                        <Grid item xs={12} sm={6} key={name}>
-                {select ? (
-                  <TextField
-                    select
-                    label={label}
-                    name={name}
-                    value={form?.[name] || ''}
-                    onChange={onFormChange}
-                    fullWidth
-                    margin="normal"
-                    required={required}
-                    error={!!validationErrors[name]}
-                    helperText={validationErrors[name]}
-                    disabled={disabled}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 1,
-                                  backgroundColor: '#fff',
-                                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'primary.main',
-                                  },
-                                },
-                                '& .MuiInputLabel-root': {
-                                  color: 'text.secondary',
-                                },
-                                '& .MuiInputLabel-root.Mui-focused': {
-                                  color: 'primary.main',
-                                },
-                              }}
-                  >
-                    {Array.isArray(options) && options.map(opt => (
-                                <MenuItem 
-                                  key={typeof opt === 'object' ? opt.value : opt} 
-                                  value={typeof opt === 'object' ? opt.value : opt}
-                                  sx={{
-                                    '&:hover': {
-                                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                                    },
-                                    '&.Mui-selected': {
-                                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                                      '&:hover': {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                                      },
-                                    },
-                                  }}
-                                >
-                        {typeof opt === 'object' ? opt.label : opt}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                ) : (
-                  <TextField
-                    label={label}
-                    name={name}
-                    value={form?.[name] || ''}
-                    onChange={onFormChange}
-                    fullWidth
-                    margin="normal"
-                    type={type}
-                    required={required}
-                    error={!!validationErrors[name]}
-                    helperText={validationErrors[name]}
-                    disabled={disabled}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 1,
-                                  backgroundColor: '#fff',
-                                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'primary.main',
-                                  },
-                                },
-                                '& .MuiInputLabel-root': {
-                                  color: 'text.secondary',
-                                },
-                                '& .MuiInputLabel-root.Mui-focused': {
-                                  color: 'primary.main',
-                                },
-                              }}
-                  />
+  // Handler para seleccionar rol
+  const handleSeleccionarRol = (id) => {
+    onFormChange({ target: { name: 'rol_idrol', value: id } });
+  };
+  // Handler para seleccionar tipo de documento
+  const handleSeleccionarTipoDocumento = (tipo) => {
+    onFormChange({ target: { name: 'tipodocumento', value: tipo } });
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          overflow: 'hidden'
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1,
+        backgroundColor: '#f8f9fa',
+        borderBottom: '1px solid #e0e0e0',
+        py: 2.5
+      }}>
+        <EditIcon color="primary" sx={{ fontSize: 28 }} />
+        <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+          Editar Usuario
+        </Typography>
+      </DialogTitle>
+      <form onSubmit={e => { e.preventDefault(); onSave(); }} autoComplete="off" noValidate>
+        <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa', maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
+          <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+            <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EditIcon color="primary" sx={{ fontSize: 32 }} />
+              Información del Usuario
+            </Typography>
+            <Grid container spacing={3}>
+              {/* Identificación */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
+                </Box>
+                <Box display="flex" gap={1} mb={2}>
+                  {tipoDocOptions.map(opt => (
+                    <Button
+                      key={opt}
+                      variant={form.tipodocumento === opt ? 'contained' : 'outlined'}
+                      color={form.tipodocumento === opt ? 'primary' : 'inherit'}
+                      size="small"
+                      sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                      onClick={() => handleSeleccionarTipoDocumento(opt)}
+                      disabled
+                    >
+                      {opt}
+                    </Button>
+                  ))}
+                </Box>
+                <TextField
+                  label="Documento"
+                  name="documento"
+                  value={form.documento}
+                  onChange={onFormChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.documento}
+                  helperText={validationErrors.documento}
+                  disabled
+                />
+              </Grid>
+              {/* Información Personal */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
+                </Box>
+                <TextField
+                  label="Nombre"
+                  name="nombre"
+                  value={form.nombre}
+                  onChange={onFormChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.nombre}
+                  helperText={validationErrors.nombre}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Apellido"
+                  name="apellido"
+                  value={form.apellido}
+                  onChange={onFormChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.apellido}
+                  helperText={validationErrors.apellido}
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              {/* Contacto */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
+                </Box>
+                <TextField
+                  label="Email"
+                  name="email"
+                  value={form.email}
+                  onChange={onFormChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.email}
+                  helperText={validationErrors.email}
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              {/* Ubicación */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
+                </Box>
+                <TextField
+                  label="Municipio"
+                  name="municipio"
+                  value={form.municipio}
+                  onChange={onFormChange}
+                  fullWidth
+                  error={!!validationErrors.municipio}
+                  helperText={validationErrors.municipio}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Barrio"
+                  name="barrio"
+                  value={form.barrio}
+                  onChange={onFormChange}
+                  fullWidth
+                  error={!!validationErrors.barrio}
+                  helperText={validationErrors.barrio}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Dirección"
+                  name="dirrecion"
+                  value={form.dirrecion}
+                  onChange={onFormChange}
+                  fullWidth
+                  error={!!validationErrors.dirrecion}
+                  helperText={validationErrors.dirrecion}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Complemento"
+                  name="complemento"
+                  value={form.complemento}
+                  onChange={onFormChange}
+                  fullWidth
+                  error={!!validationErrors.complemento}
+                  helperText={validationErrors.complemento}
+                />
+              </Grid>
+              {/* Rol */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <GroupIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Rol</Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  {rolesOptions.length === 0 && (
+                    <Grid>
+                      <Alert severity="info">No hay roles disponibles</Alert>
+                    </Grid>
+                  )}
+                  {rolesOptions.map(opt => (
+                    <Grid key={opt.value || opt}>
+                      <Button
+                        variant={form.rol_idrol === (opt.value || opt) ? 'contained' : 'outlined'}
+                        color={form.rol_idrol === (opt.value || opt) ? 'primary' : 'inherit'}
+                        size="large"
+                        sx={{ minWidth: 120, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none', mb: 1 }}
+                        onClick={() => handleSeleccionarRol(opt.value || opt)}
+                        disabled={usuario?.idusuario === 34}
+                      >
+                        {opt.label || opt}
+                      </Button>
+                    </Grid>
+                  ))}
+                </Grid>
+                {validationErrors['rol_idrol'] && (
+                  <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
                 )}
               </Grid>
-            ))}
-                    </Grid>
-                  </Paper>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Box>
-      )}
-    </DialogContent>
-    <DialogActions sx={{ 
-      p: 2.5, 
-      backgroundColor: '#f8f9fa', 
-      borderTop: '1px solid #e0e0e0' 
-    }}>
-      <Button 
-        onClick={onClose} 
-        color="secondary" 
-        disabled={loadingSave}
-        sx={{ 
-          borderRadius: 2,
-          textTransform: 'none',
-          px: 3,
-          py: 1,
-          fontWeight: 600,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }
-        }}
-      >
-        Cancelar
-      </Button>
-      <Button 
-        onClick={onSave} 
-        color="primary" 
-        disabled={loadingSave || loading}
-        sx={{ 
-          borderRadius: 2,
-          textTransform: 'none',
-          px: 3,
-          py: 1,
-          fontWeight: 600,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }
-        }}
-      >
-        {loadingSave ? <CircularProgress size={24} /> : 'Guardar'}
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+            </Grid>
+            {apiError && <Alert severity="error" sx={{ mt: 3 }}>{apiError}</Alert>}
+          </Paper>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={onClose} color="secondary" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            Cancelar
+          </Button>
+          <Button type="submit" color="success" variant="contained" disabled={loadingSave || loading} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            {loadingSave ? <CircularProgress size={24} /> : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
 
 export default Editar;

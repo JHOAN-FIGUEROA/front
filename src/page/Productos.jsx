@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, 
   CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, Dialog, 
-  DialogTitle, DialogContent, DialogActions, Grid, TextField, Chip, MenuItem
+  DialogTitle, DialogContent, DialogActions, Grid, TextField, Chip, MenuItem, Divider
 } from '@mui/material';
 import { 
   getProductos,
@@ -177,8 +177,8 @@ const Productos = () => {
     setProductoAEditar(producto);
     setEditProductoData({
       nombre: producto.nombre,
-      descripcion: producto.descripcion || '',
-      preciocompra: producto.preciocompra,
+      descripcion: producto.detalleproducto || '',
+      preciocompra: Number(String(producto.preciocompra).replace(/[^0-9.]/g, '')),
       margenganancia: producto.margenganancia,
       idcategoria: producto.idcategoria,
       codigoproducto: producto.codigoproducto,
@@ -227,8 +227,8 @@ const Productos = () => {
 
       const formData = new FormData();
       formData.append('nombre', editProductoData.nombre);
-      formData.append('detalleproducto', editProductoData.descripcion || '');
-      formData.append('preciocompra', editProductoData.preciocompra);
+      formData.append('detalleproducto', editProductoData.detalleproducto || '');
+      formData.append('preciocompra', Number(String(editProductoData.preciocompra).replace(/[^0-9.]/g, '')));
       formData.append('margenganancia', editProductoData.margenganancia);
       formData.append('idcategoria', editProductoData.idcategoria);
       formData.append('codigoproducto', editProductoData.codigoproducto);
@@ -337,7 +337,7 @@ const Productos = () => {
       const formData = new FormData();
       formData.append('nombre', nuevoProducto.nombre);
       formData.append('detalleproducto', nuevoProducto.descripcion || '');
-      formData.append('preciocompra', nuevoProducto.preciocompra);
+      formData.append('preciocompra', Number(String(nuevoProducto.preciocompra).replace(/[^0-9.]/g, '')));
       formData.append('margenganancia', nuevoProducto.margenganancia);
       formData.append('idcategoria', nuevoProducto.idcategoria);
       formData.append('codigoproducto', nuevoProducto.codigoproducto);
@@ -555,8 +555,8 @@ const Productos = () => {
               <TableRow key={producto.idproducto || idx}>
                 <TableCell>{(pagina - 1) * PRODUCTOS_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{producto.nombre}</TableCell>
-                <TableCell>COP {producto.preciocompra}</TableCell>
-                <TableCell>COP {producto.precioventa}</TableCell>
+                <TableCell>{`COP $ ${Number(producto.preciocompra).toLocaleString('es-CO')}`}</TableCell>
+                <TableCell>{`COP $ ${Number(producto.precioventa).toLocaleString('es-CO')}`}</TableCell>
                 <TableCell>{producto.stock ?? 0}</TableCell>
                 
                 <TableCell align="center">
@@ -632,7 +632,7 @@ const Productos = () => {
       </Snackbar>
 
       {/* Diálogo Crear */}
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth>
         <form onSubmit={handleCrearProducto} autoComplete="off" noValidate>
           <DialogTitle
             sx={{
@@ -645,20 +645,23 @@ const Productos = () => {
             }}
           >
             <AddIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
               Registrar Nuevo Producto
             </Typography>
           </DialogTitle>
-          <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <InfoIcon color="primary" sx={{ fontSize: 22 }} />
+          <DialogContent 
+            dividers 
+            sx={{ p: 0, backgroundColor: '#f8f9fa', animation: 'fadeIn 0.5s' }}
+          >
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoIcon color="primary" sx={{ fontSize: 32 }} />
                 Información General
               </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={4}>
                   <TextField
-                    label="Nombre"
+                    label="Nombre del Producto"
                     name="nombre"
                     value={nuevoProducto.nombre}
                     onChange={e => setNuevoProducto(prev => ({ ...prev, nombre: e.target.value }))}
@@ -667,19 +670,7 @@ const Productos = () => {
                     autoFocus
                     error={!!crearValidation.nombre}
                     helperText={crearValidation.nombre}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Descripción"
-                    name="descripcion"
-                    value={nuevoProducto.descripcion}
-                    onChange={e => setNuevoProducto(prev => ({ ...prev, descripcion: e.target.value }))}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    error={!!crearValidation.descripcion}
-                    helperText={crearValidation.descripcion}
+                    InputProps={{ startAdornment: <InventoryIcon color="primary" sx={{ mr: 1 }} /> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
@@ -687,15 +678,13 @@ const Productos = () => {
                     label="Precio de Compra"
                     name="preciocompra"
                     type="number"
-                    value={nuevoProducto.preciocompra}
-                    onChange={e => setNuevoProducto(prev => ({ ...prev, preciocompra: e.target.value }))}
+                    value={Number(String(nuevoProducto.preciocompra).replace(/[^0-9.]/g, ''))}
+                    onChange={e => setNuevoProducto(prev => ({ ...prev, preciocompra: e.target.value.replace(/[^0-9.]/g, '') }))}
                     fullWidth
                     required
                     error={!!crearValidation.preciocompra}
                     helperText={crearValidation.preciocompra}
-                    InputProps={{
-                      startAdornment: <Typography>$</Typography>
-                    }}
+                    InputProps={{ startAdornment: <AttachMoneyIcon color="primary" sx={{ mr: 1 }} /> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
@@ -709,9 +698,7 @@ const Productos = () => {
                     required
                     error={!!crearValidation.margenganancia}
                     helperText={crearValidation.margenganancia}
-                    InputProps={{
-                      endAdornment: <Typography>%</Typography>
-                    }}
+                    InputProps={{ endAdornment: <Typography color="primary">%</Typography> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -725,6 +712,7 @@ const Productos = () => {
                     required
                     error={!!crearValidation.idcategoria}
                     helperText={crearValidation.idcategoria}
+                    InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
                   >
                     {loadingCategorias ? (
                       <MenuItem disabled>
@@ -758,32 +746,69 @@ const Productos = () => {
                     helperText={crearValidation.codigoproducto}
                   />
                 </Grid>
-              </Grid>
-              <Box mt={3}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ImageIcon color="primary" sx={{ fontSize: 22 }} />
-                  Imagen del Producto
-                </Typography>
-                <Button variant="outlined" component="label" fullWidth>
-                  Subir Imagen
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleImagenChange}
+                <Grid item xs={12}>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={nuevoProducto.descripcion}
+                    onChange={e => setNuevoProducto(prev => ({ ...prev, descripcion: e.target.value }))}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!crearValidation.descripcion}
+                    helperText={crearValidation.descripcion}
                   />
-                </Button>
-                {previewImagen && (
-                  <Box mt={2} textAlign="center">
-                    <img
-                      src={previewImagen}
-                      alt="Preview"
-                      style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }}
+                </Grid>
+              </Grid>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 32 }} />
+                Imagen del Producto
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      borderRadius: 3,
+                      border: '2px dashed #1976d2',
+                      color: 'primary.main',
+                      background: 'rgba(25, 118, 210, 0.04)',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        background: 'rgba(25, 118, 210, 0.10)',
+                        borderColor: '#1565c0',
+                        color: '#1565c0',
+                      },
+                    }}
+                  >
+                    Subir Imagen
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImagenChange}
                     />
-                  </Box>
-                )}
-              </Box>
-              {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {previewImagen && (
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img
+                        src={previewImagen}
+                        alt="Preview"
+                        style={{ maxWidth: 260, maxHeight: 260, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }}
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              </Grid>
+              {crearError && <Alert severity="error" sx={{ mt: 3 }}>{crearError}</Alert>}
             </Paper>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
@@ -796,23 +821,27 @@ const Productos = () => {
       </Dialog>
       
       {/* Diálogo Editar */}
-      <Dialog open={editProductoOpen} onClose={handleCerrarEdicionProducto} maxWidth="sm" fullWidth>
+      <Dialog open={editProductoOpen} onClose={handleCerrarEdicionProducto} maxWidth="md" fullWidth>
         <form onSubmit={handleGuardarEdicionProducto} autoComplete="off" noValidate>
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
             <EditIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <span style={{ fontWeight: 600 }}>
               Editar Producto: {productoAEditar?.nombre}
-            </Typography>
+            </span>
           </DialogTitle>
-          <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
-              {editProductoLoading && <CircularProgress sx={{ display: 'block', mx: 'auto' }} />}
-              {editProductoError && <Alert severity="error">{editProductoError}</Alert>}
+          <DialogContent 
+            dividers 
+            sx={{ p: 0, backgroundColor: '#f8f9fa', animation: 'fadeIn 0.5s' }}
+          >
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoIcon color="primary" sx={{ fontSize: 32 }} />
+                Información General
+              </Typography>
               <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Nombre</Typography>
+                <Grid item xs={12} sm={4}>
                   <TextField
-                    label="Nombre"
+                    label="Nombre del Producto"
                     name="nombre"
                     value={editProductoData.nombre}
                     onChange={handleEditProductoFormChange}
@@ -821,41 +850,24 @@ const Productos = () => {
                     autoFocus
                     error={!!editValidation.nombre}
                     helperText={editValidation.nombre}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Descripción</Typography>
-                  <TextField
-                    label="Descripción"
-                    name="descripcion"
-                    value={editProductoData.descripcion}
-                    onChange={handleEditProductoFormChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    error={!!editValidation.descripcion}
-                    helperText={editValidation.descripcion}
+                    InputProps={{ startAdornment: <InventoryIcon color="primary" sx={{ mr: 1 }} /> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Precio de Compra</Typography>
                   <TextField
                     label="Precio de Compra"
                     name="preciocompra"
                     type="number"
-                    value={editProductoData.preciocompra}
+                    value={Number(String(editProductoData.preciocompra).replace(/[^0-9.]/g, ''))}
                     onChange={handleEditProductoFormChange}
                     fullWidth
                     required
                     error={!!editValidation.preciocompra}
                     helperText={editValidation.preciocompra}
-                    InputProps={{
-                      startAdornment: <Typography>$</Typography>
-                    }}
+                    InputProps={{ startAdornment: <AttachMoneyIcon color="primary" sx={{ mr: 1 }} /> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Margen de Ganancia</Typography>
                   <TextField
                     label="Margen de Ganancia (%)"
                     name="margenganancia"
@@ -866,13 +878,10 @@ const Productos = () => {
                     required
                     error={!!editValidation.margenganancia}
                     helperText={editValidation.margenganancia}
-                    InputProps={{
-                      endAdornment: <Typography>%</Typography>
-                    }}
+                    InputProps={{ endAdornment: <Typography color="primary">%</Typography> }}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Categoría</Typography>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     select
                     label="Categoría"
@@ -883,6 +892,7 @@ const Productos = () => {
                     required
                     error={!!editValidation.idcategoria}
                     helperText={editValidation.idcategoria}
+                    InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
                   >
                     {loadingCategorias ? (
                       <MenuItem disabled>
@@ -917,27 +927,68 @@ const Productos = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Imagen</Typography>
-                  <Button variant="outlined" component="label" fullWidth>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={editProductoData.descripcion}
+                    onChange={handleEditProductoFormChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!editValidation.descripcion}
+                    helperText={editValidation.descripcion}
+                  />
+                </Grid>
+              </Grid>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 32 }} />
+                Imagen
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      borderRadius: 3,
+                      border: '2px dashed #1976d2',
+                      color: 'primary.main',
+                      background: 'rgba(25, 118, 210, 0.04)',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        background: 'rgba(25, 118, 210, 0.10)',
+                        borderColor: '#1565c0',
+                        color: '#1565c0',
+                      },
+                    }}
+                  >
                     Cambiar Imagen
-                    <input 
-                      type="file" 
-                      hidden 
+                    <input
+                      type="file"
+                      hidden
                       accept="image/*"
                       onChange={handleEditImagenChange}
                     />
                   </Button>
+                </Grid>
+                <Grid item xs={12} sm={6}>
                   {(editPreviewImagen || productoAEditar?.imagen) && (
-                    <Box mt={2} textAlign="center">
-                      <img 
-                        src={editPreviewImagen || productoAEditar.imagen} 
-                        alt="Preview" 
-                        style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }} 
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img
+                        src={editPreviewImagen || productoAEditar.imagen}
+                        alt="Preview"
+                        style={{ maxWidth: 260, maxHeight: 260, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }}
                       />
                     </Box>
                   )}
                 </Grid>
               </Grid>
+              {editProductoError && <Alert severity="error" sx={{ mt: 3 }}>{editProductoError}</Alert>}
             </Paper>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
@@ -950,7 +1001,7 @@ const Productos = () => {
       </Dialog>
       
       {/* Diálogo Ver Detalle */}
-      <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle
           sx={{
             display: 'flex',
@@ -962,90 +1013,108 @@ const Productos = () => {
           }}
         >
           <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <span style={{ fontWeight: 600 }}>
             Detalles del Producto
-          </Typography>
+          </span>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
+          <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
             {productoDetalle ? (
               <>
                 {/* Información General */}
-                <Box mb={3}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <InfoIcon color="primary" sx={{ fontSize: 22 }} />
-                    Información General
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>ID</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.idproducto}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Nombre</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.nombre}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Descripción</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.detalleproducto || 'N/A'}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Estado</Typography></Grid>
-                    <Grid item xs={9}>
-                      <Chip
-                        label={productoDetalle.estado ? 'Activo' : 'Inactivo'}
-                        color={productoDetalle.estado ? 'success' : 'error'}
-                        size="small"
-                        icon={productoDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
-                        sx={{ fontWeight: 600 }}
-                      />
-                    </Grid>
+                <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InfoIcon color="primary" sx={{ fontSize: 32 }} />
+                  Información General
+                </Typography>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>ID</Typography>
+                    <Typography fontWeight={500}>{productoDetalle.idproducto}</Typography>
                   </Grid>
-                </Box>
-
-                {/* Información de Precios y Stock */}
-                <Box mb={3}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AttachMoneyIcon color="primary" sx={{ fontSize: 22 }} />
-                    Información de Precios y Stock
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Precio Compra</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>COP {productoDetalle.preciocompra}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Margen (%)</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.margenganancia}%</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Precio Venta</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>COP {productoDetalle.precioventa}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Stock</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{productoDetalle.stock ?? 0}</Typography></Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Nombre</Typography>
+                    <Typography fontWeight={500}>{productoDetalle.nombre}</Typography>
                   </Grid>
-                </Box>
-
-                {/* Información de Categoría */}
-                <Box mb={3}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CategoryIcon color="primary" sx={{ fontSize: 22 }} />
-                    Información de Categoría
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Categoría</Typography></Grid>
-                    <Grid item xs={9}>
-                      <Typography fontWeight={500}>
-                        {categorias.find(cat => cat.idcategoria === productoDetalle.idcategoria)?.nombre || 'N/A'}
-                      </Typography>
-                    </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Estado</Typography>
+                    <Chip
+                      label={productoDetalle.estado ? 'Activo' : 'Inactivo'}
+                      color={productoDetalle.estado ? 'success' : 'error'}
+                      size="small"
+                      icon={productoDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
+                      sx={{ fontWeight: 600 }}
+                    />
                   </Grid>
-                </Box>
-
+                </Grid>
+                <Divider sx={{ my: 3 }} />
+                {/* Precios y Stock */}
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AttachMoneyIcon color="primary" sx={{ fontSize: 22 }} />
+                  Precios y Stock
+                </Typography>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Precio Compra</Typography>
+                    <Typography fontWeight={500}>{`COP $ ${Number(productoDetalle.preciocompra).toLocaleString('es-CO')}`}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Margen (%)</Typography>
+                    <Typography fontWeight={500}>{productoDetalle.margenganancia}%</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Precio Venta</Typography>
+                    <Typography fontWeight={500}>{`COP $ ${Number(productoDetalle.precioventa).toLocaleString('es-CO')}`}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>Stock</Typography>
+                    <Typography fontWeight={500}>{productoDetalle.stock ?? 0}</Typography>
+                  </Grid>
+                </Grid>
+                <Divider sx={{ my: 3 }} />
+                {/* Categoría */}
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CategoryIcon color="primary" sx={{ fontSize: 22 }} />
+                  Categoría
+                </Typography>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={6}>
+                    <Typography color="text.secondary" fontWeight={600}>Categoría</Typography>
+                    <Typography fontWeight={500}>
+                      {categorias.find(cat => cat.idcategoria === productoDetalle.idcategoria)?.nombre || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography color="text.secondary" fontWeight={600}>Código de Producto</Typography>
+                    <Typography fontWeight={500}>{productoDetalle.codigoproducto}</Typography>
+                  </Grid>
+                </Grid>
+                <Divider sx={{ my: 3 }} />
                 {/* Imagen */}
                 {productoDetalle.imagen && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                       <ImageIcon color="primary" sx={{ fontSize: 22 }} />
                       Imagen del Producto
                     </Typography>
-                    <Box textAlign="center">
+                    <Box textAlign="center" mb={3}>
                       <img
                         src={productoDetalle.imagen}
                         alt="Producto"
-                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid #e0e0e0' }}
+                        style={{ maxWidth: 320, maxHeight: 320, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }}
                       />
                     </Box>
-                  </Box>
+                  </>
                 )}
+                {/* Descripción */}
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InfoIcon color="primary" sx={{ fontSize: 22 }} />
+                  Descripción
+                </Typography>
+                <Paper elevation={0} sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e0e0e0', mb: 2 }}>
+                  <Typography fontWeight={500}>
+                    {productoDetalle.detalleproducto || 'Sin descripción'}
+                  </Typography>
+                </Paper>
               </>
             ) : (
               <Typography>No se encontraron detalles</Typography>

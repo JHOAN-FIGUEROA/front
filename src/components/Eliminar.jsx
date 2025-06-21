@@ -1,12 +1,27 @@
 import { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Snackbar, Alert, Typography } from '@mui/material';
 import { deleteUsuario } from '../api';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const Eliminar = ({ id, open, onClose, onEliminado, nombre = '', loading: loadingProp = false, tipoEntidad = 'usuario', deleteApi }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleEliminar = async () => {
+    // Validación especial para cliente de ventas rápidas
+    if (tipoEntidad === 'cliente' && (id === '1010101010' || id === 1010101010)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Acción no permitida',
+        text: 'No se puede eliminar el cliente para ventas rápidas',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: { popup: 'animated fadeInDown' },
+        didOpen: (popup) => { popup.style.zIndex = 99999; }
+      });
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -19,7 +34,33 @@ const Eliminar = ({ id, open, onClose, onEliminado, nombre = '', loading: loadin
       const mensaje = response?.data?.mensaje || response?.data?.data?.mensaje || 'Categoría eliminada correctamente';
       if (onEliminado) onEliminado(mensaje);
     } catch (err) {
-      setError(err.message);
+      let errorMessage = err.message || 'Error al eliminar';
+
+      if (errorMessage.includes('violates foreign key constraint')) {
+        if (tipoEntidad === 'producto') {
+          if (errorMessage.includes('compra')) {
+            errorMessage = 'No se puede eliminar el producto, tiene compras asociadas.';
+          } else if (errorMessage.includes('venta')) {
+            errorMessage = 'No se puede eliminar el producto, tiene ventas asociadas.';
+          } else {
+            errorMessage = 'No se puede eliminar el producto porque está siendo usado en otros registros.';
+          }
+        } else if (tipoEntidad === 'proveedor') {
+            errorMessage = 'No se puede eliminar el proveedor, tiene compras asociadas.';
+        } else {
+            errorMessage = `No se puede eliminar el ${tipoEntidad}, tiene registros asociados.`;
+        }
+      }
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Eliminar',
+        text: errorMessage,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: { popup: 'animated fadeInDown' },
+        didOpen: (popup) => { popup.style.zIndex = 99999; }
+      });
     } finally {
       setLoading(false);
     }
@@ -39,9 +80,6 @@ const Eliminar = ({ id, open, onClose, onEliminado, nombre = '', loading: loadin
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError('')} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert severity="error" onClose={() => setError('')}>{error}</Alert>
-      </Snackbar>
     </>
   );
 };

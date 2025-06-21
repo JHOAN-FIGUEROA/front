@@ -194,26 +194,18 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
 
   // Agrupación de campos por secciones
   const camposPorSeccion = {
-    identificacion: [
-      'tipodocumento', 'documento',
-    ],
-    personal: [
-      'nombre', 'apellido', 'password',
-    ],
-    contacto: [
-      'email',
-    ],
-    ubicacion: [
-      'municipio', 'barrio', 'dirrecion', 'complemento',
-    ],
-    rol: [
-      'rol_idrol',
-    ],
+    identificacion: ['tipodocumento', 'documento'],
+    personal: ['nombre', 'apellido', 'password'],
+    contacto: ['email'],
+    ubicacion: ['municipio', 'barrio', 'dirrecion', 'complemento'],
+    rol: ['rol_idrol'],
   };
 
-  // Obtener las opciones de roles
+  // Obtener las opciones de roles y tipo de documento
   const rolesCampo = campos.find(c => c.name === 'rol_idrol');
   const rolesOptions = Array.isArray(rolesCampo?.options) ? rolesCampo.options : [];
+  const tipoDocCampo = campos.find(c => c.name === 'tipodocumento');
+  const tipoDocOptions = Array.isArray(tipoDocCampo?.options) ? tipoDocCampo.options : [];
 
   // Handler para seleccionar rol
   const handleSeleccionarRol = (id) => {
@@ -230,10 +222,6 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
     setValidationErrors(prev => ({ ...prev, tipodocumento: newErrors.tipodocumento }));
   };
 
-  // Obtener las opciones de tipo de documento
-  const tipoDocCampo = campos.find(c => c.name === 'tipodocumento');
-  const tipoDocOptions = Array.isArray(tipoDocCampo?.options) ? tipoDocCampo.options : [];
-
   // Helper para renderizar campos
   const renderCampos = (nombresCampos) => (
     <Grid container spacing={2}>
@@ -241,20 +229,20 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
         const campo = campos.find(c => c.name === name);
         if (!campo) return null;
         const { label, select, options, type = 'text', required = true } = campo;
-  return (
-                <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
-                  {select ? (
-                    <TextField
-                      select
-                      label={label}
-                      name={name}
-                      value={form[name] || ''}
-                      onChange={handleChange}
-                      fullWidth
-                      margin="normal"
-                      required={required}
-                      error={!!validationErrors[name]}
-                      helperText={validationErrors[name]}
+        return (
+          <Grid item xs={12} sm={select || type === 'password' ? 12 : 6} key={name}>
+            {select ? (
+              <TextField
+                select
+                label={label}
+                name={name}
+                value={form[name] || ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={required}
+                error={!!validationErrors[name]}
+                helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -270,8 +258,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                     color: 'primary.main',
                   },
                 }}
-                    >
-                      {Array.isArray(options) && options.map(opt => (
+              >
+                {Array.isArray(options) && options.map(opt => (
                   <MenuItem 
                     key={opt.value || opt} 
                     value={opt.value || opt}
@@ -287,22 +275,22 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                       },
                     }}
                   >
-                          {opt.label || opt}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  ) : (
-                    <TextField
-                      label={label}
-                      name={name}
-                      value={form[name] || ''}
-                      onChange={handleChange}
-                      fullWidth
-                      margin="normal"
-                      type={type}
-                      required={required}
-                      error={!!validationErrors[name]}
-                      helperText={validationErrors[name]}
+                    {opt.label || opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <TextField
+                label={label}
+                name={name}
+                value={form[name] || ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                type={type}
+                required={required}
+                error={!!validationErrors[name]}
+                helperText={validationErrors[name]}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
@@ -318,8 +306,8 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                     color: 'primary.main',
                   },
                 }}
-                    />
-                  )}
+              />
+            )}
           </Grid>
         );
       })}
@@ -327,207 +315,200 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
   );
 
   return (
-    <>
-      <Dialog 
-        open={open} 
-        onClose={onClose} 
-        maxWidth="md" 
-        fullWidth
-        scroll="paper"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1,
-          backgroundColor: '#f8f9fa',
-          borderBottom: '1px solid #e0e0e0',
-          py: 2.5
-        }}>
-          <PersonAddIcon color="primary" sx={{ fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {titulo}
-          </Typography>
-        </DialogTitle>
-        <form onSubmit={handleSubmit} autoComplete="off" noValidate>
-          <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff', maxHeight: '70vh', overflowY: 'auto' }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth scroll="paper"
+      PaperProps={{ sx: { borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', overflow: 'hidden' } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+        <PersonAddIcon color="primary" sx={{ fontSize: 28 }} />
+        <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+          {titulo}
+        </Typography>
+      </DialogTitle>
+      <form onSubmit={handleSubmit} autoComplete="off" noValidate>
+        <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa', maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
+          <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+            <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PersonAddIcon color="primary" sx={{ fontSize: 32 }} />
+              Información del Usuario
+            </Typography>
             <Grid container spacing={3}>
               {/* Identificación */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
-                  </Box>
-                  {/* Opciones de tipo de documento visuales */}
-                  <Box mb={2}>
-                    <Grid container spacing={2}>
-                      {tipoDocOptions.map(opt => (
-                        <Grid item xs={4} sm={3} key={opt.value || opt}>
-                          <Paper
-                            elevation={form.tipodocumento === (opt.value || opt) ? 3 : 0}
-                            sx={{
-                              p: 1.5,
-                              borderRadius: 2,
-                              border: form.tipodocumento === (opt.value || opt) ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                              backgroundColor: form.tipodocumento === (opt.value || opt) ? '#e3f2fd' : '#fff',
-                              cursor: 'pointer',
-                              textAlign: 'center',
-                              fontWeight: 600,
-                              transition: 'all 0.2s',
-                              '&:hover': {
-                                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
-                                borderColor: '#1976d2',
-                              },
-                            }}
-                            onClick={() => handleSeleccionarTipoDocumento(opt.value || opt)}
-                          >
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: 16 }}>
-                              {opt.label || opt}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-                      ))}
-                    </Grid>
-                    {validationErrors['tipodocumento'] && (
-                      <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['tipodocumento']}</Alert>
-                    )}
-                  </Box>
-                  {/* Renderizar el resto de campos de identificación excepto tipodocumento */}
-                  {renderCampos(camposPorSeccion.identificacion.filter(c => c !== 'tipodocumento'))}
-                </Paper>
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
+                </Box>
+                <Box display="flex" gap={1} mb={2}>
+                  {tipoDocOptions.map(opt => (
+                    <Button
+                      key={opt}
+                      variant={form.tipodocumento === opt ? 'contained' : 'outlined'}
+                      color={form.tipodocumento === opt ? 'primary' : 'inherit'}
+                      size="small"
+                      sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                      onClick={() => handleSeleccionarTipoDocumento(opt)}
+                    >
+                      {opt}
+                    </Button>
+                  ))}
+                </Box>
+                <TextField
+                  label="Documento"
+                  name="documento"
+                  value={form.documento}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.documento}
+                  helperText={validationErrors.documento}
+                />
               </Grid>
               {/* Información Personal */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
-                  </Box>
-                  {renderCampos(camposPorSeccion.personal)}
-                </Paper>
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
+                </Box>
+                <TextField
+                  label="Nombre"
+                  name="nombre"
+                  value={form.nombre}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.nombre}
+                  helperText={validationErrors.nombre}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Apellido"
+                  name="apellido"
+                  value={form.apellido}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.apellido}
+                  helperText={validationErrors.apellido}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Contraseña"
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.password}
+                  helperText={validationErrors.password}
+                />
               </Grid>
               {/* Contacto */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
-                  </Box>
-                  {renderCampos(camposPorSeccion.contacto)}
-                </Paper>
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
+                </Box>
+                <TextField
+                  label="Email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!validationErrors.email}
+                  helperText={validationErrors.email}
+                  sx={{ mb: 2 }}
+                />
               </Grid>
               {/* Ubicación */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
-                  </Box>
-                  {renderCampos(camposPorSeccion.ubicacion)}
-                </Paper>
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
+                </Box>
+                <TextField
+                  label="Municipio"
+                  name="municipio"
+                  value={form.municipio}
+                  onChange={handleChange}
+                  fullWidth
+                  error={!!validationErrors.municipio}
+                  helperText={validationErrors.municipio}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Barrio"
+                  name="barrio"
+                  value={form.barrio}
+                  onChange={handleChange}
+                  fullWidth
+                  error={!!validationErrors.barrio}
+                  helperText={validationErrors.barrio}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Dirección"
+                  name="dirrecion"
+                  value={form.dirrecion}
+                  onChange={handleChange}
+                  fullWidth
+                  error={!!validationErrors.dirrecion}
+                  helperText={validationErrors.dirrecion}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Complemento"
+                  name="complemento"
+                  value={form.complemento}
+                  onChange={handleChange}
+                  fullWidth
+                  error={!!validationErrors.complemento}
+                  helperText={validationErrors.complemento}
+                />
               </Grid>
               {/* Rol */}
-              <Grid item xs={12} md={6}>
-                <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <GroupIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Rol</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    {rolesOptions.length === 0 && (
-                      <Grid item xs={12}>
-                        <Alert severity="info">No hay roles disponibles</Alert>
-                      </Grid>
-                    )}
-                    {rolesOptions.map(opt => (
-                      <Grid item xs={12} sm={6} key={opt.value || opt}>
-                        <Paper
-                          elevation={rolSeleccionado === (opt.value || opt) ? 3 : 0}
-                          sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            border: rolSeleccionado === (opt.value || opt) ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                            backgroundColor: rolSeleccionado === (opt.value || opt) ? '#e3f2fd' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
-                              borderColor: '#1976d2',
-                            },
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                          }}
-                          onClick={() => handleSeleccionarRol(opt.value || opt)}
-                        >
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            {opt.label || opt}
-                          </Typography>
-                        </Paper>
-                </Grid>
-              ))}
-                  </Grid>
-                  {validationErrors['rol_idrol'] && (
-                    <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <GroupIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Rol</Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  {rolesOptions.length === 0 && (
+                    <Grid>
+                      <Alert severity="info">No hay roles disponibles</Alert>
+                    </Grid>
                   )}
-                </Paper>
+                  {rolesOptions.map(opt => (
+                    <Grid key={opt.value || opt}>
+                      <Button
+                        variant={rolSeleccionado === (opt.value || opt) ? 'contained' : 'outlined'}
+                        color={rolSeleccionado === (opt.value || opt) ? 'primary' : 'inherit'}
+                        size="large"
+                        sx={{ minWidth: 120, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none', mb: 1 }}
+                        onClick={() => handleSeleccionarRol(opt.value || opt)}
+                      >
+                        {opt.label || opt}
+                      </Button>
+                    </Grid>
+                  ))}
+                </Grid>
+                {validationErrors['rol_idrol'] && (
+                  <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
+                )}
               </Grid>
             </Grid>
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ 
-            p: 2.5, 
-            backgroundColor: '#f8f9fa', 
-            borderTop: '1px solid #e0e0e0' 
-          }}>
-            <Button 
-              onClick={onClose} 
-              color="secondary" 
-              disabled={loading || loadingProp}
-              sx={{ 
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: 'none',
-                '&:hover': {
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              color="primary" 
-              disabled={loading || loadingProp}
-              sx={{ 
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: 'none',
-                '&:hover': {
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }
-              }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Registrar'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+            {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
+          </Paper>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={onClose} color="secondary" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            Cancelar
+          </Button>
+          <Button type="submit" color="success" variant="contained" disabled={loading || loadingProp} sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } }}>
+            {loading ? <CircularProgress size={24} /> : 'Registrar'}
+          </Button>
+        </DialogActions>
+      </form>
       <Snackbar
         open={success}
         autoHideDuration={2000}
@@ -538,7 +519,7 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
           Usuario registrado correctamente
         </Alert>
       </Snackbar>
-    </>
+    </Dialog>
   );
 };
 

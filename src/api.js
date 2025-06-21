@@ -1,10 +1,14 @@
 import axios from 'axios';
+import { useAuth } from './hooks/useAuth';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 // Configuración base de Axios
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: '/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Interceptores ==============================================================
@@ -706,6 +710,34 @@ export const deleteUnidad = async (id) => {
 export const updateUnidad = async (idpresentacion, data) => {
   try {
     const response = await api.put(`/api/unidades/${idpresentacion}`, data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+// Buscar producto por código de barras
+export const getProductoByCodigo = async (codigoproducto) => {
+  try {
+    const response = await api.get('/api/productos/buscar', { params: { codigoproducto } });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+// Dashboard ==================================================================
+export const getDashboardStats = async () => {
+  try {
+    const response = await api.get('/api/dashboard');
     return response.data;
   } catch (error) {
     if (error.response) {

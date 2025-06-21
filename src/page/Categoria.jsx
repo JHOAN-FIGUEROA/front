@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, 
   CircularProgress, Alert, IconButton, Stack, Pagination, Button, Snackbar, Dialog, 
-  DialogTitle, DialogContent, DialogActions, Grid, TextField, Chip
+  DialogTitle, DialogContent, DialogActions, Grid, TextField, Chip, Divider
 } from '@mui/material';
 import { 
   getCategorias,
@@ -26,6 +26,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import ImageIcon from '@mui/icons-material/Image';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CategoryIcon from '@mui/icons-material/Category';
 
 
 const CATEGORIAS_POR_PAGINA = 5;
@@ -509,30 +510,19 @@ const Categorias = () => {
       </Snackbar>
 
       {/* Diálogo Crear */}
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="sm" fullWidth>
-        <form onSubmit={handleCrearCategoria} autoComplete="off" noValidate>
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              backgroundColor: '#f8f9fa',
-              borderBottom: '1px solid #e0e0e0',
-              py: 2.5,
-            }}
-          >
-            <AddIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Registrar Nueva Categoría
-            </Typography>
-          </DialogTitle>
+      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+          <AddIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Registrar Nueva Categoría</Typography>
+        </DialogTitle>
+        <form onSubmit={handleCrearCategoria} autoComplete="off">
           <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <InfoIcon color="primary" sx={{ fontSize: 22 }} />
-                Información General
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+                Información de Categoría
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Nombre"
@@ -541,12 +531,11 @@ const Categorias = () => {
                     onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
                     fullWidth
                     required
-                    autoFocus
                     error={!!crearValidation.nombre}
                     helperText={crearValidation.nombre}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12}>
                   <TextField
                     label="Descripción"
                     name="descripcion"
@@ -560,36 +549,32 @@ const Categorias = () => {
                   />
                 </Grid>
               </Grid>
-              <Box mt={3}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ImageIcon color="primary" sx={{ fontSize: 22 }} />
-                  Imagen de la Categoría
-                </Typography>
-                <Button variant="outlined" component="label" fullWidth>
-                  Subir Imagen
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleImagenChange}
-                  />
-                </Button>
-                {previewImagen && (
-                  <Box mt={2} textAlign="center">
-                    <img
-                      src={previewImagen}
-                      alt="Preview"
-                      style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }}
-                    />
-                  </Box>
-                )}
-              </Box>
-              {crearError && <Alert severity="error" sx={{ mt: 2 }}>{crearError}</Alert>}
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                Imagen de la Categoría
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button variant="outlined" component="label" fullWidth sx={{ py: 2, fontWeight: 700, fontSize: 18, borderRadius: 3, border: '2px dashed #1976d2', color: 'primary.main', background: 'rgba(25, 118, 210, 0.04)', transition: 'all 0.2s', '&:hover': { background: 'rgba(25, 118, 210, 0.10)', borderColor: '#1565c0', color: '#1565c0', }, }}>
+                    Subir Imagen
+                    <input type="file" hidden accept="image/*" onChange={handleImagenChange} />
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {previewImagen && (
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img src={previewImagen} alt="Preview" style={{ maxWidth: 200, maxHeight: 200, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }} />
+                    </Box>
+                  )}
+                </Grid>
+              </Grid>
+              {crearError && <Alert severity="error" sx={{ mt: 3 }}>{crearError}</Alert>}
             </Paper>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
             <Button onClick={() => setCrearOpen(false)} color="secondary" variant="outlined">Cancelar</Button>
-            <Button type="submit" color="primary" variant="contained" disabled={crearLoading || !!crearValidation.nombre || !!crearValidation.descripcion}>
+            <Button type="submit" color="primary" variant="contained" disabled={crearLoading || Object.values(crearValidation).some(v => v)}>
               {crearLoading ? <CircularProgress size={24} /> : 'Registrar'}
             </Button>
           </DialogActions>
@@ -597,21 +582,20 @@ const Categorias = () => {
       </Dialog>
       
       {/* Diálogo Editar */}
-      <Dialog open={editCategoriaOpen} onClose={handleCerrarEdicionCategoria} maxWidth="sm" fullWidth>
-        <form onSubmit={handleGuardarEdicionCategoria} autoComplete="off" noValidate>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
-            <EditIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Editar Categoría: {categoriaAEditar?.nombre}
-            </Typography>
-          </DialogTitle>
+      <Dialog open={editCategoriaOpen} onClose={handleCerrarEdicionCategoria} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+          <EditIcon color="primary" sx={{ fontSize: 28 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Editar Categoría</Typography>
+        </DialogTitle>
+        <form onSubmit={handleGuardarEdicionCategoria} autoComplete="off">
           <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-            <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
-              {editCategoriaLoading && <CircularProgress sx={{ display: 'block', mx: 'auto' }} />}
-              {editCategoriaError && <Alert severity="error">{editCategoriaError}</Alert>}
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+                Información de Categoría
+              </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Nombre</Typography>
                   <TextField
                     label="Nombre"
                     name="nombre"
@@ -619,13 +603,11 @@ const Categorias = () => {
                     onChange={handleEditCategoriaFormChange}
                     fullWidth
                     required
-                    autoFocus
                     error={!!editValidation.nombre}
                     helperText={editValidation.nombre}
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Descripción</Typography>
                   <TextField
                     label="Descripción"
                     name="descripcion"
@@ -638,24 +620,23 @@ const Categorias = () => {
                     helperText={editValidation.descripcion}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>Imagen</Typography>
-                  <Button variant="outlined" component="label" fullWidth>
+              </Grid>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                Imagen de la Categoría
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button variant="outlined" component="label" fullWidth sx={{ py: 2, fontWeight: 700, fontSize: 18, borderRadius: 3, border: '2px dashed #1976d2', color: 'primary.main', background: 'rgba(25, 118, 210, 0.04)', transition: 'all 0.2s', '&:hover': { background: 'rgba(25, 118, 210, 0.10)', borderColor: '#1565c0', color: '#1565c0', }, }}>
                     Cambiar Imagen
-                    <input 
-                      type="file" 
-                      hidden 
-                      accept="image/*"
-                      onChange={handleEditImagenChange}
-                    />
+                    <input type="file" hidden accept="image/*" onChange={handleEditImagenChange} />
                   </Button>
-                  {(editPreviewImagen || categoriaAEditar?.imagen) && (
-                    <Box mt={2} textAlign="center">
-                      <img 
-                        src={editPreviewImagen || categoriaAEditar.imagen} 
-                        alt="Preview" 
-                        style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0' }} 
-                      />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {editPreviewImagen && (
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img src={editPreviewImagen} alt="Preview" style={{ maxWidth: 200, maxHeight: 200, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }} />
                     </Box>
                   )}
                 </Grid>
@@ -672,67 +653,48 @@ const Categorias = () => {
       </Dialog>
       
       {/* Diálogo Ver Detalle */}
-      <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            backgroundColor: '#f8f9fa',
-            borderBottom: '1px solid #e0e0e0',
-            py: 2.5,
-          }}
-        >
+      <Dialog open={verDetalleOpen} onClose={() => setVerDetalleOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
           <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Detalles de Categoría
-          </Typography>
+          <span style={{ fontWeight: 600 }}>
+            Detalles de la Categoría
+          </span>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#fff', m: 2 }}>
+          <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
             {categoriaDetalle ? (
               <>
-                {/* Información General */}
-                <Box mb={3}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <InfoIcon color="primary" sx={{ fontSize: 22 }} />
-                    Información General
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>ID</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.id}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Nombre</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.nombre}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Descripción</Typography></Grid>
-                    <Grid item xs={9}><Typography fontWeight={500}>{categoriaDetalle.descripcion || 'N/A'}</Typography></Grid>
-                    <Grid item xs={3}><Typography color="text.secondary" fontWeight={600}>Estado</Typography></Grid>
-                    <Grid item xs={9}>
-                      <Chip
-                        label={categoriaDetalle.estado ? 'Activo' : 'Inactivo'}
-                        color={categoriaDetalle.estado ? 'success' : 'error'}
-                        size="small"
-                        icon={categoriaDetalle.estado ? <CheckCircleIcon /> : <CancelIcon />}
-                        sx={{ fontWeight: 600 }}
-                      />
-                    </Grid>
+                <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+                  Información de Categoría
+                </Typography>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} sm={4}>
+                    <Typography color="text.secondary" fontWeight={600}>ID</Typography>
+                    <Typography fontWeight={500}>{categoriaDetalle.id ?? categoriaDetalle.idcategoria}</Typography>
                   </Grid>
-                </Box>
-                {/* Imagen */}
+                  <Grid item xs={12} sm={8}>
+                    <Typography color="text.secondary" fontWeight={600}>Nombre</Typography>
+                    <Typography fontWeight={500}>{categoriaDetalle.nombre}</Typography>
+                  </Grid>
+                </Grid>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                  Imagen
+                </Typography>
                 {categoriaDetalle.imagen && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <ImageIcon color="primary" sx={{ fontSize: 22 }} />
-                      Imagen de la Categoría
-                    </Typography>
-                    <Box textAlign="center">
-                      <img
-                        src={categoriaDetalle.imagen}
-                        alt="Categoría"
-                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid #e0e0e0' }}
-                      />
-                    </Box>
+                  <Box textAlign="center" mb={3}>
+                    <img src={categoriaDetalle.imagen} alt="Categoría" style={{ maxWidth: 200, maxHeight: 200, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }} />
                   </Box>
                 )}
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InfoIcon color="primary" sx={{ fontSize: 22 }} />
+                  Descripción
+                </Typography>
+                <Paper elevation={0} sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e0e0e0', mb: 2 }}>
+                  <Typography fontWeight={500}>{categoriaDetalle.descripcion || 'Sin descripción'}</Typography>
+                </Paper>
               </>
             ) : (
               <Typography>No se encontraron detalles</Typography>
