@@ -10,7 +10,8 @@ import {
   updateProducto,
   deleteProducto,
   updateEstadoProducto,
-  getCategoriasActivas
+  getCategoriasActivas,
+  createCategoria
 } from '../api';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -99,6 +100,22 @@ const Productos = () => {
   const [categorias, setCategorias] = useState([]);
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [errorCategorias, setErrorCategorias] = useState('');
+
+  // Estados para el submodal de crear categoría
+  const [crearCategoriaOpen, setCrearCategoriaOpen] = useState(false);
+  const [nuevaCategoria, setNuevaCategoria] = useState({ nombre: '', descripcion: '', imagen: null });
+  const [previewImagenCategoria, setPreviewImagenCategoria] = useState(null);
+  const [crearCategoriaLoading, setCrearCategoriaLoading] = useState(false);
+  const [crearCategoriaError, setCrearCategoriaError] = useState('');
+  const [crearCategoriaValidation, setCrearCategoriaValidation] = useState({ nombre: '', descripcion: '' });
+
+  // Estados para el submodal de crear categoría en editar
+  const [crearCategoriaEditOpen, setCrearCategoriaEditOpen] = useState(false);
+  const [nuevaCategoriaEdit, setNuevaCategoriaEdit] = useState({ nombre: '', descripcion: '', imagen: null });
+  const [previewImagenCategoriaEdit, setPreviewImagenCategoriaEdit] = useState(null);
+  const [crearCategoriaEditLoading, setCrearCategoriaEditLoading] = useState(false);
+  const [crearCategoriaEditError, setCrearCategoriaEditError] = useState('');
+  const [crearCategoriaEditValidation, setCrearCategoriaEditValidation] = useState({ nombre: '', descripcion: '' });
 
   const showAlert = (message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -227,7 +244,7 @@ const Productos = () => {
 
       const formData = new FormData();
       formData.append('nombre', editProductoData.nombre);
-      formData.append('detalleproducto', editProductoData.detalleproducto || '');
+      formData.append('detalleproducto', editProductoData.descripcion || '');
       formData.append('preciocompra', Number(String(editProductoData.preciocompra).replace(/[^0-9.]/g, '')));
       formData.append('margenganancia', editProductoData.margenganancia);
       formData.append('idcategoria', editProductoData.idcategoria);
@@ -450,6 +467,19 @@ const Productos = () => {
     return '';
   };
 
+  // Validaciones para categorías
+  const validateNombreCategoria = (nombre) => {
+    if (!nombre.trim()) return 'El nombre es obligatorio';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,15}$/.test(nombre)) return 'El nombre debe tener entre 3 y 15 letras';
+    return '';
+  };
+
+  const validateDescripcionCategoria = (descripcion) => {
+    if (!descripcion) return '';
+    if (descripcion.length > 45) return 'La descripción debe tener máximo 45 caracteres';
+    return '';
+  };
+
   useEffect(() => {
     setCrearValidation({
       nombre: validateNombreProducto(nuevoProducto.nombre),
@@ -471,6 +501,22 @@ const Productos = () => {
       codigoproducto: validateCodigoProducto(editProductoData.codigoproducto)
     });
   }, [editProductoData, categorias]);
+
+  // Validaciones en tiempo real para crear categoría
+  useEffect(() => {
+    setCrearCategoriaValidation({
+      nombre: validateNombreCategoria(nuevaCategoria.nombre),
+      descripcion: validateDescripcionCategoria(nuevaCategoria.descripcion),
+    });
+  }, [nuevaCategoria]);
+
+  // Validaciones en tiempo real para crear categoría en editar
+  useEffect(() => {
+    setCrearCategoriaEditValidation({
+      nombre: validateNombreCategoria(nuevaCategoriaEdit.nombre),
+      descripcion: validateDescripcionCategoria(nuevaCategoriaEdit.descripcion),
+    });
+  }, [nuevaCategoriaEdit]);
 
   // Función para cargar categorías
   const cargarCategorias = async () => {
@@ -496,6 +542,173 @@ const Productos = () => {
   useEffect(() => {
     cargarCategorias();
   }, []);
+
+  // Funciones para manejar la creación de categorías
+  const handleImagenCategoriaChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setNuevaCategoria(prev => ({ ...prev, imagen: file }));
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewImagenCategoria(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImagenCategoriaEditChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setNuevaCategoriaEdit(prev => ({ ...prev, imagen: file }));
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewImagenCategoriaEdit(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCrearCategoria = async (e) => {
+    e.preventDefault();
+    setCrearCategoriaLoading(true);
+    setCrearCategoriaError('');
+    
+    try {
+      if (!nuevaCategoria.nombre) { 
+        throw new Error('El nombre es obligatorio');
+      }
+
+      if (nuevaCategoria.nombre.length > 15) {
+        throw new Error('El nombre debe tener máximo 15 caracteres');
+      }
+
+      if (nuevaCategoria.descripcion && nuevaCategoria.descripcion.length > 45) {
+        throw new Error('La descripción debe tener máximo 45 caracteres');
+      }
+      
+      const formData = new FormData();
+      formData.append('nombre', nuevaCategoria.nombre);
+      formData.append('descripcion', nuevaCategoria.descripcion || '');
+      
+      if (nuevaCategoria.imagen instanceof File) {
+        formData.append('imagen', nuevaCategoria.imagen, nuevaCategoria.imagen.name);
+      }
+      
+      const response = await createCategoria(formData);
+      
+      if (response.error) {
+        throw new Error(response.detalles || 'Error al crear la categoría');
+      }
+      
+      // Recargar categorías
+      await cargarCategorias();
+      
+      // Seleccionar la nueva categoría automáticamente
+      const newCategoryId = response?.idcategoria || response?.id || response?.data?.idcategoria || response?.data?.id;
+      if (newCategoryId) {
+        setTimeout(() => {
+          setNuevoProducto(prev => ({ ...prev, idcategoria: newCategoryId }));
+        }, 0);
+      }
+      
+      Swal.fire({
+        icon: 'success',
+        title: '¡Categoría Creada!',
+        text: 'La categoría ha sido registrada y seleccionada',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#fff'
+      });
+      
+      setCrearCategoriaOpen(false);
+      setNuevaCategoria({ nombre: '', descripcion: '', imagen: null });
+      setPreviewImagenCategoria(null);
+    } catch (err) {
+      const errorMsg = err.message || 'Error al crear la categoría';
+      setCrearCategoriaError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Crear',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff'
+      });
+    } finally {
+      setCrearCategoriaLoading(false);
+    }
+  };
+
+  const handleCrearCategoriaEdit = async (e) => {
+    e.preventDefault();
+    setCrearCategoriaEditLoading(true);
+    setCrearCategoriaEditError('');
+    
+    try {
+      if (!nuevaCategoriaEdit.nombre) { 
+        throw new Error('El nombre es obligatorio');
+      }
+
+      if (nuevaCategoriaEdit.nombre.length > 15) {
+        throw new Error('El nombre debe tener máximo 15 caracteres');
+      }
+
+      if (nuevaCategoriaEdit.descripcion && nuevaCategoriaEdit.descripcion.length > 45) {
+        throw new Error('La descripción debe tener máximo 45 caracteres');
+      }
+      
+      const formData = new FormData();
+      formData.append('nombre', nuevaCategoriaEdit.nombre);
+      formData.append('descripcion', nuevaCategoriaEdit.descripcion || '');
+      
+      if (nuevaCategoriaEdit.imagen instanceof File) {
+        formData.append('imagen', nuevaCategoriaEdit.imagen, nuevaCategoriaEdit.imagen.name);
+      }
+      
+      const response = await createCategoria(formData);
+      
+      if (response.error) {
+        throw new Error(response.detalles || 'Error al crear la categoría');
+      }
+      
+      // Recargar categorías
+      await cargarCategorias();
+      
+      // Seleccionar la nueva categoría automáticamente
+      const newCategoryId = response?.idcategoria || response?.id || response?.data?.idcategoria || response?.data?.id;
+      if (newCategoryId) {
+        setTimeout(() => {
+          setEditProductoData(prev => ({ ...prev, idcategoria: newCategoryId }));
+        }, 0);
+      }
+      
+      Swal.fire({
+        icon: 'success',
+        title: '¡Categoría Creada!',
+        text: 'La categoría ha sido registrada y seleccionada',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#fff'
+      });
+      
+      setCrearCategoriaEditOpen(false);
+      setNuevaCategoriaEdit({ nombre: '', descripcion: '', imagen: null });
+      setPreviewImagenCategoriaEdit(null);
+    } catch (err) {
+      const errorMsg = err.message || 'Error al crear la categoría';
+      setCrearCategoriaEditError(errorMsg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Crear',
+        text: errorMsg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff'
+      });
+    } finally {
+      setCrearCategoriaEditLoading(false);
+    }
+  };
 
   return (
     <Box p={3} sx={{ position: 'relative' }}>
@@ -702,37 +915,58 @@ const Productos = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    select
-                    label="Categoría"
-                    name="idcategoria"
-                    value={nuevoProducto.idcategoria}
-                    onChange={e => setNuevoProducto(prev => ({ ...prev, idcategoria: e.target.value }))}
-                    fullWidth
-                    required
-                    error={!!crearValidation.idcategoria}
-                    helperText={crearValidation.idcategoria}
-                    InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
-                  >
-                    {loadingCategorias ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                        Cargando categorías...
-                      </MenuItem>
-                    ) : errorCategorias ? (
-                      <MenuItem disabled>
-                        <Alert severity="error" sx={{ width: '100%' }}>{errorCategorias}</Alert>
-                      </MenuItem>
-                    ) : categorias.length === 0 ? (
-                      <MenuItem disabled>No hay categorías disponibles</MenuItem>
-                    ) : (
-                      categorias.map((categoria) => (
-                        <MenuItem key={categoria.idcategoria} value={categoria.idcategoria}>
-                          {categoria.nombre}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <TextField
+                      select
+                      label="Categoría"
+                      name="idcategoria"
+                      value={nuevoProducto.idcategoria}
+                      onChange={e => setNuevoProducto(prev => ({ ...prev, idcategoria: e.target.value }))}
+                      fullWidth
+                      required
+                      error={!!crearValidation.idcategoria}
+                      helperText={crearValidation.idcategoria}
+                      InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                    >
+                      {loadingCategorias ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                          Cargando categorías...
                         </MenuItem>
-                      ))
-                    )}
-                  </TextField>
+                      ) : errorCategorias ? (
+                        <MenuItem disabled>
+                          <Alert severity="error" sx={{ width: '100%' }}>{errorCategorias}</Alert>
+                        </MenuItem>
+                      ) : categorias.length === 0 ? (
+                        <MenuItem disabled>No hay categorías disponibles</MenuItem>
+                      ) : (
+                        categorias.map((categoria) => (
+                          <MenuItem key={categoria.idcategoria} value={categoria.idcategoria}>
+                            {categoria.nombre}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => setCrearCategoriaOpen(true)}
+                      sx={{ 
+                        minWidth: 'auto', 
+                        px: 2, 
+                        height: 56,
+                        borderColor: 'primary.main',
+                        '&:hover': {
+                          borderColor: 'primary.dark',
+                          backgroundColor: 'primary.light',
+                          color: 'primary.contrastText'
+                        }
+                      }}
+                      title="Crear nueva categoría"
+                    >
+                      <AddIcon />
+                    </Button>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -882,37 +1116,58 @@ const Productos = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    select
-                    label="Categoría"
-                    name="idcategoria"
-                    value={editProductoData.idcategoria}
-                    onChange={handleEditProductoFormChange}
-                    fullWidth
-                    required
-                    error={!!editValidation.idcategoria}
-                    helperText={editValidation.idcategoria}
-                    InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
-                  >
-                    {loadingCategorias ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                        Cargando categorías...
-                      </MenuItem>
-                    ) : errorCategorias ? (
-                      <MenuItem disabled>
-                        <Alert severity="error" sx={{ width: '100%' }}>{errorCategorias}</Alert>
-                      </MenuItem>
-                    ) : categorias.length === 0 ? (
-                      <MenuItem disabled>No hay categorías disponibles</MenuItem>
-                    ) : (
-                      categorias.map((categoria) => (
-                        <MenuItem key={categoria.idcategoria} value={categoria.idcategoria}>
-                          {categoria.nombre}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <TextField
+                      select
+                      label="Categoría"
+                      name="idcategoria"
+                      value={editProductoData.idcategoria}
+                      onChange={handleEditProductoFormChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.idcategoria}
+                      helperText={editValidation.idcategoria}
+                      InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                    >
+                      {loadingCategorias ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                          Cargando categorías...
                         </MenuItem>
-                      ))
-                    )}
-                  </TextField>
+                      ) : errorCategorias ? (
+                        <MenuItem disabled>
+                          <Alert severity="error" sx={{ width: '100%' }}>{errorCategorias}</Alert>
+                        </MenuItem>
+                      ) : categorias.length === 0 ? (
+                        <MenuItem disabled>No hay categorías disponibles</MenuItem>
+                      ) : (
+                        categorias.map((categoria) => (
+                          <MenuItem key={categoria.idcategoria} value={categoria.idcategoria}>
+                            {categoria.nombre}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => setCrearCategoriaEditOpen(true)}
+                      sx={{ 
+                        minWidth: 'auto', 
+                        px: 2, 
+                        height: 56,
+                        borderColor: 'primary.main',
+                        '&:hover': {
+                          borderColor: 'primary.dark',
+                          backgroundColor: 'primary.light',
+                          color: 'primary.contrastText'
+                        }
+                      }}
+                      title="Crear nueva categoría"
+                    >
+                      <AddIcon />
+                    </Button>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -1139,6 +1394,236 @@ const Productos = () => {
         tipoEntidad="producto"
         deleteApi={deleteProducto}
       />
+
+      {/* Submodal Crear Categoría */}
+      <Dialog open={crearCategoriaOpen} onClose={() => setCrearCategoriaOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleCrearCategoria} autoComplete="off" noValidate>
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: '#f8f9fa',
+              borderBottom: '1px solid #e0e0e0',
+              py: 2.5,
+            }}
+          >
+            <AddIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+              Crear Nueva Categoría
+            </Typography>
+          </DialogTitle>
+          <DialogContent 
+            dividers 
+            sx={{ p: 0, backgroundColor: '#f8f9fa', animation: 'fadeIn 0.5s' }}
+          >
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+                Información de Categoría
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Nombre"
+                    name="nombre"
+                    value={nuevaCategoria.nombre}
+                    onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
+                    fullWidth
+                    required
+                    autoFocus
+                    error={!!crearCategoriaValidation.nombre}
+                    helperText={crearCategoriaValidation.nombre}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={nuevaCategoria.descripcion}
+                    onChange={e => setNuevaCategoria(prev => ({ ...prev, descripcion: e.target.value }))}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!crearCategoriaValidation.descripcion}
+                    helperText={crearCategoriaValidation.descripcion}
+                  />
+                </Grid>
+              </Grid>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                Imagen de la Categoría
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      borderRadius: 3,
+                      border: '2px dashed #1976d2',
+                      color: 'primary.main',
+                      background: 'rgba(25, 118, 210, 0.04)',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        background: 'rgba(25, 118, 210, 0.10)',
+                        borderColor: '#1565c0',
+                        color: '#1565c0',
+                      },
+                    }}
+                  >
+                    Subir Imagen
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImagenCategoriaChange}
+                    />
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {previewImagenCategoria && (
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img
+                        src={previewImagenCategoria}
+                        alt="Preview"
+                        style={{ maxWidth: 200, maxHeight: 200, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }}
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              </Grid>
+              {crearCategoriaError && <Alert severity="error" sx={{ mt: 3 }}>{crearCategoriaError}</Alert>}
+            </Paper>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={() => setCrearCategoriaOpen(false)} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={crearCategoriaLoading || Object.values(crearCategoriaValidation).some(v => v)}>
+              {crearCategoriaLoading ? <CircularProgress size={24} /> : 'Crear Categoría'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Submodal Crear Categoría en Editar */}
+      <Dialog open={crearCategoriaEditOpen} onClose={() => setCrearCategoriaEditOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleCrearCategoriaEdit} autoComplete="off" noValidate>
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: '#f8f9fa',
+              borderBottom: '1px solid #e0e0e0',
+              py: 2.5,
+            }}
+          >
+            <AddIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+              Crear Nueva Categoría
+            </Typography>
+          </DialogTitle>
+          <DialogContent 
+            dividers 
+            sx={{ p: 0, backgroundColor: '#f8f9fa', animation: 'fadeIn 0.5s' }}
+          >
+            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+                Información de Categoría
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Nombre"
+                    name="nombre"
+                    value={nuevaCategoriaEdit.nombre}
+                    onChange={e => setNuevaCategoriaEdit(prev => ({ ...prev, nombre: e.target.value }))}
+                    fullWidth
+                    required
+                    autoFocus
+                    error={!!crearCategoriaEditValidation.nombre}
+                    helperText={crearCategoriaEditValidation.nombre}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Descripción"
+                    name="descripcion"
+                    value={nuevaCategoriaEdit.descripcion}
+                    onChange={e => setNuevaCategoriaEdit(prev => ({ ...prev, descripcion: e.target.value }))}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!crearCategoriaEditValidation.descripcion}
+                    helperText={crearCategoriaEditValidation.descripcion}
+                  />
+                </Grid>
+              </Grid>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon color="primary" sx={{ fontSize: 22 }} />
+                Imagen de la Categoría
+              </Typography>
+              <Grid container spacing={3} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      borderRadius: 3,
+                      border: '2px dashed #1976d2',
+                      color: 'primary.main',
+                      background: 'rgba(25, 118, 210, 0.04)',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        background: 'rgba(25, 118, 210, 0.10)',
+                        borderColor: '#1565c0',
+                        color: '#1565c0',
+                      },
+                    }}
+                  >
+                    Subir Imagen
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImagenCategoriaEditChange}
+                    />
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {previewImagenCategoriaEdit && (
+                    <Box textAlign="center" sx={{ mt: { xs: 2, sm: 0 } }}>
+                      <img
+                        src={previewImagenCategoriaEdit}
+                        alt="Preview"
+                        style={{ maxWidth: 200, maxHeight: 200, borderRadius: 16, border: '2px solid #e0e0e0', boxShadow: '0 4px 16px rgba(25,118,210,0.08)' }}
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              </Grid>
+              {crearCategoriaEditError && <Alert severity="error" sx={{ mt: 3 }}>{crearCategoriaEditError}</Alert>}
+            </Paper>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={() => setCrearCategoriaEditOpen(false)} color="secondary" variant="outlined">Cancelar</Button>
+            <Button type="submit" color="primary" variant="contained" disabled={crearCategoriaEditLoading || Object.values(crearCategoriaEditValidation).some(v => v)}>
+              {crearCategoriaEditLoading ? <CircularProgress size={24} /> : 'Crear Categoría'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 };
