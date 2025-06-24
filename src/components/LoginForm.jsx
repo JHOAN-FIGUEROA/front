@@ -5,6 +5,11 @@ import { styled } from '@mui/material/styles';
 import Swal from 'sweetalert2';
 import { useAuth } from '../hooks/useAuth';
 import { solicitarTokenRecuperacion, restablecerPassword } from '../api';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   flex: 1,
@@ -94,6 +99,9 @@ const LoginForm = () => {
   const [recuperarErrors, setRecuperarErrors] = useState({});
   const [solicitarLoading, setSolicitarLoading] = useState(false);
   const [restablecerLoading, setRestablecerLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNuevaPassword, setShowNuevaPassword] = useState(false);
+  const [showConfirmarPassword, setShowConfirmarPassword] = useState(false);
 
   // Silenciar errores de red al cargar el componente
   useState(() => {
@@ -526,13 +534,38 @@ const LoginForm = () => {
               fullWidth
               label="Tu contraseña"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
               variant="outlined"
               error={!!errors.password}
               helperText={errors.password}
               disabled={!isEmailValid(formData.email)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} arrow>
+                      <IconButton
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                        sx={{
+                          fontSize: 28,
+                          color: showPassword ? '#2E8B57' : '#888',
+                          boxShadow: '0 2px 8px rgba(46,139,87,0.15)',
+                          transition: 'color 0.2s',
+                          '&:hover': {
+                            color: '#17643c',
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                )
+              }}
             />
           </Box>
           <StyledButton 
@@ -665,25 +698,75 @@ const LoginForm = () => {
             fullWidth
             label="Nueva Contraseña"
             name="nuevaPassword"
-            type="password"
+            type={showNuevaPassword ? 'text' : 'password'}
             value={recuperarData.nuevaPassword}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.nuevaPassword}
             helperText={recuperarErrors.nuevaPassword}
             margin="normal"
             aria-describedby="nueva-password-helper-text"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title={showNuevaPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} arrow>
+                    <IconButton
+                      aria-label={showNuevaPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      onClick={() => setShowNuevaPassword((show) => !show)}
+                      edge="end"
+                      sx={{
+                        fontSize: 28,
+                        color: showNuevaPassword ? '#2E8B57' : '#888',
+                        boxShadow: '0 2px 8px rgba(46,139,87,0.15)',
+                        transition: 'color 0.2s',
+                        '&:hover': {
+                          color: '#17643c',
+                          backgroundColor: 'transparent',
+                        },
+                      }}
+                    >
+                      {showNuevaPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              )
+            }}
           />
           <TextField
             fullWidth
             label="Confirmar Contraseña"
             name="confirmarPassword"
-            type="password"
+            type={showConfirmarPassword ? 'text' : 'password'}
             value={recuperarData.confirmarPassword}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.confirmarPassword}
             helperText={recuperarErrors.confirmarPassword}
             margin="normal"
             aria-describedby="confirmar-password-helper-text"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title={showConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} arrow>
+                    <IconButton
+                      aria-label={showConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      onClick={() => setShowConfirmarPassword((show) => !show)}
+                      edge="end"
+                      sx={{
+                        fontSize: 28,
+                        color: showConfirmarPassword ? '#2E8B57' : '#888',
+                        boxShadow: '0 2px 8px rgba(46,139,87,0.15)',
+                        transition: 'color 0.2s',
+                        '&:hover': {
+                          color: '#17643c',
+                          backgroundColor: 'transparent',
+                        },
+                      }}
+                    >
+                      {showConfirmarPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              )
+            }}
           />
         </DialogContent>
         <DialogActions sx={{
