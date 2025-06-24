@@ -845,7 +845,7 @@ const Compras = () => {
       </Dialog>
 
       {/* --- Modal Crear Compra --- */}
-      <Dialog open={crearOpen} onClose={handleCrearClose} maxWidth="lg" fullWidth>
+      <Dialog open={crearOpen} onClose={handleCrearClose} maxWidth="xl" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AddShoppingCartIcon color="primary" />
           <Typography variant="h6">Registrar Nueva Compra</Typography>
@@ -865,7 +865,7 @@ const Compras = () => {
                   required
                   margin="normal"
                   error={!!crearValidation.nrodecompra}
-                  helperText={crearValidation.nrodecompra}
+                  helperText={crearValidation.nrodecompra || " "}
                   type="number"
                 />
                 <TextField
@@ -1080,19 +1080,19 @@ const Compras = () => {
       
       {/* --- Sub-Modal para Agregar Productos --- */}
       <Dialog open={productosModalOpen} onClose={() => setProductosModalOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Seleccionar Productos</DialogTitle>
+        <DialogTitle sx={{ mb: 2 }}>Seleccionar Productos</DialogTitle>
         <DialogContent>
           <Buscador
             value={productosBusqueda}
             onChange={(e) => setProductosBusqueda(e.target.value)}
             placeholder="Buscar producto por nombre o código..."
-            sx={{ width: '100%', minWidth: 250, mb: 2 }}
+            sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
           />
           <TableContainer component={Paper} sx={{ maxHeight: 400, mt: 2 }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>Producto</TableCell>
+                  <TableCell sx={{ minWidth: 200 }}>Producto</TableCell>
                   <TableCell>Código</TableCell>
                   <TableCell>Stock</TableCell>
                   <TableCell>Precio Compra Actual</TableCell>
@@ -1107,7 +1107,7 @@ const Compras = () => {
                   )
                   .map(p => (
                     <TableRow key={p.idproducto} hover onClick={() => handleSelectProducto(p)} selected={productoSeleccionado?.idproducto === p.idproducto}>
-                      <TableCell>{p.nombre}</TableCell>
+                      <TableCell sx={{ minWidth: 200 }}>{p.nombre}</TableCell>
                       <TableCell>{p.codigoproducto}</TableCell>
                       <TableCell>{p.stock}</TableCell>
                       <TableCell>{formatCurrency(p.preciocompra)}</TableCell>
