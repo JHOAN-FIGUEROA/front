@@ -367,6 +367,23 @@ export const deleteProveedor = async (nitproveedor) => {
   }
 };
 
+export const getProveedoresActivos = async () => {
+  try {
+    // Traer todos los productos (hasta 1000)
+    const response = await api.get('/api/productos', { params: { page: 1, limit: 1000 } });
+    let productos = [];
+    if (response.data && response.data.data && Array.isArray(response.data.data.productos)) {
+      productos = response.data.data.productos.filter(p => p.estado === true || p.estado === 1 || p.estado === 'true');
+    }
+    return { success: true, data: { productos } };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error desconocido'
+    };
+  }
+};
+
 // Categorías =================================================================
 export const getCategorias = async (page = 1, limit = 5, searchTerm = '') => {
   try {
@@ -459,6 +476,23 @@ export const deleteCategoria = async (id) => {
   }
 };
 
+export const getProductosActivos = async () => {
+  try {
+    // Traer todos los productos (hasta 1000)
+    const response = await api.get('/api/productos', { params: { page: 1, limit: 1000 } });
+    let productos = [];
+    if (response.data && response.data.data && Array.isArray(response.data.data.productos)) {
+      productos = response.data.data.productos.filter(p => p.estado === true || p.estado === 1 || p.estado === 'true');
+    }
+    return { success: true, data: { productos } };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error desconocido'
+    };
+  }
+};
+
 // Clientes ===================================================================
 export const getClientes = async (page = 1, limit = 5, searchTerm = '') => {
   try {
@@ -543,6 +577,23 @@ export const deleteCliente = async (id) => {
     } else {
       throw new Error(error.message || 'Error al conectar con el servidor');
     }
+  }
+};
+
+export const getClientesActivos = async () => {
+  try {
+    // Traer todos los clientes (hasta 1000)
+    const response = await api.get('/api/clientes', { params: { page: 1, limit: 1000 } });
+    let clientes = [];
+    if (response.data && response.data.data && Array.isArray(response.data.data.clientes)) {
+      clientes = response.data.data.clientes.filter(c => c.estado === true || c.estado === 1 || c.estado === 'true');
+    }
+    return { success: true, data: { clientes } };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error desconocido'
+    };
   }
 };
 
@@ -745,6 +796,189 @@ export const getDashboardStats = async () => {
     } else {
       throw new Error(error.message || 'Error al conectar con el servidor');
     }
+  }
+};
+
+// Compras ====================================================================
+export const getCompras = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/compras', { params: { page, limit, search: searchTerm } });
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    if (error.response) {
+      return { 
+        error: true, 
+        status: error.response.status, 
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` 
+      };
+    } else {
+      return { 
+        error: true, 
+        status: 500, 
+        detalles: error.message || 'Error desconocido al obtener compras' 
+      };
+    }
+  }
+};
+
+export const getCompraById = async (id) => {
+  try {
+    const response = await api.get(`/api/compras/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const createCompra = async (data) => {
+  try {
+    const response = await api.post('/api/compras', data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const anularCompra = async (id, motivo) => {
+  try {
+    const response = await api.put(`/api/compras/${id}/anular`, { motivo_anulacion: motivo });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      return { 
+        success: false, 
+        error: true,
+        message: error.response.data.error || error.response.data.detalles || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return { 
+        success: false, 
+        error: true,
+        message: error.message || 'Error al conectar con el servidor' 
+      };
+    }
+  }
+};
+
+export const getCompraPDF = async (id) => {
+  try {
+    const response = await api.get(`/api/compras/${id}/pdf`, { responseType: 'blob' });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error al obtener el PDF'
+    };
+  }
+};
+
+// Ventas =====================================================================
+export const getVentas = async (page = 1, limit = 5, searchTerm = '') => {
+  try {
+    const response = await api.get('/api/ventas', { params: { page, limit, search: searchTerm } });
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    if (error.response) {
+      return { 
+        error: true, 
+        status: error.response.status, 
+        detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}` 
+      };
+    } else {
+      return { 
+        error: true, 
+        status: 500, 
+        detalles: error.message || 'Error desconocido al obtener ventas' 
+      };
+    }
+  }
+};
+
+export const getVentaById = async (id) => {
+  try {
+    const response = await api.get(`/api/ventas/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const createVenta = async (data) => {
+  try {
+    const response = await api.post('/api/ventas', data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    } else {
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
+  }
+};
+
+export const anularVenta = async (id, motivo) => {
+  try {
+    const response = await api.put(`/api/ventas/${id}/anular`, { motivo_anulacion: motivo });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      return { 
+        success: false, 
+        error: true,
+        message: error.response.data.error || error.response.data.detalles || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return { 
+        success: false, 
+        error: true,
+        message: error.message || 'Error al conectar con el servidor' 
+      };
+    }
+  }
+};
+
+export const confirmarVenta = async (id) => {
+  try {
+    const response = await api.put(`/api/ventas/${id}/confirmar`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      return { 
+        success: false, 
+        error: true,
+        message: error.response.data.error || error.response.data.detalles || `Error HTTP ${error.response.status}`
+      };
+    } else {
+      return { 
+        success: false, 
+        error: true,
+        message: error.message || 'Error al conectar con el servidor' 
+      };
+    }
+  }
+};
+
+export const getVentaPDF = async (id) => {
+  try {
+    const response = await api.get(`/api/ventas/${id}/pdf`, { responseType: 'blob' });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error al obtener el PDF'
+    };
   }
 };
 
