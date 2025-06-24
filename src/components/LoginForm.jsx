@@ -226,7 +226,18 @@ const LoginForm = () => {
           padding: '1.5em'
         });
 
-        navigate('/dashboard');
+        // Redirigir al primer módulo permitido según los permisos del usuario
+        const getFirstAllowedRoute = (permisos) => {
+          if (permisos.includes('Dashboard')) return '/dashboard';
+          if (permisos.includes('Compras')) return '/compras';
+          if (permisos.includes('Ventas')) return '/ventas';
+          if (permisos.includes('Clientes')) return '/ventas/clientes';
+          // Agrega más rutas según tus módulos y permisos
+          return '/unauthorized'; // Fallback si no tiene ningún permiso conocido
+        };
+        const usuario = JSON.parse(localStorage.getItem('user'));
+        const ruta = getFirstAllowedRoute(usuario?.permisos || []);
+        navigate(ruta);
 
       } else {
         let errorMessage = result?.error || 'Ha ocurrido un error al iniciar sesión.';

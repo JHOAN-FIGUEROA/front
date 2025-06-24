@@ -182,108 +182,108 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
           </>
         )}
         
-        {hasPermission(PERMISSIONS.PROVEEDORES) && (
-  <>
-    <ListItem {...({ button: 'true' })} onClick={handleComprasClick}>
-      <ListItemIcon sx={{ color: '#fff' }}>
-        <ShoppingBasket />
-      </ListItemIcon>
-      {open && <ListItemText primary="Compras" />}
-      {open ? (openCompras ? <ExpandLess /> : <ExpandMore />) : null}
-    </ListItem>
-    <Collapse in={openCompras && open} timeout="auto" unmountOnExit>
-      <List component="div" disablePadding>
-        {hasPermission(PERMISSIONS.PROVEEDORES) && (
-          <ListItem
-            {...({ button: 'true' })}
-            selected={location.pathname === '/compras/proveedores'}
-            onClick={() => handleNavigate('/compras/proveedores')}
-            sx={{
-              pl: openCompras && open ? 4 : 0,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-            }}
-          >
-            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-              <LocalShipping />
-            </ListItemIcon>
-            {open && <ListItemText primary="Proveedores" />}
-          </ListItem>
-        )}
-
-        {hasPermission(PERMISSIONS.CATEGORIAS) && (
-          <ListItem
-            {...({ button: 'true' })}
-            selected={location.pathname === '/compras/categorias'}
-            onClick={() => handleNavigate('/compras/categorias')}
-            sx={{
-              pl: openCompras && open ? 4 : 0,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-            }}
-          >
-            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-              <Category />
-            </ListItemIcon>
-            {open && <ListItemText primary="Categorías" />}
-          </ListItem>
-        )}
-
-        {hasPermission(PERMISSIONS.PRODUCTOS) && (
-          <ListItem
-            {...({ button: 'true' })}
-            selected={location.pathname === '/compras/productos'}
-            onClick={() => handleNavigate('/compras/productos')}
-            sx={{
-              pl: openCompras && open ? 4 : 0,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-            }}
-          >
-            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-              <Inventory />
-            </ListItemIcon>
-            {open && <ListItemText primary="Productos" />}
-          </ListItem>
-        )}
-
-
-        {hasPermission(PERMISSIONS.PRODUCTOS) && (
-          <ListItem
-            {...({ button: 'true' })}
-            selected={location.pathname === '/compras/unidades'}
-            onClick={() => handleNavigate('/compras/unidades')}
-            sx={{
-              pl: openCompras && open ? 4 : 0,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-            }}
-          >
-            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-              <CreateNewFolder />
-            </ListItemIcon>
-            {open && <ListItemText primary="Presentacion" />}
-          </ListItem>
-        )}
-
         {hasPermission(PERMISSIONS.COMPRAS) && (
-          <ListItem
-            {...({ button: 'true' })}
-            selected={location.pathname === '/compras'}
-            onClick={() => handleNavigate('/compras')}
-            sx={{
-              pl: openCompras && open ? 4 : 0,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-              '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-            }}
-          >
-            <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
-              <ShoppingBasket />
-            </ListItemIcon>
-            {open && <ListItemText primary="Compras" />}
-          </ListItem>
-        )}
-        {hasPermission(PERMISSIONS.CATEGORÍAS) && (  // Asegúrate que coincida exactamente con tu constante
+          <>
+            <ListItem {...({ button: 'true' })} onClick={handleComprasClick}>
+              <ListItemIcon sx={{ color: '#fff' }}>
+                <ShoppingBasket />
+              </ListItemIcon>
+              {open && <ListItemText primary="Compras" />}
+              {open ? (openCompras ? <ExpandLess /> : <ExpandMore />) : null}
+            </ListItem>
+            <Collapse in={openCompras && open} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {hasPermission(PERMISSIONS.PROVEEDORES) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/compras/proveedores'}
+                    onClick={() => handleNavigate('/compras/proveedores')}
+                    sx={{
+                      pl: openCompras && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                      <LocalShipping />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Proveedores" />}
+                  </ListItem>
+                )}
+
+                {hasPermission(PERMISSIONS.CATEGORIAS) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/compras/categorias'}
+                    onClick={() => handleNavigate('/compras/categorias')}
+                    sx={{
+                      pl: openCompras && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                      <Category />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Categorías" />}
+                  </ListItem>
+                )}
+
+                {hasPermission(PERMISSIONS.PRODUCTOS) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/compras/productos'}
+                    onClick={() => handleNavigate('/compras/productos')}
+                    sx={{
+                      pl: openCompras && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                      <Inventory />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Productos" />}
+                  </ListItem>
+                )}
+
+
+                {hasPermission(PERMISSIONS.PRODUCTOS) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/compras/unidades'}
+                    onClick={() => handleNavigate('/compras/unidades')}
+                    sx={{
+                      pl: openCompras && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                      <CreateNewFolder />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Presentacion" />}
+                  </ListItem>
+                )}
+
+                {hasPermission(PERMISSIONS.COMPRAS) && (
+                  <ListItem
+                    {...({ button: 'true' })}
+                    selected={location.pathname === '/compras'}
+                    onClick={() => handleNavigate('/compras')}
+                    sx={{
+                      pl: openCompras && open ? 4 : 0,
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&.Mui-selected': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', pl: openCompras && open ? 1 : 0 }}>
+                      <ShoppingBasket />
+                    </ListItemIcon>
+                    {open && <ListItemText primary="Compras" />}
+                  </ListItem>
+                )}
+                {hasPermission(PERMISSIONS.CATEGORÍAS) && (  // Asegúrate que coincida exactamente con tu constante
   <ListItem
     {...({ button: 'true' })}
     selected={location.pathname === '/compras/categorias'}
@@ -300,10 +300,10 @@ const SideBar = ({ variant, open, onClose, onToggleDesktop, navbarHeight }) => {
     {open && <ListItemText primary="Categoría" />}
   </ListItem>
 )}
-      </List>
-    </Collapse>
-  </>
-)}
+              </List>
+            </Collapse>
+          </>
+        )}
         
         {(hasPermission(PERMISSIONS.VENTAS) || hasPermission(PERMISSIONS.CLIENTES)) && (
           <>
