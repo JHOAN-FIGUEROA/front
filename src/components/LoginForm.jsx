@@ -378,14 +378,7 @@ const LoginForm = () => {
           confirmButtonColor: '#2E8B57',
         });
       } else {
-        let mensaje = 'Error al solicitar el token';
-        
-        if (result && result.detalles && typeof result.detalles === 'string') {
-          mensaje = result.detalles;
-        } else if (result && result.error && typeof result.error === 'string') {
-          mensaje = result.error;
-        }
-        
+        let mensaje = result?.message || result?.error || result?.detalles || 'Error al solicitar el token';
         const swalConfig = configurarSweetAlert();
         Swal.fire({
           ...swalConfig,
@@ -452,14 +445,7 @@ const LoginForm = () => {
         });
         navigate('/login');
       } else {
-        let mensaje = 'Error al restablecer la contraseña';
-        
-        if (result && result.detalles && typeof result.detalles === 'string') {
-          mensaje = result.detalles;
-        } else if (result && result.error && typeof result.error === 'string') {
-          mensaje = result.error;
-        }
-        
+        let mensaje = result?.message || result?.error || result?.detalles || 'Error al restablecer la contraseña';
         const swalConfig = configurarSweetAlert();
         Swal.fire({
           ...swalConfig,
@@ -520,7 +506,7 @@ const LoginForm = () => {
   return (
     <>
       <StyledPaper elevation={3}>
-        <span style={{ fontWeight: 600 }}>
+        <span style={{ fontWeight: 600, display: 'block', marginBottom: '8px', marginTop: '0px' }}>
           Iniciar Sesión
         </span>
         <form onSubmit={handleSubmit}>
