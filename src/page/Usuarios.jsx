@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import BadgeIcon from '@mui/icons-material/Badge';
 
 import Buscador from '../components/Buscador';
 import VerDetalle from '../components/VerDetalle';
@@ -20,8 +21,8 @@ import Crear from '../components/Crear';
 
 const USUARIOS_POR_PAGINA = 5;
 const CAMPOS_EDITABLES = [
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true, disabled: true },
-  { name: 'documento', label: 'Documento', required: true, disabled: true },
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true },
+  { name: 'documento', label: 'Documento', required: true },
   { name: 'nombre', label: 'Nombre', required: true },
   { name: 'apellido', label: 'Apellido', required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
@@ -33,7 +34,7 @@ const CAMPOS_EDITABLES = [
 ];
 
 const CAMPOS_CREAR_ORIGINAL = [
-  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI',], required: true },
+  { name: 'tipodocumento', label: 'Tipo de Documento', select: true, options: ['CC', 'CE', 'TI'], required: true, default: 'CC' },
   { name: 'documento', label: 'Documento', required: true },
   { name: 'nombre', label: 'Nombre', required: true },
   { name: 'apellido', label: 'Apellido', required: true },
@@ -349,8 +350,8 @@ const Usuarios = () => {
     const newErrors = {};
     if (!documento.trim()) {
       newErrors.documento = 'El documento es requerido';
-    } else if (!/^\d{10}$/.test(documento)) {
-      newErrors.documento = 'El documento debe tener exactamente 10 dígitos numéricos';
+    } else if (!/^\d{7,10}$/.test(documento)) {
+      newErrors.documento = 'El documento debe tener entre 7 y 10 dígitos numéricos';
     }
     return newErrors;
   };
@@ -375,10 +376,7 @@ const Usuarios = () => {
   const validateEditUbicacion = (valor, campo) => {
     const newErrors = {};
     if (["municipio", "barrio", "dirrecion"].includes(campo)) {
-      if (!valor || !valor.trim()) {
-        newErrors[campo] = `El campo es obligatorio`;
-        return newErrors;
-      }
+      return newErrors; // No validar estos campos
     }
     if (valor && valor.trim()) {
       if (valor.length < 3 || valor.length > 50) {
@@ -789,9 +787,133 @@ const Usuarios = () => {
             return { ...campo, options: rolSelectOptions };
           }
           return campo;
-        })
-        .filter(campo => !(campo.name === 'rol_idrol' && editUsuario?.idusuario === 34))}
-      />
+        }).filter(campo => !(campo.name === 'rol_idrol' && editUsuario?.idusuario === 34))}
+      >
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+              </Box>
+              <Box display="flex" gap={1} mb={2}>
+                {['CC', 'CE', 'TI'].map(opt => (
+                  <Button
+                    key={opt}
+                    variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                    color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                    size="small"
+                    sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                    onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </Box>
+              <TextField
+                label="Documento"
+                name="documento"
+                value={editForm.documento}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+              </Box>
+              <TextField
+                label="Nombre"
+                name="nombre"
+                value={editForm.nombre}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                error={!!editValidationErrors.nombre}
+                helperText={editValidationErrors.nombre}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Apellido"
+                name="apellido"
+                value={editForm.apellido}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                error={!!editValidationErrors.apellido}
+                helperText={editValidationErrors.apellido}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+              </Box>
+              <TextField
+                label="Email"
+                name="email"
+                value={editForm.email}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                error={!!editValidationErrors.email}
+                helperText={editValidationErrors.email}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+              </Box>
+              <TextField
+                label="Municipio"
+                name="municipio"
+                value={editForm.municipio}
+                onChange={handleEditFormChange}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Barrio"
+                name="barrio"
+                value={editForm.barrio}
+                onChange={handleEditFormChange}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Dirección"
+                name="dirrecion"
+                value={editForm.dirrecion}
+                onChange={handleEditFormChange}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Complemento"
+                name="complemento"
+                value={editForm.complemento}
+                onChange={handleEditFormChange}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Paper>
+          </Grid>
+        </Grid>
+      </Editar>
 
       <Eliminar
         id={usuarioEliminar?.idusuario}

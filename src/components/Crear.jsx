@@ -65,10 +65,17 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
 
   const validateDocumento = (documento) => {
     const newErrors = {};
+    const tipoDoc = form.tipodocumento;
     if (!documento.trim()) {
       newErrors.documento = 'El documento es requerido';
-    } else if (!/^\d{10}$/.test(documento)) {
-      newErrors.documento = 'El documento debe tener exactamente 10 dígitos numéricos';
+    } else if (tipoDoc === 'TI') {
+      if (!/^\d{10}$/.test(documento)) {
+        newErrors.documento = 'El documento TI debe tener exactamente 10 dígitos numéricos';
+      }
+    } else if (tipoDoc === 'CC' || tipoDoc === 'CE') {
+      if (!/^\d{7,10}$/.test(documento)) {
+        newErrors.documento = 'El documento debe tener entre 7 y 10 dígitos numéricos';
+      }
     }
     return newErrors;
   };

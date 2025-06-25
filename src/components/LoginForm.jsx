@@ -685,14 +685,24 @@ const LoginForm = () => {
         >
           <TextField
             fullWidth
-            label="Token"
+            label="Token (4 dígitos)"
             name="token"
             value={recuperarData.token}
-            onChange={handleRecuperarChange}
+            onChange={e => {
+              // Solo permite números y máximo 4 dígitos
+              const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+              handleRecuperarChange({ target: { name: 'token', value } });
+            }}
             error={!!recuperarErrors.token}
             helperText={recuperarErrors.token}
             margin="normal"
             aria-describedby="token-helper-text"
+            inputProps={{
+              maxLength: 4,
+              inputMode: 'numeric',
+              pattern: '[0-9]*',
+              style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }
+            }}
           />
           <TextField
             fullWidth

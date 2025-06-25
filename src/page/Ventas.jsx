@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, TextField, Tooltip, Select, MenuItem, InputLabel, FormControl, InputAdornment
 } from '@mui/material';
-import { getVentas, getVentaById, anularVenta, createVenta, getClientesActivos, getUnidades, getProductosActivos, getVentaPDF, confirmarVenta } from '../api';
+import { getVentas, getVentaById, anularVenta, createVenta, getClientesActivos, getUnidades, getProductosActivos, getVentaPDF, confirmarVenta, buscarUnidadPorCodigo } from '../api';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -323,7 +323,20 @@ const Ventas = () => {
       precioventa: Number(productoSeleccionado.precioventa) || 0,
     };
     setCrearForm(prev => ({ ...prev, productos: [...prev.productos, nuevoProducto] }));
-    setSnackbar({ open: true, message: `${productoSeleccionado.nombre} (${presentacionSeleccionada.nombre}) agregado a la venta.`, severity: 'success' });
+    Swal.fire({
+      position: 'top',
+      icon: 'success',
+      title: `${productoSeleccionado.nombre} (${presentacionSeleccionada.nombre}) agregado a la venta`,
+      showConfirmButton: false,
+      timer: 1200,
+      width: 350,
+      toast: true,
+      background: '#f6fff6',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'swal2-title-custom',
+      },
+    });
     setProductoSeleccionado(null);
     setPresentacionSeleccionada(null);
     setCantidadPresentacion(1);
@@ -393,6 +406,20 @@ const Ventas = () => {
           timer: 2000,
           showConfirmButton: false,
         });
+        // Descargar automáticamente la factura PDF de la venta
+        if (result.data && result.data.idventas) {
+          const pdfResult = await getVentaPDF(result.data.idventas);
+          if (pdfResult.success && pdfResult.data) {
+            const url = window.URL.createObjectURL(new Blob([pdfResult.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `venta_${result.data.idventas}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }
+        }
         fetchVentas(1, '');
       }
     } catch (err) {
@@ -607,7 +634,7 @@ const Ventas = () => {
           <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
           <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Detalles de la Venta</Typography>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 3 }, maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
           {detalleLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress size={40} />
@@ -623,7 +650,7 @@ const Ventas = () => {
               </Typography>
               <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <ReceiptIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Información de Venta</Typography>
@@ -635,7 +662,7 @@ const Ventas = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <CalendarTodayIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Fecha</Typography>
@@ -645,7 +672,7 @@ const Ventas = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <AttachMoneyIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Total</Typography>
@@ -656,7 +683,7 @@ const Ventas = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <CheckCircleIcon color={['ACTIVA','COMPLETADA'].includes(ventaDetalle.data.estado) ? "success" : ventaDetalle.data.estado === 'ANULADA' ? "error" : ventaDetalle.data.estado === 'PEDIDO' ? "warning" : "info"} sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
                     <Chip 
@@ -670,7 +697,7 @@ const Ventas = () => {
                 {/* Motivo de anulación */}
                 {ventaDetalle.data.estado === 'ANULADA' && ventaDetalle.data.motivo_anulacion && (
                   <Grid item xs={12}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#fff3cd', borderRadius: 2, border: '1px solid #ffeaa7' }}>
+                    <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#fff3cd', borderRadius: 2, border: '1px solid #ffeaa7' }}>
                       <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <CancelIcon color="warning" sx={{ fontSize: 24 }} />
                         <Typography variant="h6" sx={{ fontWeight: 600, color: '#856404' }}>Motivo de Anulación</Typography>
@@ -689,7 +716,7 @@ const Ventas = () => {
                     <ShoppingCartIcon color="primary" sx={{ fontSize: 32 }} />
                     Productos de la Venta
                   </Typography>
-                  <TableContainer component={Paper} sx={{ boxShadow: 2, mb: 2 }}>
+                  <TableContainer component={Paper} sx={{ boxShadow: 2, mb: 2, maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
                     <Table>
                       <TableHead>
                         <TableRow>
@@ -718,7 +745,7 @@ const Ventas = () => {
                     </Table>
                   </TableContainer>
                   <Box display="flex" justifyContent="flex-end">
-                    <Paper elevation={0} sx={{ p: 2, backgroundColor: '#e3f2fd', borderRadius: 2, border: '1px solid #2196f3' }}>
+                    <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#e3f2fd', borderRadius: 2, border: '1px solid #2196f3' }}>
                       <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
                         Total: {formatCurrency(ventaDetalle.data.total)}
                       </Typography>
@@ -803,7 +830,7 @@ const Ventas = () => {
         </DialogActions>
       </Dialog>
       {/* Modal de creación de venta */}
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="lg" fullWidth>
+      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="xl" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AddShoppingCartIcon color="primary" />
           <Typography variant="h6">Registrar Nueva Venta</Typography>
@@ -812,7 +839,7 @@ const Ventas = () => {
           <Grid container spacing={3}>
             {/* Columna Izquierda: Datos Generales y Cliente */}
             <Grid item xs={12} md={5}>
-              <Paper sx={{ p: 2, mb: 2 }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom>Datos Generales</Typography>
                 {/* Tipo de venta */}
                 <FormControl fullWidth margin="normal">
@@ -839,7 +866,7 @@ const Ventas = () => {
                   InputProps={{ readOnly: true, disabled: true }}
                 />
               </Paper>
-              <Paper sx={{ p: 2 }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom>Cliente</Typography>
                 {crearForm.tipo === 'VENTA_RAPIDA' ? (
                   <TextField
@@ -886,14 +913,14 @@ const Ventas = () => {
             </Grid>
             {/* Columna Derecha: Productos */}
             <Grid item xs={12} md={7}>
-              <Paper sx={{ p: 2, height: '100%' }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                   <Typography variant="h6">Productos</Typography>
                   <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
                     Agregar Productos
                   </Button>
                 </Box>
-                <TableContainer sx={{ maxHeight: 400 }}>
+                <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
                   <Table stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -945,6 +972,12 @@ const Ventas = () => {
                                   onBlur={e => {
                                     if (prod.cantidad === '' || prod.cantidad < 1) {
                                       handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', 1);
+                                    }
+                                  }}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
+                                      e.preventDefault();
+                                      handleAddProducto();
                                     }
                                   }}
                                   sx={{ width: '80px' }}
@@ -1003,9 +1036,67 @@ const Ventas = () => {
             value={productosBusqueda}
             onChange={(e) => setProductosBusqueda(e.target.value)}
             placeholder="Buscar producto por nombre o código..."
-            sx={{ width: '100%', minWidth: 250, mb: 2 }}
+            sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter' && productosBusqueda.trim() !== '') {
+                const res = await buscarUnidadPorCodigo(productosBusqueda.trim());
+                if (res.success && res.data && res.data.data) {
+                  const unidad = res.data.data;
+                  const producto = unidad.producto;
+                  if (!producto) {
+                    Swal.fire({ icon: 'error', title: 'Producto no encontrado', text: 'No se encontró el producto para este código.' });
+                    return;
+                  }
+                  // Si ya existe, suma la cantidad al existente y NO actualiza el precio
+                  let yaExiste = false;
+                  setCrearForm(prev => {
+                    const productos = prev.productos.map(p => {
+                      if (p.idproducto === producto.idproducto && p.idpresentacion === unidad.idpresentacion) {
+                        yaExiste = true;
+                        return {
+                          ...p,
+                          cantidad: (Number(p.cantidad) || 0) + 1,
+                          // NO actualizar precioventa
+                        };
+                      }
+                      return p;
+                    });
+                    if (!yaExiste) {
+                      productos.push({
+                        idproducto: producto.idproducto,
+                        nombre: producto.nombre,
+                        codigoproducto: producto.codigoproducto || '',
+                        idpresentacion: unidad.idpresentacion,
+                        presentacion_nombre: unidad.nombre,
+                        factor_conversion: parseFloat(unidad.factor_conversion),
+                        cantidad: 1,
+                        precioventa: Number(producto.precioventa) || 0,
+                      });
+                    }
+                    return { ...prev, productos };
+                  });
+                  Swal.fire({
+                    position: 'top',
+                    icon: 'success',
+                    title: `${producto.nombre} (${unidad.nombre}) agregado a la venta`,
+                    showConfirmButton: false,
+                    timer: 1200,
+                    width: 350,
+                    toast: true,
+                    background: '#f6fff6',
+                    customClass: {
+                      popup: 'swal2-toast',
+                      title: 'swal2-title-custom',
+                    },
+                  });
+                  setProductosBusqueda('');
+                } else {
+                  Swal.fire({ icon: 'error', title: 'No encontrado', text: res.detalles || 'No se encontró la presentación para este código.' });
+                }
+              }
+            }}
           />
-          <TableContainer component={Paper} sx={{ maxHeight: 400, mt: 2 }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 400, mt: 2, overflowX: { xs: 'auto', sm: 'visible' } }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -1094,6 +1185,12 @@ const Ventas = () => {
                   onBlur={() => {
                     if (!cantidadPresentacion || cantidadPresentacion < 1) setCantidadPresentacion(1);
                   }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
+                      e.preventDefault();
+                      handleAddProducto();
+                    }
+                  }}
                   sx={{ width: '100%' }}
                   inputProps={{ min: 1, style: { textAlign: 'center' } }}
                 />
@@ -1115,7 +1212,20 @@ const Ventas = () => {
                   sx={{ minWidth: 180, fontWeight: 'bold', py: 1.2 }}
                   onClick={() => {
                     handleAddProducto();
-                    setSnackbar({ open: true, message: `${productoSeleccionado?.nombre || ''} (${presentacionSeleccionada?.nombre || ''}) agregado a la venta.`, severity: 'success' });
+                    Swal.fire({
+                      position: 'top',
+                      icon: 'success',
+                      title: `${productoSeleccionado?.nombre || ''} (${presentacionSeleccionada?.nombre || ''}) agregado a la venta`,
+                      showConfirmButton: false,
+                      timer: 1200,
+                      width: 350,
+                      toast: true,
+                      background: '#f6fff6',
+                      customClass: {
+                        popup: 'swal2-toast',
+                        title: 'swal2-title-custom',
+                      },
+                    });
                   }}
                   disabled={
                     !productoSeleccionado ||

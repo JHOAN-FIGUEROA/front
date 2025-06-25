@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, MenuItem, Chip
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, MenuItem, Chip, InputAdornment
 } from '@mui/material';
 import { getClientes, updateEstadoCliente, createCliente, getClienteById, updateCliente, deleteCliente } from '../api';
 import AddIcon from '@mui/icons-material/Add';
@@ -21,6 +21,8 @@ import Editar from '../components/Editar';
 import Eliminar from '../components/Eliminar';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 const CLIENTES_POR_PAGINA = 5;
 
@@ -31,10 +33,10 @@ const CAMPOS_CREAR = [
   { name: 'apellido', label: 'Apellido', required: true },
   { name: 'email', label: 'Email', required: true, type: 'email' },
   { name: 'telefono', label: 'Teléfono', required: true },
-  { name: 'municipio', label: 'Municipio', required: true },
+  { name: 'municipio', label: 'Municipio', required: false },
   { name: 'complemento', label: 'Complemento', required: false },
-  { name: 'direccion', label: 'Dirección', required: true },
-  { name: 'barrio', label: 'Barrio', required: true },
+  { name: 'direccion', label: 'Dirección', required: false },
+  { name: 'barrio', label: 'Barrio', required: false },
   { name: 'password', label: 'Contraseña', required: true, type: 'password' },
 ];
 
@@ -74,6 +76,11 @@ const Clientes = () => {
 
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [clienteEliminar, setClienteEliminar] = useState(null);
+
+  // Estado para mostrar/ocultar contraseña en crear
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => { event.preventDefault(); };
 
   // Función helper para mostrar el Snackbar
   const openSnackbar = (message, severity = 'info') => {
@@ -187,8 +194,8 @@ const Clientes = () => {
     if (!String(documento).trim()) {
       return 'El documento es requerido';
     }
-    if (!/^\d{10}$/.test(String(documento))) {
-      return 'El documento debe tener exactamente 10 dígitos numéricos';
+    if (!/^\d{7,10}$/.test(String(documento))) {
+      return 'El documento debe tener entre 7 y 10 dígitos numéricos';
     }
     return '';
   };
@@ -226,40 +233,6 @@ const Clientes = () => {
     }
     if (!/^\d{10}$/.test(telefono)) {
       return 'El teléfono debe tener exactamente 10 dígitos numéricos';
-    }
-    return '';
-  };
-
-  const validateUbicacion = (valor, campo) => {
-    if (!valor?.trim()) {
-      return `El ${campo} es requerido`;
-    }
-    if (valor.length < 3 || valor.length > 50) {
-      return `El ${campo} debe tener entre 3 y 50 caracteres`;
-    }
-    if (campo === 'direccion') {
-      if ((valor.match(/\d/g) || []).length < 2) {
-        return `La dirección debe contener al menos 2 números`;
-      }
-      // Permitir todos los caracteres en dirección
-      return '';
-    }
-    // Para los demás campos, solo letras, números y espacios
-    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
-      return `Solo se permiten letras, números y espacios`;
-    }
-    return '';
-  };
-
-  const validateComplemento = (complemento) => {
-    if (!complemento?.trim()) {
-      return ''; // Complemento es opcional si está vacío
-    }
-    if (complemento.length < 3 || complemento.length > 50) {
-      return 'El complemento debe tener entre 3 y 50 caracteres';
-    }
-    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(complemento)) {
-      return 'Solo se permiten letras, números y espacios';
     }
     return '';
   };
@@ -374,10 +347,8 @@ const Clientes = () => {
       case 'municipio':
       case 'barrio':
       case 'direccion':
-        errorMessage = validateUbicacion(value, name);
-        break;
       case 'complemento':
-        errorMessage = validateComplemento(value);
+        errorMessage = '';
         break;
       default:
         break;
@@ -540,10 +511,8 @@ const Clientes = () => {
       case 'municipio':
       case 'barrio':
       case 'direccion':
-        errorMessage = validateUbicacion(newValue, name);
-        break;
       case 'complemento':
-        errorMessage = validateComplemento(newValue);
+        errorMessage = '';
         break;
       case 'password':
         errorMessage = validatePassword(newValue);
@@ -577,17 +546,10 @@ const Clientes = () => {
     const telefonoError = validateTelefono(crearForm.telefono);
     if (telefonoError) { newErrors.telefono = telefonoError; isValid = false; }
 
-    const municipioError = validateUbicacion(crearForm.municipio, 'municipio');
-    if (municipioError) { newErrors.municipio = municipioError; isValid = false; }
-
-    const barrioError = validateUbicacion(crearForm.barrio, 'barrio');
-    if (barrioError) { newErrors.barrio = barrioError; isValid = false; }
-
-    const direccionError = validateUbicacion(crearForm.direccion, 'direccion');
-    if (direccionError) { newErrors.direccion = direccionError; isValid = false; }
-
-    const complementoError = validateComplemento(crearForm.complemento);
-    if (complementoError) { newErrors.complemento = complementoError; isValid = false; }
+    const municipioError = '';
+    const barrioError = '';
+    const direccionError = '';
+    const complementoError = '';
 
     const passwordError = validatePassword(crearForm.password);
     if (passwordError) { newErrors.password = passwordError; isValid = false; }
@@ -674,17 +636,10 @@ const Clientes = () => {
     const telefonoError = validateTelefono(editForm.telefono);
     if (telefonoError) { newErrors.telefono = telefonoError; isValid = false; }
 
-    const municipioError = validateUbicacion(editForm.municipio, 'municipio');
-    if (municipioError) { newErrors.municipio = municipioError; isValid = false; }
-
-    const barrioError = validateUbicacion(editForm.barrio, 'barrio');
-    if (barrioError) { newErrors.barrio = barrioError; isValid = false; }
-
-    const direccionError = validateUbicacion(editForm.direccion, 'direccion');
-    if (direccionError) { newErrors.direccion = direccionError; isValid = false; }
-
-    const complementoError = validateComplemento(editForm.complemento);
-    if (complementoError) { newErrors.complemento = complementoError; isValid = false; }
+    const municipioError = '';
+    const barrioError = '';
+    const direccionError = '';
+    const complementoError = '';
 
     setEditValidation(newErrors);
     return isValid;
@@ -915,13 +870,31 @@ const Clientes = () => {
                   <TextField
                     label="Contraseña"
                     name="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={crearForm.password}
                     onChange={handleCrearChange}
                     fullWidth
                     required
                     error={!!crearValidation.password}
                     helperText={crearValidation.password}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            onClick={handleClickShowPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                            size="large"
+                            sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                            title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          >
+                            {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                    sx={{ mb: 2 }}
                   />
                 </Grid>
                 {/* Contacto */}
@@ -965,10 +938,8 @@ const Clientes = () => {
                     value={crearForm.municipio}
                     onChange={handleCrearChange}
                     fullWidth
-                    required
-                    error={!!crearValidation.municipio}
-                    helperText={crearValidation.municipio}
-                    sx={{ mb: 2 }}
+                    error={false}
+                    helperText={''}
                   />
                   <TextField
                     label="Barrio"
@@ -976,10 +947,8 @@ const Clientes = () => {
                     value={crearForm.barrio}
                     onChange={handleCrearChange}
                     fullWidth
-                    required
-                    error={!!crearValidation.barrio}
-                    helperText={crearValidation.barrio}
-                    sx={{ mb: 2 }}
+                    error={false}
+                    helperText={''}
                   />
                   <TextField
                     label="Dirección"
@@ -987,10 +956,8 @@ const Clientes = () => {
                     value={crearForm.direccion}
                     onChange={handleCrearChange}
                     fullWidth
-                    required
-                    error={!!crearValidation.direccion}
-                    helperText={crearValidation.direccion}
-                    sx={{ mb: 2 }}
+                    error={false}
+                    helperText={''}
                   />
                   <TextField
                     label="Complemento"
@@ -998,8 +965,8 @@ const Clientes = () => {
                     value={crearForm.complemento}
                     onChange={handleCrearChange}
                     fullWidth
-                    error={!!crearValidation.complemento}
-                    helperText={crearValidation.complemento}
+                    error={false}
+                    helperText={''}
                   />
                 </Grid>
               </Grid>
@@ -1149,26 +1116,27 @@ const Clientes = () => {
                       <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                     </Box>
-                    <TextField
-                      label="Tipo de Documento"
-                      name="tipodocumento"
-                      value={editForm.tipodocumento}
-                      fullWidth
-                      select
-                      disabled
-                      sx={{ mb: 2 }}
-                    >
-                      {['CC', 'CE', 'TI'].map(option => (
-                        <MenuItem key={option} value={option}>{option}</MenuItem>
+                    <Box display="flex" gap={1} mb={2}>
+                      {['TI', 'CC', 'CE'].map(opt => (
+                        <Button
+                          key={opt}
+                          variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                          color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                          size="small"
+                          sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                          onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
+                        >
+                          {opt}
+                        </Button>
                       ))}
-                    </TextField>
+                    </Box>
                     <TextField
                       label="Documento"
                       name="documentocliente"
                       value={editForm.documentocliente}
+                      onChange={handleEditChange}
                       fullWidth
                       required
-                      disabled
                     />
                   </Paper>
                 </Grid>
@@ -1245,9 +1213,8 @@ const Clientes = () => {
                       value={editForm.municipio}
                       onChange={handleEditChange}
                       fullWidth
-                      required
-                      error={!!editValidation.municipio}
-                      helperText={editValidation.municipio}
+                      error={false}
+                      helperText={''}
                       sx={{ mb: 2 }}
                     />
                     <TextField
@@ -1256,9 +1223,8 @@ const Clientes = () => {
                       value={editForm.barrio}
                       onChange={handleEditChange}
                       fullWidth
-                      required
-                      error={!!editValidation.barrio}
-                      helperText={editValidation.barrio}
+                      error={false}
+                      helperText={''}
                       sx={{ mb: 2 }}
                     />
                     <TextField
@@ -1267,9 +1233,8 @@ const Clientes = () => {
                       value={editForm.direccion}
                       onChange={handleEditChange}
                       fullWidth
-                      required
-                      error={!!editValidation.direccion}
-                      helperText={editValidation.direccion}
+                      error={false}
+                      helperText={''}
                       sx={{ mb: 2 }}
                     />
                     <TextField
@@ -1278,8 +1243,9 @@ const Clientes = () => {
                       value={editForm.complemento}
                       onChange={handleEditChange}
                       fullWidth
-                      error={!!editValidation.complemento}
-                      helperText={editValidation.complemento}
+                      error={false}
+                      helperText={''}
+                      sx={{ mb: 2 }}
                     />
                   </Paper>
                 </Grid>

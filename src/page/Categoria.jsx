@@ -158,8 +158,18 @@ const Categorias = () => {
   const handleEditImagenChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setEditCategoriaData(prev => ({ ...prev, imagen: file }));
-      
       const reader = new FileReader();
       reader.onload = (event) => {
         setEditPreviewImagen(event.target.result);
@@ -180,11 +190,9 @@ const Categorias = () => {
       formData.append('nombre', editCategoriaData.nombre);
       formData.append('descripcion', editCategoriaData.descripcion || '');
       
-      // Solo enviamos la imagen si es un archivo nuevo
-      if (editCategoriaData.imagen instanceof File) {
-        formData.append('imagen', editCategoriaData.imagen);
+      if (editCategoriaData.imagen && editCategoriaData.imagen instanceof File) {
+        formData.append('imagen', editCategoriaData.imagen, editCategoriaData.imagen.name);
       }
-      // Si no enviamos imagen, el backend mantendrá la existente
       
       console.log('editCategoriaData.imagen:', editCategoriaData.imagen);
       
@@ -231,12 +239,20 @@ const Categorias = () => {
   };
 
   const handleImagenChange = (e) => {
-    console.log('handleImagenChange ejecutado');
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      console.log('Archivo seleccionado:', file);
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevaCategoria(prev => ({ ...prev, imagen: file }));
-      
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreviewImagen(event.target.result);
@@ -268,9 +284,7 @@ const Categorias = () => {
       formData.append('nombre', nuevaCategoria.nombre);
       formData.append('descripcion', nuevaCategoria.descripcion || '');
       
-      // Asegurarnos de que la imagen se envíe correctamente
-      if (nuevaCategoria.imagen instanceof File) {
-        console.log('Enviando imagen:', nuevaCategoria.imagen); // Para debugging
+      if (nuevaCategoria.imagen && nuevaCategoria.imagen instanceof File) {
         formData.append('imagen', nuevaCategoria.imagen, nuevaCategoria.imagen.name);
       }
       

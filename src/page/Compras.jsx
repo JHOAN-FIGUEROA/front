@@ -381,23 +381,46 @@ const Compras = () => {
 
   const handleAddProducto = () => {
     if (!productoSeleccionado || !presentacionSeleccionada) return;
-    const productoExistente = crearForm.productos.find(p => p.idproducto === productoSeleccionado.idproducto && p.idpresentacion === presentacionSeleccionada.idpresentacion);
-    if (productoExistente) {
-      openSnackbar('El producto con esa presentación ya está en la lista.', 'warning');
-      return;
-    }
-    const nuevoProducto = {
-      idproducto: productoSeleccionado.idproducto,
-      nombre: productoSeleccionado.nombre,
-      codigoproducto: productoSeleccionado.codigoproducto,
-      idpresentacion: presentacionSeleccionada.idpresentacion,
-      presentacion_nombre: presentacionSeleccionada.nombre,
-      factor_conversion: parseFloat(presentacionSeleccionada.factor_conversion),
-      cantidad: cantidadPresentacion,
-      preciodecompra: Number(productoSeleccionado.preciocompra) || 0,
-    };
-    setCrearForm(prev => ({ ...prev, productos: [...prev.productos, nuevoProducto] }));
-    setSnackbarProducto({ open: true, message: `${productoSeleccionado.nombre} (${presentacionSeleccionada.nombre}) agregado a la compra.`, severity: 'success' });
+    setCrearForm(prev => {
+      const productos = prev.productos.map(p => {
+        if (p.idproducto === productoSeleccionado.idproducto && p.idpresentacion === presentacionSeleccionada.idpresentacion) {
+          return {
+            ...p,
+            cantidad: (Number(p.cantidad) || 0) + (Number(cantidadPresentacion) || 0),
+            // NO actualizar preciodecompra, se mantiene el del primer registro
+          };
+        }
+        return p;
+      });
+      const existe = prev.productos.some(p => p.idproducto === productoSeleccionado.idproducto && p.idpresentacion === presentacionSeleccionada.idpresentacion);
+      if (!existe) {
+        productos.push({
+          idproducto: productoSeleccionado.idproducto,
+          nombre: productoSeleccionado.nombre,
+          codigoproducto: productoSeleccionado.codigoproducto,
+          idpresentacion: presentacionSeleccionada.idpresentacion,
+          presentacion_nombre: presentacionSeleccionada.nombre,
+          factor_conversion: parseFloat(presentacionSeleccionada.factor_conversion),
+          cantidad: cantidadPresentacion,
+          preciodecompra: Number(productoSeleccionado.preciocompra) || 0,
+        });
+      }
+      return { ...prev, productos };
+    });
+    Swal.fire({
+      position: 'top',
+      icon: 'success',
+      title: `${productoSeleccionado.nombre} (${presentacionSeleccionada.nombre}) agregado a la compra`,
+      showConfirmButton: false,
+      timer: 1200,
+      width: 350,
+      toast: true,
+      background: '#f6fff6',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'swal2-title-custom',
+      },
+    });
     setProductoSeleccionado(null);
     setPresentacionSeleccionada(null);
     setCantidadPresentacion(1);
@@ -667,7 +690,7 @@ const Compras = () => {
           <VisibilityIcon color="primary" sx={{ fontSize: 28 }} />
           <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Detalles de la Compra</Typography>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 3 }, maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
           {detalleLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress size={40} />
@@ -684,7 +707,7 @@ const Compras = () => {
               <Grid container spacing={3} sx={{ mb: 4 }}>
                 {/* Información básica */}
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <ReceiptIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Información de Compra</Typography>
@@ -699,7 +722,7 @@ const Compras = () => {
                 </Grid>
                 {/* Fechas */}
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <CalendarTodayIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Fechas</Typography>
@@ -712,7 +735,7 @@ const Compras = () => {
                 </Grid>
                 {/* Total y Estado */}
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                       <AttachMoneyIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Total</Typography>
@@ -724,7 +747,7 @@ const Compras = () => {
                 </Grid>
                 {/* Estado */}
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <CheckCircleIcon color={compraDetalle.compra?.estado ? "success" : "error"} sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
                     <Chip 
@@ -738,7 +761,7 @@ const Compras = () => {
                 {/* Motivo de anulación */}
                 {!compraDetalle.compra?.estado && compraDetalle.compra?.motivo_anulacion && (
                   <Grid item xs={12}>
-                    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#fff3cd', borderRadius: 2, border: '1px solid #ffeaa7' }}>
+                    <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#fff3cd', borderRadius: 2, border: '1px solid #ffeaa7' }}>
                       <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <CancelIcon color="warning" sx={{ fontSize: 24 }} />
                         <Typography variant="h6" sx={{ fontWeight: 600, color: '#856404' }}>Motivo de Anulación</Typography>
@@ -758,7 +781,7 @@ const Compras = () => {
                     <ShoppingCartIcon color="primary" sx={{ fontSize: 32 }} />
                     Productos de la Compra
                   </Typography>
-                  <TableContainer component={Paper} sx={{ boxShadow: 2, mb: 2 }}>
+                  <TableContainer component={Paper} sx={{ boxShadow: 2, mb: 2, maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
                     <Table>
                       <TableHead>
                         <TableRow>
@@ -785,7 +808,7 @@ const Compras = () => {
                     </Table>
                   </TableContainer>
                   <Box display="flex" justifyContent="flex-end">
-                    <Paper elevation={0} sx={{ p: 2, backgroundColor: '#e3f2fd', borderRadius: 2, border: '1px solid #2196f3' }}>
+                    <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#e3f2fd', borderRadius: 2, border: '1px solid #2196f3' }}>
                       <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
                         Total: {formatCurrency(compraDetalle.compra?.total)}
                       </Typography>
@@ -796,7 +819,7 @@ const Compras = () => {
             </>
           ) : null}
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+        <DialogActions sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
           <Button onClick={() => setDetalleOpen(false)} variant="contained" color="primary">
             Cerrar
           </Button>
@@ -809,7 +832,7 @@ const Compras = () => {
           <CancelIcon color="error" sx={{ fontSize: 28 }} />
           <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Anular Compra</Typography>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 3, backgroundColor: '#fff' }}>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 3 }, backgroundColor: '#fff' }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
             ¿Está seguro que desea anular la compra <strong>#{compraAnular?.nrodecompra}</strong>?
           </Typography>
@@ -829,7 +852,7 @@ const Compras = () => {
             helperText={motivoAnulacion.length > 0 && (motivoAnulacion.length < 10 || motivoAnulacion.length > 50) ? 'El motivo debe tener entre 10 y 50 caracteres.' : ''}
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+        <DialogActions sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
           <Button onClick={() => setAnularOpen(false)} color="secondary" variant="outlined">
             Cancelar
           </Button>
@@ -850,11 +873,11 @@ const Compras = () => {
           <AddShoppingCartIcon color="primary" />
           <Typography variant="h6">Registrar Nueva Compra</Typography>
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 3 }, maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
           <Grid container spacing={3}>
             {/* Columna Izquierda: Datos Generales y Proveedor */}
             <Grid item xs={12} md={5}>
-              <Paper sx={{ p: 2, mb: 2 }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom>Datos Generales</Typography>
                 <TextField
                   label="Número de Compra"
@@ -937,7 +960,7 @@ const Compras = () => {
                   </div>
                 )}
               </Paper>
-              <Paper sx={{ p: 2 }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom>Proveedor</Typography>
                 <Autocomplete
                   options={proveedoresActivos}
@@ -971,14 +994,14 @@ const Compras = () => {
 
             {/* Columna Derecha: Productos */}
             <Grid item xs={12} md={7}>
-              <Paper sx={{ p: 2, height: '100%' }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                   <Typography variant="h6">Productos</Typography>
                   <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
                     Agregar Productos
                   </Button>
                 </Box>
-                <TableContainer sx={{ maxHeight: 400 }}>
+                <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
                   <Table stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -1088,7 +1111,7 @@ const Compras = () => {
             placeholder="Buscar producto por nombre o código..."
             sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
           />
-          <TableContainer component={Paper} sx={{ maxHeight: 400, mt: 2 }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -1162,9 +1185,18 @@ const Compras = () => {
                 <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
                   Precio Compra
                 </Typography>
-                <Typography variant="h6" sx={{ color: 'success.main', fontWeight: 700 }}>
-                  {formatCurrency(Number(productoSeleccionado.preciocompra) || 0)}
-                </Typography>
+                <TextField
+                  label="Precio Compra"
+                  type="number"
+                  value={productoSeleccionado.preciocompra}
+                  onChange={e => {
+                    const value = e.target.value;
+                    setProductoSeleccionado(prev => ({ ...prev, preciocompra: value === '' ? '' : Number(value) }));
+                  }}
+                  inputProps={{ min: 0, step: 'any', style: { textAlign: 'center', fontWeight: 700, color: '#388e3c' } }}
+                  size="small"
+                  sx={{ width: '100%' }}
+                />
               </Box>
               <Box flex={1} minWidth={180}>
                 <Button
@@ -1175,7 +1207,20 @@ const Compras = () => {
                   sx={{ minWidth: 180, fontWeight: 'bold', py: 1.2 }}
                   onClick={() => {
                     handleAddProducto();
-                    openSnackbar(`${productoSeleccionado?.nombre || ''} (${presentacionSeleccionada?.nombre || ''}) agregado a la compra.`, 'success');
+                    Swal.fire({
+                      position: 'top',
+                      icon: 'success',
+                      title: `${productoSeleccionado?.nombre || ''} (${presentacionSeleccionada?.nombre || ''}) agregado a la compra`,
+                      showConfirmButton: false,
+                      timer: 1200,
+                      width: 350,
+                      toast: true,
+                      background: '#f6fff6',
+                      customClass: {
+                        popup: 'swal2-toast',
+                        title: 'swal2-title-custom',
+                      },
+                    });
                   }}
                   disabled={
                     !productoSeleccionado ||
@@ -1201,17 +1246,6 @@ const Compras = () => {
           <Button onClick={() => setProductosModalOpen(false)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
-      {/* Snackbar exclusivo para producto añadido */}
-      <Snackbar
-        open={snackbarProducto.open}
-        autoHideDuration={1000}
-        onClose={() => setSnackbarProducto({ open: false, message: '', severity: 'success' })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity={snackbarProducto.severity} onClose={() => setSnackbarProducto({ open: false, message: '', severity: 'success' })} sx={{ width: '100%' }}>
-          {snackbarProducto.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
