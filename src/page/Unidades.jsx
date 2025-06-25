@@ -116,10 +116,15 @@ const Unidades = () => {
       return !(unidad.estado === true || unidad.estado === 1 || unidad.estado === 'true');
     }
 
-    // Buscar por nombre de unidad o nombre de producto
+    // Buscar por nombre de unidad, nombre de producto o factor de conversión
     const nombreUnidad = (unidad.nombre || '').toLowerCase();
     const nombreProducto = (unidad.producto_nombre || unidad.producto?.nombre || '').toLowerCase();
-    return nombreUnidad.includes(terminoBusquedaLower) || nombreProducto.includes(terminoBusquedaLower);
+    const factorConversion = String(unidad.factor_conversion || '').toLowerCase();
+    return (
+      nombreUnidad.includes(terminoBusquedaLower) ||
+      nombreProducto.includes(terminoBusquedaLower) ||
+      factorConversion.includes(terminoBusquedaLower)
+    );
   });
 
   // Validaciones
