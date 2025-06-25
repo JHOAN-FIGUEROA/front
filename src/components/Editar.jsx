@@ -115,7 +115,6 @@ const Editar = ({
                       size="small"
                       sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
                       onClick={() => handleSeleccionarTipoDocumento(opt)}
-                      disabled
                     >
                       {opt}
                     </Button>
@@ -130,7 +129,7 @@ const Editar = ({
                   required
                   error={!!validationErrors.documento}
                   helperText={validationErrors.documento}
-                  disabled
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               {/* Información Personal */}
@@ -149,6 +148,7 @@ const Editar = ({
                   error={!!validationErrors.nombre}
                   helperText={validationErrors.nombre}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
                   label="Apellido"
@@ -160,6 +160,7 @@ const Editar = ({
                   error={!!validationErrors.apellido}
                   helperText={validationErrors.apellido}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               {/* Contacto */}
@@ -178,6 +179,7 @@ const Editar = ({
                   error={!!validationErrors.email}
                   helperText={validationErrors.email}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               {/* Ubicación */}
@@ -195,6 +197,7 @@ const Editar = ({
                   error={!!validationErrors.municipio}
                   helperText={validationErrors.municipio}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
                   label="Barrio"
@@ -205,6 +208,7 @@ const Editar = ({
                   error={!!validationErrors.barrio}
                   helperText={validationErrors.barrio}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
                   label="Dirección"
@@ -215,6 +219,7 @@ const Editar = ({
                   error={!!validationErrors.dirrecion}
                   helperText={validationErrors.dirrecion}
                   sx={{ mb: 2 }}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
                   label="Complemento"
@@ -224,6 +229,7 @@ const Editar = ({
                   fullWidth
                   error={!!validationErrors.complemento}
                   helperText={validationErrors.complemento}
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               {/* Rol */}

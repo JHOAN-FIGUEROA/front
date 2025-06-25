@@ -179,15 +179,10 @@ const Proveedores = () => {
     if (!documento?.trim()) {
       return 'El documento es requerido';
     }
-    
     // Validar según el tipo de documento
-    if (tipoDocumento === 'NIT') {
-      if (!/^\d{9}$/.test(documento)) {
-        return 'El NIT debe tener exactamente 9 dígitos numéricos';
-      }
-    } else if (tipoDocumento === 'CC' || tipoDocumento === 'CE') {
-      if (!/^\d{10}$/.test(documento)) {
-        return 'El documento debe tener exactamente 10 dígitos numéricos';
+    if (tipoDocumento === 'NIT' || tipoDocumento === 'CC' || tipoDocumento === 'CE') {
+      if (!/^\d{7,10}$/.test(documento)) {
+        return 'El documento debe tener entre 7 y 10 dígitos numéricos';
       }
     }
     return '';
@@ -1064,26 +1059,27 @@ const Proveedores = () => {
                       <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                     </Box>
-                    <TextField
-                      label="Tipo de Documento"
-                      name="tipodocumento"
-                      value={editForm.tipodocumento}
-                      fullWidth
-                      select
-                      disabled
-                      sx={{ mb: 2 }}
-                    >
-                      {['NIT', 'CC', 'CE'].map(option => (
-                        <MenuItem key={option} value={option}>{option}</MenuItem>
+                    <Box display="flex" gap={1} mb={2}>
+                      {['NIT', 'CC', 'CE'].map(opt => (
+                        <Button
+                          key={opt}
+                          variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                          color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                          size="small"
+                          sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                          onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
+                        >
+                          {opt}
+                        </Button>
                       ))}
-                    </TextField>
+                    </Box>
                     <TextField
                       label="Documento"
                       name="documento"
                       value={editForm.documento}
+                      onChange={handleEditChange}
                       fullWidth
                       required
-                      disabled
                     />
                   </Paper>
                 </Grid>

@@ -213,8 +213,18 @@ const Productos = () => {
   const handleEditImagenChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setEditProductoData(prev => ({ ...prev, imagen: file }));
-      
       const reader = new FileReader();
       reader.onload = (event) => {
         setEditPreviewImagen(event.target.result);
@@ -250,7 +260,7 @@ const Productos = () => {
       formData.append('idcategoria', editProductoData.idcategoria);
       formData.append('codigoproducto', editProductoData.codigoproducto);
       
-      if (editProductoData.imagen instanceof File) {
+      if (editProductoData.imagen && editProductoData.imagen instanceof File) {
         formData.append('imagen', editProductoData.imagen);
       }
       
@@ -307,8 +317,18 @@ const Productos = () => {
   const handleImagenChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevoProducto(prev => ({ ...prev, imagen: file }));
-      
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreviewImagen(event.target.result);
@@ -359,7 +379,7 @@ const Productos = () => {
       formData.append('idcategoria', nuevoProducto.idcategoria);
       formData.append('codigoproducto', nuevoProducto.codigoproducto);
       
-      if (nuevoProducto.imagen instanceof File) {
+      if (nuevoProducto.imagen && nuevoProducto.imagen instanceof File) {
         formData.append('imagen', nuevoProducto.imagen);
       }
       
@@ -547,6 +567,17 @@ const Productos = () => {
   const handleImagenCategoriaChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevaCategoria(prev => ({ ...prev, imagen: file }));
       
       const reader = new FileReader();
@@ -560,6 +591,17 @@ const Productos = () => {
   const handleImagenCategoriaEditChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevaCategoriaEdit(prev => ({ ...prev, imagen: file }));
       
       const reader = new FileReader();
@@ -592,7 +634,7 @@ const Productos = () => {
       formData.append('nombre', nuevaCategoria.nombre);
       formData.append('descripcion', nuevaCategoria.descripcion || '');
       
-      if (nuevaCategoria.imagen instanceof File) {
+      if (nuevaCategoria.imagen && nuevaCategoria.imagen instanceof File) {
         formData.append('imagen', nuevaCategoria.imagen, nuevaCategoria.imagen.name);
       }
       
@@ -662,7 +704,7 @@ const Productos = () => {
       formData.append('nombre', nuevaCategoriaEdit.nombre);
       formData.append('descripcion', nuevaCategoriaEdit.descripcion || '');
       
-      if (nuevaCategoriaEdit.imagen instanceof File) {
+      if (nuevaCategoriaEdit.imagen && nuevaCategoriaEdit.imagen instanceof File) {
         formData.append('imagen', nuevaCategoriaEdit.imagen, nuevaCategoriaEdit.imagen.name);
       }
       

@@ -18,7 +18,17 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    if (!(config.data instanceof FormData)) {
+    // Si es FormData, no establecer Content-Type manualmente y loguear los pares
+    if (config.data instanceof FormData) {
+      // Elimina Content-Type si existe
+      if (config.headers['Content-Type']) {
+        delete config.headers['Content-Type'];
+      }
+      // Log de depuración para ver los pares de FormData
+      for (let pair of config.data.entries()) {
+        console.log('[FormData]', pair[0], pair[1]);
+      }
+    } else {
       config.headers['Content-Type'] = 'application/json';
     }
     return config;
@@ -978,6 +988,19 @@ export const getVentaPDF = async (id) => {
     return {
       error: true,
       detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error al obtener el PDF'
+    };
+  }
+};
+
+// Buscar unidad/presentación por código de barras
+export const buscarUnidadPorCodigo = async (codigo) => {
+  try {
+    const response = await api.get('/api/unidades/buscar', { params: { codigobarras: codigo } });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      error: true,
+      detalles: error.response?.data?.detalles || error.response?.data?.error || error.message || 'Error al buscar unidad por código'
     };
   }
 };
