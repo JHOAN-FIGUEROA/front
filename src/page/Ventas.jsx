@@ -238,6 +238,7 @@ const Ventas = () => {
     setCrearForm(initialCrearForm);
     setCrearValidation({});
     setClientes([]);
+    setCrearLoading(false);
   };
   const validateField = (name, value) => {
     let error = '';
@@ -321,6 +322,7 @@ const Ventas = () => {
       factor_conversion: parseFloat(presentacionSeleccionada.factor_conversion),
       cantidad: cantidadPresentacion,
       precioventa: Number(productoSeleccionado.precioventa) || 0,
+      stock_presentacion: productoSeleccionado.stock !== undefined ? productoSeleccionado.stock : (productoSeleccionado.stock_presentacion !== undefined ? productoSeleccionado.stock_presentacion : 0),
     };
     setCrearForm(prev => ({ ...prev, productos: [...prev.productos, nuevoProducto] }));
     Swal.fire({
@@ -362,6 +364,8 @@ const Ventas = () => {
               idpresentacion: nuevaPresentacion.idpresentacion,
               presentacion_nombre: nuevaPresentacion.nombre,
               factor_conversion: parseFloat(nuevaPresentacion.factor_conversion),
+              stock_presentacion: nuevaPresentacion.stock !== undefined ? nuevaPresentacion.stock : (nuevaPresentacion.stock_presentacion !== undefined ? nuevaPresentacion.stock_presentacion : 0),
+              cantidad: p.cantidad > (nuevaPresentacion.stock !== undefined ? nuevaPresentacion.stock : (nuevaPresentacion.stock_presentacion !== undefined ? nuevaPresentacion.stock_presentacion : 0)) ? (nuevaPresentacion.stock !== undefined ? nuevaPresentacion.stock : (nuevaPresentacion.stock_presentacion !== undefined ? nuevaPresentacion.stock_presentacion : 0)) : p.cantidad
             }
           : p
       )
@@ -380,7 +384,9 @@ const Ventas = () => {
     if (!crearForm.documentocliente) validationErrors.documentocliente = 'Debe seleccionar un cliente.';
     if (crearForm.productos.length === 0) validationErrors.productos = 'Debe agregar al menos un producto a la venta.';
     setCrearValidation(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
     setCrearLoading(true);
     // Si es venta rápida, enviar como VENTA_DIRECTA a la API
     const dataToSend = {
@@ -941,9 +947,9 @@ const Ventas = () => {
                         crearForm.productos.map(prod => {
                           const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
                           const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                          const unidadesReales = (Number(prod.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1);
+                          const stockDisponible = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
                           const precioUnitario = prod.precioventa;
-                          const subtotal = unidadesReales * precioUnitario;
+                          const subtotal = stockDisponible * precioUnitario;
                           return (
                             <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
                               <TableCell>{prod.nombre}</TableCell>
@@ -951,7 +957,14 @@ const Ventas = () => {
                                 <FormControl fullWidth size="small">
                                   <Select
                                     value={prod.idpresentacion}
-                                    onChange={e => handlePresentacionChange(prod.idproducto, prod.idpresentacion, Number(e.target.value))}
+                                    onChange={e => {
+                                      const nueva = (presentacionesPorProducto[prod.idproducto] || []).find(pr => pr.idpresentacion === Number(e.target.value));
+                                      // Si la presentación no tiene stock, asígnale el stock del producto seleccionado
+                                      if (nueva && (nueva.stock === undefined || nueva.stock === null)) {
+                                        nueva.stock = prod.stock;
+                                      }
+                                      setPresentacionSeleccionada(nueva);
+                                    }}
                                     displayEmpty
                                   >
                                     {presentaciones.map(pr => (
@@ -967,7 +980,19 @@ const Ventas = () => {
                                   type="number"
                                   value={prod.cantidad === '' ? '' : prod.cantidad}
                                   onChange={e => {
-                                    handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', e.target.value === '' ? '' : Number(e.target.value));
+                                    const nuevaCantidad = e.target.value === '' ? '' : Number(e.target.value);
+                                    // Validar stock disponible según factor de conversión
+                                    const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
+                                    const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
+                                    const stock = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
+                                    const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                                    const maxCantidad = Math.floor(stock / factor);
+                                    if (nuevaCantidad !== '' && nuevaCantidad > maxCantidad) {
+                                      Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para esta presentación. Máximo permitido: ${maxCantidad}` });
+                                      handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', maxCantidad);
+                                      return;
+                                    }
+                                    handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', nuevaCantidad);
                                   }}
                                   onBlur={e => {
                                     if (prod.cantidad === '' || prod.cantidad < 1) {
@@ -1009,8 +1034,8 @@ const Ventas = () => {
                   <Typography variant="h6">
                     Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
                       const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      const unidadesReales = (Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1);
-                      return acc + (unidadesReales * p.precioventa);
+                      const stockDisponible = p.stock_presentacion !== undefined ? p.stock_presentacion : (p.stock !== undefined ? p.stock : (p.producto_stock !== undefined ? p.producto_stock : (p.producto?.stock || 0)));
+                      return acc + (stockDisponible * p.precioventa);
                     }, 0))}
                   </Typography>
                 </Box>
@@ -1020,10 +1045,7 @@ const Ventas = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCrearOpen(false)} color="secondary">Cancelar</Button>
-          <Button onClick={() => {
-            setCrearLoading(true);
-            handleCrearVenta();
-          }} variant="contained" color="primary" disabled={crearLoading}>
+          <Button onClick={handleCrearVenta} variant="contained" color="primary" disabled={crearLoading}>
             {crearLoading ? <CircularProgress size={24} /> : 'Guardar Venta'}
           </Button>
         </DialogActions>
@@ -1047,20 +1069,27 @@ const Ventas = () => {
                     Swal.fire({ icon: 'error', title: 'Producto no encontrado', text: 'No se encontró el producto para este código.' });
                     return;
                   }
-                  // Si ya existe, suma la cantidad al existente y NO actualiza el precio
+                  // Validar stock antes de agregar
                   let yaExiste = false;
+                  let stockDisponible = producto.stock;
                   setCrearForm(prev => {
+                    let cantidadActual = 0;
                     const productos = prev.productos.map(p => {
                       if (p.idproducto === producto.idproducto && p.idpresentacion === unidad.idpresentacion) {
                         yaExiste = true;
+                        cantidadActual = Number(p.cantidad) || 0;
                         return {
                           ...p,
-                          cantidad: (Number(p.cantidad) || 0) + 1,
-                          // NO actualizar precioventa
+                          cantidad: cantidadActual + 1,
                         };
                       }
                       return p;
                     });
+                    const cantidadTotal = yaExiste ? cantidadActual + 1 : 1;
+                    if (cantidadTotal > stockDisponible) {
+                      Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para agregar este producto. Stock disponible: ${stockDisponible}` });
+                      return prev;
+                    }
                     if (!yaExiste) {
                       productos.push({
                         idproducto: producto.idproducto,
@@ -1071,25 +1100,27 @@ const Ventas = () => {
                         factor_conversion: parseFloat(unidad.factor_conversion),
                         cantidad: 1,
                         precioventa: Number(producto.precioventa) || 0,
+                        stock_presentacion: unidad.stock !== undefined ? unidad.stock : (unidad.stock_presentacion !== undefined ? unidad.stock_presentacion : 0),
                       });
                     }
+                    Swal.fire({
+                      position: 'top',
+                      icon: 'success',
+                      title: `${producto.nombre} (${unidad.nombre}) agregado a la venta`,
+                      showConfirmButton: false,
+                      timer: 1200,
+                      width: 350,
+                      toast: true,
+                      background: '#f6fff6',
+                      customClass: {
+                        popup: 'swal2-toast',
+                        title: 'swal2-title-custom',
+                      },
+                    });
+                    setProductosBusqueda('');
                     return { ...prev, productos };
                   });
-                  Swal.fire({
-                    position: 'top',
-                    icon: 'success',
-                    title: `${producto.nombre} (${unidad.nombre}) agregado a la venta`,
-                    showConfirmButton: false,
-                    timer: 1200,
-                    width: 350,
-                    toast: true,
-                    background: '#f6fff6',
-                    customClass: {
-                      popup: 'swal2-toast',
-                      title: 'swal2-title-custom',
-                    },
-                  });
-                  setProductosBusqueda('');
+                  return;
                 } else {
                   Swal.fire({ icon: 'error', title: 'No encontrado', text: res.detalles || 'No se encontró la presentación para este código.' });
                 }
@@ -1162,6 +1193,10 @@ const Ventas = () => {
                     label="Presentación"
                     onChange={e => {
                       const nueva = (presentacionesPorProducto[productoSeleccionado.idproducto] || []).find(pr => pr.idpresentacion === Number(e.target.value));
+                      // Si la presentación no tiene stock, asígnale el stock del producto seleccionado
+                      if (nueva && (nueva.stock === undefined || nueva.stock === null)) {
+                        nueva.stock = productoSeleccionado.stock;
+                      }
                       setPresentacionSeleccionada(nueva);
                     }}
                   >
@@ -1180,19 +1215,25 @@ const Ventas = () => {
                   value={cantidadPresentacion === 0 ? '' : cantidadPresentacion}
                   onChange={e => {
                     const val = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                    const stock = presentacionSeleccionada?.stock !== undefined ? presentacionSeleccionada.stock : 1;
+                    const factor = presentacionSeleccionada?.factor_conversion ? parseFloat(presentacionSeleccionada.factor_conversion) : 1;
+                    const maxCantidad = Math.floor(stock / factor);
+                    if (val > maxCantidad) {
+                      Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para esta presentación. Máximo permitido: ${maxCantidad}` });
+                      setCantidadPresentacion(maxCantidad);
+                      return;
+                    }
                     setCantidadPresentacion(val);
                   }}
                   onBlur={() => {
                     if (!cantidadPresentacion || cantidadPresentacion < 1) setCantidadPresentacion(1);
                   }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
-                      e.preventDefault();
-                      handleAddProducto();
-                    }
-                  }}
                   sx={{ width: '100%' }}
-                  inputProps={{ min: 1, style: { textAlign: 'center' } }}
+                  inputProps={{ min: 1, max: (() => {
+                    const stock = presentacionSeleccionada?.stock !== undefined ? presentacionSeleccionada.stock : 1;
+                    const factor = presentacionSeleccionada?.factor_conversion ? parseFloat(presentacionSeleccionada.factor_conversion) : 1;
+                    return Math.floor(stock / factor);
+                  })(), style: { textAlign: 'center' } }}
                 />
               </Box>
               <Box flex={1} minWidth={150}>

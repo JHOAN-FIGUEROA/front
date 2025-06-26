@@ -82,6 +82,10 @@ const Clientes = () => {
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => { event.preventDefault(); };
 
+  // 1. Agrega el estado para confirmar contraseña:
+  const [confirmarPassword, setConfirmarPassword] = useState('');
+  const [confirmarPasswordError, setConfirmarPasswordError] = useState('');
+
   // Función helper para mostrar el Snackbar
   const openSnackbar = (message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -489,7 +493,11 @@ const Clientes = () => {
       newValue = value.replace(/[^0-9]/g, '');
     }
     setCrearForm(prev => ({ ...prev, [name]: newValue }));
-
+    if (name === 'confirmarPassword') {
+      setConfirmarPassword(newValue);
+      setConfirmarPasswordError('');
+      return;
+    }
     let errorMessage = '';
     switch (name) {
       case 'tipodocumento':
@@ -553,6 +561,12 @@ const Clientes = () => {
 
     const passwordError = validatePassword(crearForm.password);
     if (passwordError) { newErrors.password = passwordError; isValid = false; }
+    if (crearForm.password !== confirmarPassword) {
+      setConfirmarPasswordError('Las contraseñas no coinciden');
+      isValid = false;
+    } else {
+      setConfirmarPasswordError('');
+    }
 
     setCrearValidation(newErrors);
     return isValid;
@@ -894,6 +908,18 @@ const Clientes = () => {
                         </InputAdornment>
                       )
                     }}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    label="Confirmar Contraseña"
+                    name="confirmarPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmarPassword}
+                    onChange={handleCrearChange}
+                    fullWidth
+                    required
+                    error={!!confirmarPasswordError}
+                    helperText={confirmarPasswordError}
                     sx={{ mb: 2 }}
                   />
                 </Grid>

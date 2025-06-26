@@ -169,6 +169,17 @@ const Categorias = () => {
         e.target.value = '';
         return;
       }
+      if (file.size > 512000) { // 500 KB
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setEditCategoriaData(prev => ({ ...prev, imagen: file }));
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -246,6 +257,17 @@ const Categorias = () => {
           icon: 'error',
           title: 'Archivo no válido',
           text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 512000) { // 500 KB
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
           confirmButtonColor: '#2E8B57',
           background: '#fff'
         });
