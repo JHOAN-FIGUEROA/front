@@ -101,7 +101,6 @@ const LoginForm = () => {
   const [restablecerLoading, setRestablecerLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNuevaPassword, setShowNuevaPassword] = useState(false);
-  const [showConfirmarPassword, setShowConfirmarPassword] = useState(false);
 
   // Silenciar errores de red al cargar el componente
   useState(() => {
@@ -685,8 +684,8 @@ const LoginForm = () => {
         >
           <TextField
             fullWidth
-            label="Token (4 dígitos)"
-            name="token"
+            label="Código de Confirmación (4 dígitos)"
+            name="Token"
             value={recuperarData.token}
             onChange={e => {
               // Solo permite números y máximo 4 dígitos
@@ -745,38 +744,13 @@ const LoginForm = () => {
             fullWidth
             label="Confirmar Contraseña"
             name="confirmarPassword"
-            type={showConfirmarPassword ? 'text' : 'password'}
+            type={showNuevaPassword ? 'text' : 'password'}
             value={recuperarData.confirmarPassword}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.confirmarPassword}
             helperText={recuperarErrors.confirmarPassword}
             margin="normal"
             aria-describedby="confirmar-password-helper-text"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title={showConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} arrow>
-                    <IconButton
-                      aria-label={showConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      onClick={() => setShowConfirmarPassword((show) => !show)}
-                      edge="end"
-                      sx={{
-                        fontSize: 28,
-                        color: showConfirmarPassword ? '#2E8B57' : '#888',
-                        boxShadow: '0 2px 8px rgba(46,139,87,0.15)',
-                        transition: 'color 0.2s',
-                        '&:hover': {
-                          color: '#17643c',
-                          backgroundColor: 'transparent',
-                        },
-                      }}
-                    >
-                      {showConfirmarPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              )
-            }}
           />
         </DialogContent>
         <DialogActions sx={{

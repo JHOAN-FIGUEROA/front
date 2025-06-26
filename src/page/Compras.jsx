@@ -1022,9 +1022,10 @@ const Compras = () => {
                         crearForm.productos.map(prod => {
                           const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
                           const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                          const unidadesReales = (Number(prod.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1);
-                          const precioUnitario = prod.preciodecompra;
-                          const subtotal = unidadesReales * precioUnitario;
+                          const cantidadPresentaciones = Number(prod.cantidad) || 0;
+                          const precioPresentacion = Number(prod.preciodecompra) || 0;
+                          const factor = presentacion ? parseFloat(presentacion.factor_conversion) : 1;
+                          const subtotal = cantidadPresentaciones * precioPresentacion;
                           return (
                             <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
                               <TableCell>{prod.nombre}</TableCell>
@@ -1060,7 +1061,7 @@ const Compras = () => {
                                   size="small"
                                 />
                               </TableCell>
-                              <TableCell align="right">{formatCurrency(precioUnitario)}</TableCell>
+                              <TableCell align="right">{formatCurrency(precioPresentacion)}</TableCell>
                               <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
                               <TableCell>
                                 <IconButton size="small" color="error" onClick={() => handleRemoveProducto(prod.idproducto)}>
@@ -1076,17 +1077,22 @@ const Compras = () => {
                 </TableContainer>
                 <Box mt={2} textAlign="right">
                   <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                    Total de productos (unidades reales): {crearForm.productos.reduce((acc, p) => {
-                      const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
-                    }, 0)}
+                    Total de productos (unidades reales): {
+                      crearForm.productos.reduce((acc, p) => {
+                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
+                        return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
+                      }, 0)
+                    }
                   </Typography>
                   <Typography variant="h6">
-                    Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
-                      const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      const unidadesReales = (Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1);
-                      return acc + (unidadesReales * p.preciodecompra);
-                    }, 0))}
+                    Total: {formatCurrency(
+                      crearForm.productos.reduce((acc, p) => {
+                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
+                        const cantidadPresentaciones = Number(p.cantidad) || 0;
+                        const precioPresentacion = Number(p.preciodecompra) || 0;
+                        return acc + (cantidadPresentaciones * precioPresentacion);
+                      }, 0)
+                    )}
                   </Typography>
                 </Box>
               </Paper>
@@ -1232,10 +1238,23 @@ const Compras = () => {
                   Agregar a la compra
                 </Button>
               </Box>
-              {presentacionSeleccionada && cantidadPresentacion > 0 && (
-                <Box flex={1} minWidth={200}>
-                  <Typography variant="body2" sx={{ mt: 1, color: 'primary.main', fontWeight: 600 }}>
-                    Total unidades reales: {cantidadPresentacion * parseFloat(presentacionSeleccionada.factor_conversion)}
+              {presentacionSeleccionada && productoSeleccionado && (
+                <Box mt={2}>
+                  <Typography variant="body2" color="text.secondary">
+                    <b>Precio de la presentación:</b> COP $ {Number(productoSeleccionado.preciocompra).toLocaleString('es-CO')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <b>Factor de conversión:</b> {presentacionSeleccionada.factor_conversion}
+                  </Typography>
+                  <Typography variant="body2" color="primary.main">
+                    <b>Precio por unidad:</b> COP $ {(
+                      Number(productoSeleccionado.preciocompra) && Number(presentacionSeleccionada.factor_conversion)
+                        ? Math.round(Number(productoSeleccionado.preciocompra) / Number(presentacionSeleccionada.factor_conversion))
+                        : 0
+                    ).toLocaleString('es-CO')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    El campo "Precio Compra Actual" en la lista de productos siempre muestra el precio por unidad, que es el que se usa para calcular el precio de venta y el margen de ganancia.
                   </Typography>
                 </Box>
               )}

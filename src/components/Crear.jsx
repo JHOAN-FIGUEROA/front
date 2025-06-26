@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert, Typography, Paper, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert, Typography, Paper, Box, IconButton } from '@mui/material';
 import { createUsuario } from '../api';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonIcon from '@mui/icons-material/Person';
@@ -7,6 +7,8 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import GroupIcon from '@mui/icons-material/Group';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Visibility from '@mui/icons-material/Visibility';
 
 // Asegúrate de que la prop onError se desestructure aquí
 const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, titulo = 'Registrar Usuario', onError }) => {
@@ -16,6 +18,9 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
   const [validationErrors, setValidationErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const [rolSeleccionado, setRolSeleccionado] = useState('');
+  const [confirmarPassword, setConfirmarPassword] = useState('');
+  const [confirmarPasswordError, setConfirmarPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -133,6 +138,11 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+    if (name === 'confirmarPassword') {
+      setConfirmarPassword(value);
+      setConfirmarPasswordError('');
+      return;
+    }
     let newErrors = {};
     if (name === 'email') {
       newErrors = validateEmail(value);
@@ -169,6 +179,12 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
       validateRol(form.rol_idrol),
       validateTipoDocumento(form.tipodocumento)
     );
+    if (form.password !== confirmarPassword) {
+      setConfirmarPasswordError('Las contraseñas no coinciden');
+      newErrors.password = 'Las contraseñas no coinciden';
+    } else {
+      setConfirmarPasswordError('');
+    }
     setValidationErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -400,13 +416,40 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                 <TextField
                   label="Contraseña"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={handleChange}
                   fullWidth
                   required
                   error={!!validationErrors.password}
                   helperText={validationErrors.password}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                        size="large"
+                        sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                        title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                      </IconButton>
+                    )
+                  }}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Confirmar Contraseña"
+                  name="confirmarPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmarPassword}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  error={!!confirmarPasswordError}
+                  helperText={confirmarPasswordError}
+                  sx={{ mb: 2 }}
                 />
               </Grid>
               {/* Contacto */}

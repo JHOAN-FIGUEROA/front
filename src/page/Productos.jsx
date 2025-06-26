@@ -83,7 +83,6 @@ const Productos = () => {
   const [crearValidation, setCrearValidation] = useState({ 
     nombre: '', 
     descripcion: '', 
-    preciocompra: '',
     margenganancia: '',
     idcategoria: '',
     codigoproducto: ''
@@ -224,6 +223,17 @@ const Productos = () => {
         e.target.value = '';
         return;
       }
+      if (file.size > 512000) { // 500 KB
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setEditProductoData(prev => ({ ...prev, imagen: file }));
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -328,6 +338,17 @@ const Productos = () => {
         e.target.value = '';
         return;
       }
+      if (file.size > 512000) { // 500 KB = 500*1024 = 512000 bytes
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevoProducto(prev => ({ ...prev, imagen: file }));
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -353,10 +374,6 @@ const Productos = () => {
 
       if (nuevoProducto.descripcion && nuevoProducto.descripcion.length > 200) {
         throw new Error('La descripción debe tener máximo 200 caracteres');
-      }
-
-      if (!nuevoProducto.preciocompra || nuevoProducto.preciocompra <= 0) {
-        throw new Error('El precio de compra debe ser mayor a 0');
       }
 
       if (!nuevoProducto.margenganancia || nuevoProducto.margenganancia < 0) {
@@ -504,7 +521,6 @@ const Productos = () => {
     setCrearValidation({
       nombre: validateNombreProducto(nuevoProducto.nombre),
       descripcion: validateDescripcionProducto(nuevoProducto.descripcion),
-      preciocompra: validatePrecioCompra(nuevoProducto.preciocompra),
       margenganancia: validateMargenGanancia(nuevoProducto.margenganancia),
       idcategoria: validateCategoria(nuevoProducto.idcategoria),
       codigoproducto: validateCodigoProducto(nuevoProducto.codigoproducto)
@@ -578,6 +594,17 @@ const Productos = () => {
         e.target.value = '';
         return;
       }
+      if (file.size > 512000) { // 500 KB
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
       setNuevaCategoria(prev => ({ ...prev, imagen: file }));
       
       const reader = new FileReader();
@@ -596,6 +623,17 @@ const Productos = () => {
           icon: 'error',
           title: 'Archivo no válido',
           text: 'Por favor selecciona un archivo de imagen válido (jpg, png, gif, etc.)',
+          confirmButtonColor: '#2E8B57',
+          background: '#fff'
+        });
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 512000) { // 500 KB
+        Swal.fire({
+          icon: 'error',
+          title: 'Imagen demasiado grande',
+          text: 'La imagen debe pesar máximo 500 KB.',
           confirmButtonColor: '#2E8B57',
           background: '#fff'
         });
@@ -810,8 +848,22 @@ const Productos = () => {
               <TableRow key={producto.idproducto || idx}>
                 <TableCell>{(pagina - 1) * PRODUCTOS_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{producto.nombre}</TableCell>
-                <TableCell>{`COP $ ${Number(producto.preciocompra).toLocaleString('es-CO')}`}</TableCell>
-                <TableCell>{`COP $ ${Number(producto.precioventa).toLocaleString('es-CO')}`}</TableCell>
+                <TableCell>
+                  <span>
+                    COP $ {Number(producto.preciocompra).toLocaleString('es-CO')}
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }} title="Precio por unidad">
+                      (por unidad)
+                    </Typography>
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span>
+                    COP $ {Number(producto.precioventa).toLocaleString('es-CO')}
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }} title="Precio por unidad">
+                      (por unidad)
+                    </Typography>
+                  </span>
+                </TableCell>
                 <TableCell>{producto.stock ?? 0}</TableCell>
                 
                 <TableCell align="center">
@@ -926,20 +978,6 @@ const Productos = () => {
                     error={!!crearValidation.nombre}
                     helperText={crearValidation.nombre}
                     InputProps={{ startAdornment: <InventoryIcon color="primary" sx={{ mr: 1 }} /> }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    label="Precio de Compra"
-                    name="preciocompra"
-                    type="number"
-                    value={Number(String(nuevoProducto.preciocompra).replace(/[^0-9.]/g, ''))}
-                    onChange={e => setNuevoProducto(prev => ({ ...prev, preciocompra: e.target.value.replace(/[^0-9.]/g, '') }))}
-                    fullWidth
-                    required
-                    error={!!crearValidation.preciocompra}
-                    helperText={crearValidation.preciocompra}
-                    InputProps={{ startAdornment: <AttachMoneyIcon color="primary" sx={{ mr: 1 }} /> }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
