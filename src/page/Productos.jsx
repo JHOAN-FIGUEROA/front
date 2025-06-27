@@ -136,13 +136,13 @@ const Productos = () => {
         setTotalPaginasAPI(1);
       } else if (result.success && result.data) {
         const productosData = result.data.data?.productos || [];
-        const paginacionData = result.data.data?.paginacion || {};
+        const paginacionData = result.data.data;
         
         setProductos(productosData);
-        setTotalPaginasAPI(paginacionData.totalPaginas || 1);
+        setTotalPaginasAPI(paginacionData.pages || 1);
         
-        if (currentPage > (paginacionData.totalPaginas || 1) && (paginacionData.totalPaginas || 1) > 0) {
-          const newPage = paginacionData.totalPaginas;
+        if (currentPage > (paginacionData.pages || 1) && (paginacionData.pages || 1) > 0) {
+          const newPage = paginacionData.pages;
           const newSearchParams = new URLSearchParams(searchParams);
           newSearchParams.set('page', newPage.toString());
           setSearchParams(newSearchParams, { replace: true });

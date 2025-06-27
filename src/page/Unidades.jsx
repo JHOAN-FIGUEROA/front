@@ -57,7 +57,7 @@ const Unidades = () => {
         setTotalPaginasAPI(1);
       } else if (result.success && result.data && result.data.unidades) {
         setUnidades(result.data.unidades || []);
-        setTotalPaginasAPI(result.data.totalPaginas || 1);
+        setTotalPaginasAPI(result.data.totalPages || 1);
       } else {
         setUnidades([]);
         setTotalPaginasAPI(1);
