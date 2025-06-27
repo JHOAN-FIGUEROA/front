@@ -664,14 +664,16 @@ const Compras = () => {
         </Table>
       </TableContainer>
       {!loading && totalPaginasAPI > 1 && (
-        <Pagination
-          count={totalPaginasAPI}
-          page={pagina}
-          onChange={handleChangePagina}
-          color="primary"
-          showFirstButton 
-          showLastButton
-        />
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Pagination
+            count={totalPaginasAPI}
+            page={pagina}
+            onChange={handleChangePagina}
+            color="primary"
+            showFirstButton 
+            showLastButton
+          />
+        </Box>
       )}
       <Snackbar
         open={snackbar.open}
