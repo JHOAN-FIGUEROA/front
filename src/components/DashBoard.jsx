@@ -106,62 +106,62 @@ const DashBoard = () => {
   const lastPurchase = stats?.comprasPorMes?.length > 0 ? stats.comprasPorMes[stats.comprasPorMes.length - 1].total : 0;
 
   return (
-    <Box p={2} sx={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
-  <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-    Dashboard Principal
-  </Typography>
+    <Box p={{ xs: 1, sm: 2 }} sx={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
+        Dashboard Principal
+      </Typography>
 
-  <Grid container spacing={2}>
-    <Grid item xs={12} sm={6} md={4}>
-      <KpiCard title="Total Clientes" value={stats?.totalClientes || 0} icon={<PeopleIcon fontSize="small" />} color="#29b6f6" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={4}>
-      <KpiCard title="Ventas del Último Mes" value={formatCurrency(lastSale)} icon={<PointOfSaleIcon fontSize="small" />} color="#66bb6a" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={4}>
-      <KpiCard title="Compras del Último Mes" value={formatCurrency(lastPurchase)} icon={<ShoppingCartIcon fontSize="small" />} color="#ffa726" />
-    </Grid>
-  </Grid>
+      <Grid container spacing={{ xs: 1, sm: 2 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <KpiCard title="Total Clientes" value={stats?.totalClientes || 0} icon={<PeopleIcon fontSize="small" />} color="#29b6f6" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <KpiCard title="Ventas del Último Mes" value={formatCurrency(lastSale)} icon={<PointOfSaleIcon fontSize="small" />} color="#66bb6a" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <KpiCard title="Compras del Último Mes" value={formatCurrency(lastPurchase)} icon={<ShoppingCartIcon fontSize="small" />} color="#ffa726" />
+        </Grid>
+      </Grid>
 
-  <Box display="flex" gap={2} sx={{ mt: 2, flexDirection: { xs: 'column', lg: 'row' } }}>
-    <Box sx={{ flex: '6.5 1 0%', minWidth: 0 }}>
-      <ChartContainer title="Ventas por mes" sx={{ height: 400 }}>
-        <AreaChart data={stats?.ventasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="mes" />
-          <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
-          <Tooltip content={renderCustomTooltip} formatter={(value) => formatCurrency(value)} />
-          <Legend />
-          <Area type="monotone" dataKey="total" stroke="#66bb6a" fill="#66bb6a" fillOpacity={0.3} name="Total Ventas" />
-        </AreaChart>
-      </ChartContainer>
+      <Box display="flex" gap={{ xs: 1, sm: 2 }} sx={{ mt: 2, flexDirection: { xs: 'column', lg: 'row' } }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <ChartContainer title="Ventas por mes" sx={{ height: { xs: 250, sm: 400 } }}>
+            <AreaChart data={stats?.ventasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
+              <Tooltip content={renderCustomTooltip} formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Area type="monotone" dataKey="total" stroke="#66bb6a" fill="#66bb6a" fillOpacity={0.3} name="Total Ventas" />
+            </AreaChart>
+          </ChartContainer>
+        </Box>
+
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 2 }, minWidth: 0 }}>
+          <ChartContainer title="Compras por mes" sx={{ flex: 1, height: { xs: 200, sm: 300 } }}>
+            <AreaChart data={stats?.comprasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
+              <Tooltip content={renderCustomTooltip} formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Area type="monotone" dataKey="total" stroke="#ffa726" fill="#ffa726" fillOpacity={0.3} name="Total Compras" />
+            </AreaChart>
+          </ChartContainer>
+
+          <ChartContainer title="Productos más vendidos" sx={{ flex: 1, height: { xs: 200, sm: 300 } }}>
+            <BarChart data={stats?.productosMasVendidos} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" hide />
+              <YAxis dataKey="nombre" type="category" width={100} tick={{ fontSize: 12 }} />
+              <Tooltip content={renderCustomTooltip} />
+              <Legend />
+              <Bar dataKey="cantidad" fill="#29b6f6" name="Cantidad Vendida" />
+            </BarChart>
+          </ChartContainer>
+        </Box>
+      </Box>
     </Box>
-
-    <Box sx={{ flex: '3.5 1 0%', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-      <ChartContainer title="Compras por mes" sx={{ flex: 1 }}>
-        <AreaChart data={stats?.comprasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="mes" />
-          <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
-          <Tooltip content={renderCustomTooltip} formatter={(value) => formatCurrency(value)} />
-          <Legend />
-          <Area type="monotone" dataKey="total" stroke="#ffa726" fill="#ffa726" fillOpacity={0.3} name="Total Compras" />
-        </AreaChart>
-      </ChartContainer>
-
-      <ChartContainer title="Productos más vendidos" sx={{ flex: 1 }}>
-        <BarChart data={stats?.productosMasVendidos} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" hide />
-          <YAxis dataKey="nombre" type="category" width={100} tick={{ fontSize: 12 }} />
-          <Tooltip content={renderCustomTooltip} />
-          <Legend />
-          <Bar dataKey="cantidad" fill="#29b6f6" name="Cantidad Vendida" />
-        </BarChart>
-      </ChartContainer>
-    </Box>
-  </Box>
-</Box>
   );
 };
 
