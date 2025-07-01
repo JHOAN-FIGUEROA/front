@@ -3,6 +3,7 @@ import { useState } from 'react';
 import SideBar from './SideBar';
 import Navbar from './Navbar';
 import { useInactivityTimer } from '../hooks/useInactivityTimer';
+import DashBoard from './DashBoard';
 
 const drawerWidth = 240;
 const closedDrawerWidth = 64;
@@ -61,27 +62,25 @@ const DashboardLayout = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          // Padding izquierdo dinámico basado en el ancho del sidebar permanente
+          width: '100vw',
+          position: 'relative',
           paddingLeft: isMobile ? 0 : `${desktopDrawerWidth}px`,
-          // Padding superior para no quedar debajo del Navbar fijo
           paddingTop: navbarHeight,
           boxSizing: 'border-box',
           overflowX: 'hidden',
-          overflowY: 'auto', // Permitir scroll vertical en este contenedor
-          height: '100%', // Permitir que ocupe la altura disponible dentro del flex parent
-          // Eliminar height: calc(100vh - navbarHeight) de aquí
-          // Añadir una transición al padding izquierdo para que coincida con la del sidebar
+          overflowY: 'auto',
+          height: '100%',
           transition: theme.transitions.create('padding-left', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
           }),
-          zIndex: theme.zIndex.drawer -1, // Asegurar que el contenido principal esté debajo del sidebar
+          zIndex: theme.zIndex.drawer -1,
         }}
       >
         {/* Contenedor interno para limitar el ancho, centrar y manejar su propio scroll si es necesario */}
         <Box sx={{
-          width: '100%', // Ocupar el 100% del ancho del padre
-          padding: '16px', // Añadir padding interno
+          width: '100%',
+          padding: (Array.isArray(children) ? children.some(child => child?.type === DashBoard) : children?.type === DashBoard) ? 0 : '16px',
           boxSizing: 'border-box',
           height: '100%', // Ocupar la altura completa del padre (main)
           overflowY: 'auto', // Permitir scroll vertical DENTRO de este Box si su contenido se desborda
