@@ -990,48 +990,48 @@ const Productos = () => {
                 <InfoIcon color="primary" sx={{ fontSize: 32 }} />
                 Información General
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                {/* Fila 1 */}
+                <Box display="flex" gap={2}>
                   <TextField
                     label="Nombre del Producto"
                     name="nombre"
                     value={nuevoProducto.nombre}
                     onChange={e => setNuevoProducto(prev => ({ ...prev, nombre: e.target.value }))}
-                    fullWidth
                     required
                     autoFocus
                     error={!!crearValidation.nombre}
                     helperText={crearValidation.nombre}
                     InputProps={{ startAdornment: <InventoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={4}>
                   <TextField
                     label="Margen de Ganancia (%)"
                     name="margenganancia"
                     type="number"
                     value={nuevoProducto.margenganancia}
                     onChange={e => setNuevoProducto(prev => ({ ...prev, margenganancia: e.target.value }))}
-                    fullWidth
                     required
                     error={!!crearValidation.margenganancia}
                     helperText={crearValidation.margenganancia}
                     InputProps={{ endAdornment: <Typography color="primary">%</Typography> }}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                </Box>
+                {/* Fila 2 */}
+                <Box display="flex" gap={2}>
+                  <Box display="flex" gap={1} flex={1}>
                     <TextField
                       select
                       label="Categoría"
                       name="idcategoria"
                       value={nuevoProducto.idcategoria}
                       onChange={e => setNuevoProducto(prev => ({ ...prev, idcategoria: e.target.value }))}
-                      fullWidth
                       required
                       error={!!crearValidation.idcategoria}
                       helperText={crearValidation.idcategoria}
                       InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                      sx={{ flex: 1 }}
                     >
                       {loadingCategorias ? (
                         <MenuItem disabled>
@@ -1056,49 +1056,37 @@ const Productos = () => {
                       variant="outlined"
                       color="primary"
                       onClick={() => setCrearCategoriaOpen(true)}
-                      sx={{ 
-                        minWidth: 'auto', 
-                        px: 2, 
-                        height: 56,
-                        borderColor: 'primary.main',
-                        '&:hover': {
-                          borderColor: 'primary.dark',
-                          backgroundColor: 'primary.light',
-                          color: 'primary.contrastText'
-                        }
-                      }}
+                      sx={{ minWidth: 'auto', px: 2, height: 56, borderColor: 'primary.main', '&:hover': { borderColor: 'primary.dark', backgroundColor: 'primary.light', color: 'primary.contrastText' } }}
                       title="Crear nueva categoría"
                     >
                       <AddIcon />
                     </Button>
                   </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Código de Producto"
                     name="codigoproducto"
                     value={nuevoProducto.codigoproducto}
                     onChange={e => setNuevoProducto(prev => ({ ...prev, codigoproducto: e.target.value }))}
-                    fullWidth
                     required
                     error={!!crearValidation.codigoproducto}
                     helperText={crearValidation.codigoproducto}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                {/* Fila 3: Descripción */}
+                <Box display="flex" gap={2}>
                   <TextField
                     label="Descripción"
                     name="descripcion"
                     value={nuevoProducto.descripcion}
                     onChange={e => setNuevoProducto(prev => ({ ...prev, descripcion: e.target.value }))}
-                    fullWidth
-                    multiline
-                    rows={3}
+                    required
                     error={!!crearValidation.descripcion}
                     helperText={crearValidation.descripcion}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
               <Divider sx={{ my: 4 }} />
               <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ImageIcon color="primary" sx={{ fontSize: 32 }} />
@@ -1162,11 +1150,20 @@ const Productos = () => {
       {/* Diálogo Editar */}
       <Dialog open={editProductoOpen} onClose={handleCerrarEdicionProducto} maxWidth="md" fullWidth>
         <form onSubmit={handleGuardarEdicionProducto} autoComplete="off" noValidate>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0', py: 2.5 }}>
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: '#f8f9fa',
+              borderBottom: '1px solid #e0e0e0',
+              py: 2.5,
+            }}
+          >
             <EditIcon color="primary" sx={{ fontSize: 28 }} />
-            <span style={{ fontWeight: 600 }}>
-              Editar Producto: {productoAEditar?.nombre}
-            </span>
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+              Editar Producto
+            </Typography>
           </DialogTitle>
           <DialogContent 
             dividers 
@@ -1177,62 +1174,48 @@ const Productos = () => {
                 <InfoIcon color="primary" sx={{ fontSize: 32 }} />
                 Información General
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                {/* Fila 1 */}
+                <Box display="flex" gap={2}>
                   <TextField
                     label="Nombre del Producto"
                     name="nombre"
                     value={editProductoData.nombre}
                     onChange={handleEditProductoFormChange}
-                    fullWidth
                     required
                     autoFocus
                     error={!!editValidation.nombre}
                     helperText={editValidation.nombre}
                     InputProps={{ startAdornment: <InventoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    label="Precio de Compra"
-                    name="preciocompra"
-                    type="number"
-                    value={Number(String(editProductoData.preciocompra).replace(/[^0-9.]/g, ''))}
-                    onChange={handleEditProductoFormChange}
-                    fullWidth
-                    required
-                    error={!!editValidation.preciocompra}
-                    helperText={editValidation.preciocompra}
-                    InputProps={{ startAdornment: <AttachMoneyIcon color="primary" sx={{ mr: 1 }} /> }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
                   <TextField
                     label="Margen de Ganancia (%)"
                     name="margenganancia"
                     type="number"
                     value={editProductoData.margenganancia}
                     onChange={handleEditProductoFormChange}
-                    fullWidth
                     required
                     error={!!editValidation.margenganancia}
                     helperText={editValidation.margenganancia}
                     InputProps={{ endAdornment: <Typography color="primary">%</Typography> }}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                </Box>
+                {/* Fila 2 */}
+                <Box display="flex" gap={2}>
+                  <Box display="flex" gap={1} flex={1}>
                     <TextField
                       select
                       label="Categoría"
                       name="idcategoria"
                       value={editProductoData.idcategoria}
                       onChange={handleEditProductoFormChange}
-                      fullWidth
                       required
                       error={!!editValidation.idcategoria}
                       helperText={editValidation.idcategoria}
                       InputProps={{ startAdornment: <CategoryIcon color="primary" sx={{ mr: 1 }} /> }}
+                      sx={{ flex: 1 }}
                     >
                       {loadingCategorias ? (
                         <MenuItem disabled>
@@ -1257,49 +1240,37 @@ const Productos = () => {
                       variant="outlined"
                       color="primary"
                       onClick={() => setCrearCategoriaEditOpen(true)}
-                      sx={{ 
-                        minWidth: 'auto', 
-                        px: 2, 
-                        height: 56,
-                        borderColor: 'primary.main',
-                        '&:hover': {
-                          borderColor: 'primary.dark',
-                          backgroundColor: 'primary.light',
-                          color: 'primary.contrastText'
-                        }
-                      }}
+                      sx={{ minWidth: 'auto', px: 2, height: 56, borderColor: 'primary.main', '&:hover': { borderColor: 'primary.dark', backgroundColor: 'primary.light', color: 'primary.contrastText' } }}
                       title="Crear nueva categoría"
                     >
                       <AddIcon />
                     </Button>
                   </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Código de Producto"
                     name="codigoproducto"
                     value={editProductoData.codigoproducto}
                     onChange={handleEditProductoFormChange}
-                    fullWidth
                     required
                     error={!!editValidation.codigoproducto}
                     helperText={editValidation.codigoproducto}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                {/* Fila 3: Descripción */}
+                <Box display="flex" gap={2}>
                   <TextField
                     label="Descripción"
                     name="descripcion"
                     value={editProductoData.descripcion}
                     onChange={handleEditProductoFormChange}
-                    fullWidth
-                    multiline
-                    rows={3}
+                    required
                     error={!!editValidation.descripcion}
                     helperText={editValidation.descripcion}
+                    sx={{ flex: 1 }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
               <Divider sx={{ my: 4 }} />
               <Typography variant="h5" sx={{ fontWeight: 900, mb: 3, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ImageIcon color="primary" sx={{ fontSize: 32 }} />

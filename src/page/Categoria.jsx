@@ -579,33 +579,29 @@ const Categorias = () => {
                 <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
                 Información de Categoría
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Nombre"
-                    name="nombre"
-                    value={nuevaCategoria.nombre}
-                    onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
-                    fullWidth
-                    required
-                    error={!!crearValidation.nombre}
-                    helperText={crearValidation.nombre}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Descripción"
-                    name="descripcion"
-                    value={nuevaCategoria.descripcion}
-                    onChange={e => setNuevaCategoria(prev => ({ ...prev, descripcion: e.target.value }))}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    error={!!crearValidation.descripcion}
-                    helperText={crearValidation.descripcion}
-                  />
-                </Grid>
-              </Grid>
+              <Box display="flex" gap={2}>
+                <TextField
+                  label="Nombre"
+                  name="nombre"
+                  value={nuevaCategoria.nombre}
+                  onChange={e => setNuevaCategoria(prev => ({ ...prev, nombre: e.target.value }))}
+                  sx={{ width: 260 }}
+                  required
+                  error={!!crearValidation.nombre}
+                  helperText={crearValidation.nombre}
+                />
+                <TextField
+                  label="Descripción"
+                  name="descripcion"
+                  value={nuevaCategoria.descripcion}
+                  onChange={e => setNuevaCategoria(prev => ({ ...prev, descripcion: e.target.value }))}
+                  sx={{ flex: 1 }}
+                  multiline={false}
+                  rows={undefined}
+                  error={!!crearValidation.descripcion}
+                  helperText={crearValidation.descripcion}
+                />
+              </Box>
               <Divider sx={{ my: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ImageIcon color="primary" sx={{ fontSize: 22 }} />
@@ -651,33 +647,29 @@ const Categorias = () => {
                 <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
                 Información de Categoría
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Nombre"
-                    name="nombre"
-                    value={editCategoriaData.nombre}
-                    onChange={handleEditCategoriaFormChange}
-                    fullWidth
-                    required
-                    error={!!editValidation.nombre}
-                    helperText={editValidation.nombre}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Descripción"
-                    name="descripcion"
-                    value={editCategoriaData.descripcion}
-                    onChange={handleEditCategoriaFormChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    error={!!editValidation.descripcion}
-                    helperText={editValidation.descripcion}
-                  />
-                </Grid>
-              </Grid>
+              <Box display="flex" gap={2}>
+                <TextField
+                  label="Nombre"
+                  name="nombre"
+                  value={editCategoriaData.nombre}
+                  onChange={handleEditCategoriaFormChange}
+                  sx={{ width: 260 }}
+                  required
+                  error={!!editValidation.nombre}
+                  helperText={editValidation.nombre}
+                />
+                <TextField
+                  label="Descripción"
+                  name="descripcion"
+                  value={editCategoriaData.descripcion}
+                  onChange={handleEditCategoriaFormChange}
+                  sx={{ flex: 1 }}
+                  multiline={false}
+                  rows={undefined}
+                  error={!!editValidation.descripcion}
+                  helperText={editValidation.descripcion}
+                />
+              </Box>
               <Divider sx={{ my: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ImageIcon color="primary" sx={{ fontSize: 22 }} />
