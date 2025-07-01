@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert, Typography, Paper, Box, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, CircularProgress, Snackbar, Alert, Typography, Paper, Box, IconButton, InputAdornment } from '@mui/material';
 import { createUsuario } from '../api';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonIcon from '@mui/icons-material/Person';
@@ -330,6 +330,22 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                   },
                 }}
                 InputLabelProps={{ shrink: Boolean(form[name]) }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                        size="large"
+                        sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                        title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
             )}
           </Grid>
@@ -433,6 +449,22 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                 helperText={validationErrors.password}
                 InputLabelProps={{ shrink: Boolean(form.password) }}
                 sx={{ flex: 1 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowPassword((show) => !show)}
+                        edge="end"
+                        size="large"
+                        sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                        title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
               <TextField
                 label="Confirmar Contraseña"
