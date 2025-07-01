@@ -189,9 +189,30 @@ const Categorias = () => {
     }
   };
 
+  const hasEditChangesCategoria = () => {
+    if (!categoriaAEditar) return false;
+    return (
+      editCategoriaData.nombre !== categoriaAEditar.nombre ||
+      editCategoriaData.descripcion !== (categoriaAEditar.descripcion || '') ||
+      !!editCategoriaData.imagen // Si hay una nueva imagen
+    );
+  };
+
   const handleGuardarEdicionCategoria = async (e) => {
     e.preventDefault();
     if (!categoriaAEditar) return;
+
+    if (!hasEditChangesCategoria()) {
+      setEditCategoriaLoading(false);
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin Cambios',
+        text: 'No hay cambios para guardar',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff'
+      });
+      return;
+    }
 
     setEditCategoriaLoading(true);
     setEditCategoriaError('');

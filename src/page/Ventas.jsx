@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, TextField, Tooltip, Select, MenuItem, InputLabel, FormControl, InputAdornment
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, TextField, Tooltip, Select, MenuItem, InputLabel, FormControl, InputAdornment, Backdrop
 } from '@mui/material';
 import { getVentas, getVentaById, anularVenta, createVenta, getClientesActivos, getUnidades, getProductosActivos, getVentaPDF, confirmarVenta, buscarUnidadPorCodigo } from '../api';
 import AddIcon from '@mui/icons-material/Add';
@@ -32,7 +32,7 @@ const Ventas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
-  const [pagina, setPagina] = useState(Number.parseInt(searchParams.get('page')) || 1);
+  const pagina = Number.parseInt(searchParams.get('page')) || 1;
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [busqueda, setBusqueda] = useState(searchParams.get('search') || '');
   const [detalleOpen, setDetalleOpen] = useState(false);
@@ -67,6 +67,7 @@ const Ventas = () => {
   const [cantidadPresentacion, setCantidadPresentacion] = useState(1);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [productosLoading, setProductosLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Calendario manual para fecha de venta
   const [showCalendar, setShowCalendar] = useState(false);
@@ -129,29 +130,29 @@ const Ventas = () => {
   // Agrega un estado para el filtro de estado de ventas
   const [filtroEstado, setFiltroEstado] = useState('');
 
+  // Función para traducir el filtro de estado a lo que espera el backend
+  const getEstadoParamVentas = (estado) => {
+    if (estado === 'anulada') return 'ANULADA';
+    if (estado === 'completada') return 'COMPLETADA';
+    return '';
+  };
+
   // Fetch ventas
-  const fetchVentas = useCallback(async (currentPage, currentSearch) => {
+  const fetchVentas = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
-      const result = await getVentas(currentPage, VENTAS_POR_PAGINA, currentSearch);
+      const estadoParam = getEstadoParamVentas(estadoFiltro);
+      const result = await getVentas(currentPage, VENTAS_POR_PAGINA, currentSearch, estadoParam);
       if (result.error) {
         setError(result.detalles || 'Error al cargar ventas.');
         setVentas([]);
         setTotalPaginasAPI(1);
       } else if (result.success && result.data) {
         const ventasBase = result.data.ventas || [];
-        // Obtener el estado real de cada venta
-        const ventasConEstado = await Promise.all(ventasBase.map(async v => {
-          try {
-            const detalle = await getVentaById(v.idventas);
-            return { ...v, estado: detalle.data.estado };
-          } catch {
-            return v;
-          }
-        }));
-        setVentas(ventasConEstado);
-        setTotalPaginasAPI(result.data.pages || 1);
+        setVentas(ventasBase);
+        const totalPaginas = result.data.pages || 1;
+        setTotalPaginasAPI(totalPaginas);
       } else {
         setVentas([]);
         setTotalPaginasAPI(1);
@@ -168,10 +169,9 @@ const Ventas = () => {
   useEffect(() => {
     const pageFromUrl = Number.parseInt(searchParams.get('page')) || 1;
     const searchFromUrl = searchParams.get('search') || '';
-    setPagina(pageFromUrl);
     setBusqueda(searchFromUrl);
-    fetchVentas(pageFromUrl, searchFromUrl);
-  }, [searchParams, fetchVentas]);
+    fetchVentas(pageFromUrl, searchFromUrl, getEstadoParamVentas(filtroEstado));
+  }, [searchParams, fetchVentas, filtroEstado]);
 
   // Filtrado frontend de ventas
   const ventasFiltradas = ventas
@@ -447,6 +447,34 @@ const Ventas = () => {
     setCantidadPresentacion(1);
   };
 
+  const handleFiltroEstado = (nuevoEstado) => {
+    setFiltroEstado(nuevoEstado);
+    fetchVentas(1, busqueda, getEstadoParamVentas(nuevoEstado));
+  };
+
+  const handleDescargarPDF = async (idventas) => {
+    setPdfLoading(true);
+    try {
+      const result = await getVentaPDF(idventas);
+      if (result.success && result.data) {
+        const url = window.URL.createObjectURL(new Blob([result.data], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `venta_${idventas}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        openSnackbar(result.detalles || 'Error al generar PDF', 'error');
+      }
+    } catch (err) {
+      openSnackbar('Error inesperado al generar PDF', 'error');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Ventas Registradas</Typography>
@@ -480,9 +508,9 @@ const Ventas = () => {
         </Button>
       </Box>
       <Box display="flex" justifyContent="center" gap={2} my={2}>
-        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('anulada')}>Anuladas</Button>
-        <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('completada')}>Completadas</Button>
-        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('')}>Todas</Button>
+        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
+        <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('completada')}>Completadas</Button>
+        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
@@ -535,7 +563,7 @@ const Ventas = () => {
                     )}
                   </TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                       <Tooltip title="Ver Detalle"><span>
                         <IconButton 
                           color="info" 
@@ -549,25 +577,26 @@ const Ventas = () => {
                         <IconButton
                           color="primary"
                           size="small"
-                          onClick={async () => {
-                            const result = await getVentaPDF(venta.idventas);
-                            if (result.success && result.data) {
-                              const url = window.URL.createObjectURL(new Blob([result.data], { type: 'application/pdf' }));
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.setAttribute('download', `venta_${venta.idventas}.pdf`);
-                              document.body.appendChild(link);
-                              link.click();
-                              link.parentNode.removeChild(link);
-                              window.URL.revokeObjectURL(url);
-                            } else {
-                              openSnackbar(result.detalles || 'Error al generar PDF', 'error');
-                            }
-                          }}
+                          onClick={() => handleDescargarPDF(venta.idventas)}
                         >
                           <PictureAsPdfIcon fontSize="small" />
                         </IconButton>
                       </span></Tooltip>
+                      {estado !== 'ANULADA' ? (
+                        <Tooltip title="Anular Venta"><span>
+                          <IconButton 
+                            color="error" 
+                            size="small" 
+                            onClick={() => { setAnularOpen(true); setVentaAnular(venta); }}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </span></Tooltip>
+                      ) : (
+                        <IconButton style={{ visibility: 'hidden' }} size="small">
+                          <CancelIcon fontSize="small" />
+                        </IconButton>
+                      )}
                       {estado === 'PEDIDO' && (
                         <Tooltip title="Confirmar Venta"><span>
                           <IconButton
@@ -586,17 +615,6 @@ const Ventas = () => {
                             }}
                           >
                             <CheckCircleIcon fontSize="small" />
-                          </IconButton>
-                        </span></Tooltip>
-                      )}
-                      {estado !== 'ANULADA' && (
-                        <Tooltip title="Anular Venta"><span>
-                          <IconButton 
-                            color="error" 
-                            size="small" 
-                            onClick={() => { setAnularOpen(true); setVentaAnular(venta); }}
-                          >
-                            <CancelIcon fontSize="small" />
                           </IconButton>
                         </span></Tooltip>
                       )}
@@ -1145,20 +1163,23 @@ const Ventas = () => {
                       <CircularProgress size={28} />
                     </TableCell>
                   </TableRow>
-                ) : productosActivos.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" style={{ color: '#888' }}>
-                      No hay productos activos disponibles o falta el campo "precioventa" en los productos.<br/>
-                      Revisa la consola para ver los datos recibidos.
-                    </TableCell>
-                  </TableRow>
                 ) : (
-                  productosActivos
-                    .filter(p => 
-                      p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
-                      p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
-                    )
-                    .map(p => (
+                  (() => {
+                    const productosFiltrados = productosActivos
+                      .filter(p => 
+                        p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
+                        p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
+                      );
+                    if (productosFiltrados.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center" style={{ color: '#888' }}>
+                            No se encontró ningún producto
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return productosFiltrados.slice(0, 5).map(p => (
                       <TableRow key={p.idproducto} hover onClick={() => {
                         setProductoSeleccionado(p);
                         setPresentacionSeleccionada(null);
@@ -1176,7 +1197,8 @@ const Ventas = () => {
                           }}>Seleccionar</Button>
                         </TableCell>
                       </TableRow>
-                    ))
+                    ));
+                  })()
                 )}
               </TableBody>
             </Table>
@@ -1292,6 +1314,11 @@ const Ventas = () => {
           <Button onClick={() => setProductosModalOpen(false)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
+      {/* Loader para generación de PDF */}
+      <Backdrop open={pdfLoading} sx={{ zIndex: 2000, color: '#fff' }}>
+        <CircularProgress color="inherit" />
+        <span style={{ marginLeft: 16, fontWeight: 600 }}>Generando PDF...</span>
+      </Backdrop>
     </Box>
   );
 };

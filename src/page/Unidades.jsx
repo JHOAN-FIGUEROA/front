@@ -57,7 +57,7 @@ const Unidades = () => {
         setTotalPaginasAPI(1);
       } else if (result.success && result.data && result.data.unidades) {
         setUnidades(result.data.unidades || []);
-        setTotalPaginasAPI(result.data.totalPages || 1);
+        setTotalPaginasAPI(result.data.totalPages || result.data.totalpages || 1);
       } else {
         setUnidades([]);
         setTotalPaginasAPI(1);
@@ -88,7 +88,9 @@ const Unidades = () => {
   }, [crearOpen]);
 
   const handleChangePagina = (event, value) => {
-    setPagina(value);
+    if (pagina !== value) {
+      setPagina(value);
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -243,14 +245,14 @@ const Unidades = () => {
       producto_idproducto: unidad.producto_idproducto,
       nombre: unidad.nombre,
       factor_conversion: unidad.factor_conversion,
-      codigoproducto: unidad.codigoproducto,
+      codigoproducto: unidad.codigoproducto || (unidad.producto && unidad.producto.codigoproducto) || '',
       codigobarras: String(unidad.codigobarras ?? '')
     });
     setOriginalEditData({
       producto_idproducto: unidad.producto_idproducto,
       nombre: unidad.nombre,
       factor_conversion: unidad.factor_conversion,
-      codigoproducto: unidad.codigoproducto,
+      codigoproducto: unidad.codigoproducto || (unidad.producto && unidad.producto.codigoproducto) || '',
       codigobarras: String(unidad.codigobarras ?? '')
     });
     setEditValidation({});

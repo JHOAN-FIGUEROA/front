@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Paper, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Swal from 'sweetalert2';
 import { useAuth } from '../hooks/useAuth';
@@ -594,25 +594,30 @@ const LoginForm = () => {
         aria-describedby="recuperar-password-description"
         sx={{
           '& .MuiDialog-paper': {
-            minWidth: '300px',
+            minWidth: '320px',
             maxWidth: '400px',
             width: '100%',
             margin: '24px auto',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(46,139,87,0.10)',
           },
         }}
       >
-        <DialogTitle id="recuperar-password-title">Recuperar Contraseña</DialogTitle>
+        <DialogTitle id="recuperar-password-title" sx={{ fontWeight: 700, fontSize: 22, textAlign: 'center', pb: 0 }}>
+          Recuperar Contraseña
+        </DialogTitle>
         <DialogContent 
           id="recuperar-password-description"
           sx={{
             backgroundColor: '#ffffff',
-            padding: (theme) => theme.spacing(4),
-            borderRadius: '10px',
-            '&.MuiDialogContent-root': {
-              padding: (theme) => theme.spacing(4),
-            },
+            px: 4, pt: 1, pb: 2,
+            borderRadius: 3,
+            textAlign: 'center',
           }}
         >
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+            Ingresa tu correo electrónico y te enviaremos un código de verificación para restablecer tu contraseña.
+          </Typography>
           <TextField
             fullWidth
             label="Correo electrónico"
@@ -621,24 +626,30 @@ const LoginForm = () => {
             value={recuperarData.email}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.email}
-            helperText={recuperarErrors.email}
+            helperText={recuperarErrors.email || 'Ejemplo: usuario@correo.com'}
             margin="normal"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <i className="fas fa-envelope" style={{ color: '#2E8B57' }} />
+                </InputAdornment>
+              )
+            }}
             aria-describedby="email-helper-text"
+            sx={{ borderRadius: 2 }}
           />
         </DialogContent>
-        <DialogActions sx={{
-          backgroundColor: '#ffffff',
-          padding: (theme) => theme.spacing(2),
-          justifyContent: 'center',
-          borderBottomLeftRadius: '10px',
-          borderBottomRightRadius: '10px',
-        }}>
+        <Stack direction="row" spacing={2} sx={{ backgroundColor: '#fff', px: 4, pb: 3, pt: 1, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, mt: 0 }}>
           <Button 
             onClick={() => setOpenRecuperarPassword(false)}
             color="error"
             variant="contained"
             disabled={solicitarLoading}
+            size="large"
+            fullWidth
+            sx={{ fontWeight: 700, flex: 1 }}
             aria-label="Cancelar solicitud de token"
+            startIcon={<i className="fas fa-times" />}
           >
             Cancelar
           </Button>
@@ -647,11 +658,15 @@ const LoginForm = () => {
             color="success"
             variant="contained"
             disabled={solicitarLoading}
+            size="large"
+            fullWidth
+            sx={{ fontWeight: 700, flex: 1 }}
             aria-label="Solicitar token de recuperación"
+            startIcon={<i className="fas fa-paper-plane" />}
           >
-            {solicitarLoading ? 'Solicitando...' : 'Solicitar Token'}
+            {solicitarLoading ? 'Enviando...' : 'Solicitar Token'}
           </Button>
-        </DialogActions>
+        </Stack>
       </Dialog>
 
       {/* Modal de Restablecer Contraseña */}
@@ -663,25 +678,30 @@ const LoginForm = () => {
         aria-describedby="restablecer-password-description"
         sx={{
           '& .MuiDialog-paper': {
-            minWidth: '300px',
+            minWidth: '320px',
             maxWidth: '400px',
             width: '100%',
             margin: '24px auto',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(46,139,87,0.10)',
           },
         }}
       >
-        <DialogTitle id="restablecer-password-title">Restablecer Contraseña</DialogTitle>
+        <DialogTitle id="restablecer-password-title" sx={{ fontWeight: 700, fontSize: 22, textAlign: 'center', pb: 0 }}>
+          Restablecer Contraseña
+        </DialogTitle>
         <DialogContent 
           id="restablecer-password-description"
           sx={{
             backgroundColor: '#ffffff',
-            padding: (theme) => theme.spacing(4),
-            borderRadius: '10px',
-             '&.MuiDialogContent-root': {
-              padding: (theme) => theme.spacing(4),
-            },
+            px: 4, pt: 1, pb: 2,
+            borderRadius: 3,
+            textAlign: 'center',
           }}
         >
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+            Ingresa el código de verificación que recibiste y tu nueva contraseña.
+          </Typography>
           <TextField
             fullWidth
             label="Código de Confirmación (4 dígitos)"
@@ -693,15 +713,15 @@ const LoginForm = () => {
               handleRecuperarChange({ target: { name: 'token', value } });
             }}
             error={!!recuperarErrors.token}
-            helperText={recuperarErrors.token}
+            helperText={recuperarErrors.token || 'Revisa tu correo electrónico'}
             margin="normal"
-            aria-describedby="token-helper-text"
             inputProps={{
               maxLength: 4,
               inputMode: 'numeric',
               pattern: '[0-9]*',
-              style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }
+              style: { textAlign: 'center', fontSize: '1.7rem', letterSpacing: '0.7rem', fontWeight: 700, color: '#2E8B57', background: '#f7faf7', borderRadius: 8 }
             }}
+            sx={{ mb: 2, borderRadius: 2 }}
           />
           <TextField
             fullWidth
@@ -711,9 +731,8 @@ const LoginForm = () => {
             value={recuperarData.nuevaPassword}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.nuevaPassword}
-            helperText={recuperarErrors.nuevaPassword}
+            helperText={recuperarErrors.nuevaPassword || 'Debe tener 8-15 caracteres, mayúscula, número y símbolo'}
             margin="normal"
-            aria-describedby="nueva-password-helper-text"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -739,6 +758,7 @@ const LoginForm = () => {
                 </InputAdornment>
               )
             }}
+            sx={{ borderRadius: 2 }}
           />
           <TextField
             fullWidth
@@ -748,24 +768,25 @@ const LoginForm = () => {
             value={recuperarData.confirmarPassword}
             onChange={handleRecuperarChange}
             error={!!recuperarErrors.confirmarPassword}
-            helperText={recuperarErrors.confirmarPassword}
+            helperText={recuperarErrors.confirmarPassword || 'Repite la nueva contraseña'}
             margin="normal"
-            aria-describedby="confirmar-password-helper-text"
+            sx={{ borderRadius: 2 }}
           />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'left' }}>
+            La contraseña debe tener entre 8 y 15 caracteres, al menos una mayúscula, un número y un símbolo especial.
+          </Typography>
         </DialogContent>
-        <DialogActions sx={{
-          backgroundColor: '#ffffff',
-          padding: (theme) => theme.spacing(2),
-          justifyContent: 'center',
-          borderBottomLeftRadius: '10px',
-          borderBottomRightRadius: '10px',
-        }}>
+        <Stack direction="row" spacing={2} sx={{ backgroundColor: '#fff', px: 4, pb: 3, pt: 1, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, mt: 0 }}>
           <Button 
             onClick={() => setOpenRestablecerPassword(false)}
             color="error"
             variant="contained"
             disabled={restablecerLoading}
+            size="large"
+            fullWidth
+            sx={{ fontWeight: 700, flex: 1 }}
             aria-label="Cancelar restablecimiento"
+            startIcon={<i className="fas fa-times" />}
           >
             Cancelar
           </Button>
@@ -774,11 +795,15 @@ const LoginForm = () => {
             color="success"
             variant="contained"
             disabled={restablecerLoading}
+            size="large"
+            fullWidth
+            sx={{ fontWeight: 700, flex: 1 }}
             aria-label="Confirmar cambio de contraseña"
+            startIcon={<i className="fas fa-key" />}
           >
             {restablecerLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
           </Button>
-        </DialogActions>
+        </Stack>
       </Dialog>
     </>
   );

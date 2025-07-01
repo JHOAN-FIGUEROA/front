@@ -243,10 +243,35 @@ const Productos = () => {
     }
   };
 
+  const hasEditChangesProducto = () => {
+    if (!productoAEditar) return false;
+    return (
+      editProductoData.nombre !== productoAEditar.nombre ||
+      editProductoData.descripcion !== (productoAEditar.detalleproducto || '') ||
+      Number(String(editProductoData.preciocompra).replace(/[^0-9.]/g, '')) !== Number(String(productoAEditar.preciocompra).replace(/[^0-9.]/g, '')) ||
+      editProductoData.margenganancia !== productoAEditar.margenganancia ||
+      editProductoData.idcategoria !== productoAEditar.idcategoria ||
+      editProductoData.codigoproducto !== productoAEditar.codigoproducto ||
+      !!editProductoData.imagen // Si hay una nueva imagen
+    );
+  };
+
   const handleGuardarEdicionProducto = async (e) => {
     e.preventDefault();
     if (!productoAEditar || !productoAEditar.idproducto) {
       setEditProductoError('ID de producto no válido.');
+      return;
+    }
+
+    if (!hasEditChangesProducto()) {
+      setEditProductoLoading(false);
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin Cambios',
+        text: 'No hay cambios para guardar',
+        confirmButtonColor: '#2E8B57',
+        background: '#fff'
+      });
       return;
     }
 

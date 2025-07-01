@@ -810,9 +810,11 @@ export const getDashboardStats = async () => {
 };
 
 // Compras ====================================================================
-export const getCompras = async (page = 1, limit = 5, searchTerm = '') => {
+export const getCompras = async (page = 1, limit = 5, searchTerm = '', estado) => {
   try {
-    const response = await api.get('/api/compras', { params: { page, limit, search: searchTerm } });
+    const params = { page, limit, search: searchTerm };
+    if (estado !== undefined && estado !== '') params.estado = estado;
+    const response = await api.get('/api/compras', { params });
     return { success: true, data: response.data.data };
   } catch (error) {
     if (error.response) {
@@ -891,9 +893,11 @@ export const getCompraPDF = async (id) => {
 };
 
 // Ventas =====================================================================
-export const getVentas = async (page = 1, limit = 5, searchTerm = '') => {
+export const getVentas = async (page = 1, limit = 5, searchTerm = '', estado) => {
   try {
-    const response = await api.get('/api/ventas', { params: { page, limit, search: searchTerm } });
+    const params = { page, limit, search: searchTerm };
+    if (estado !== undefined && estado !== '') params.estado = estado;
+    const response = await api.get('/api/ventas', { params });
     return { success: true, data: response.data.data };
   } catch (error) {
     if (error.response) {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, TextField, Tooltip, Select, MenuItem, InputLabel, FormControl, InputAdornment
+  Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, TextField, Tooltip, Select, MenuItem, InputLabel, FormControl, InputAdornment, Backdrop
 } from '@mui/material';
 import { getCompras, getCompraById, anularCompra, createCompra, getProveedoresActivos, getProductosActivos, getProveedores, getUnidades, getProductos, getCompraPDF } from '../api';
 import AddIcon from '@mui/icons-material/Add';
@@ -44,6 +44,7 @@ const Compras = () => {
   // Estados para crear compra
   const [crearOpen, setCrearOpen] = useState(false);
   const [crearLoading, setCrearLoading] = useState(false);
+  const [crearError, setCrearError] = useState('');
   const initialCrearForm = {
     nrodecompra: '',
     fechadecompra: new Date().toISOString().split('T')[0],
@@ -120,11 +121,22 @@ const Compras = () => {
     }
   };
 
-  const fetchCompras = useCallback(async (currentPage, currentSearch) => {
+  const [filtroEstado, setFiltroEstado] = useState('');
+
+  // Función para traducir el filtro de estado a número
+  const getEstadoParam = (estado) => {
+    if (estado === 'activa') return 1;
+    if (estado === 'anulada') return 0;
+    return '';
+  };
+
+  const fetchCompras = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
-      const result = await getCompras(currentPage, COMPRAS_POR_PAGINA, currentSearch);
+      // Usar getEstadoParam para asegurar el tipo correcto
+      const estadoParam = getEstadoParam(estadoFiltro);
+      const result = await getCompras(currentPage, COMPRAS_POR_PAGINA, currentSearch, estadoParam);
       if (result.error) {
         setError(result.detalles || 'Error al cargar compras.');
         setCompras([]);
@@ -137,7 +149,9 @@ const Compras = () => {
         const totalPaginas = result.data.pages || 1;
         setTotalPaginasAPI(totalPaginas);
 
-        if (currentPage > totalPaginas && totalPaginas > 0) {
+        if (result.data.page && result.data.page !== pagina) {
+          setPagina(result.data.page);
+        } else if (currentPage > totalPaginas && totalPaginas > 0) {
           setPagina(totalPaginas);
         } else if (currentPage !== pagina) {
           setPagina(currentPage);
@@ -154,21 +168,20 @@ const Compras = () => {
     finally {
       setLoading(false);
     }
-  }, [setPagina]);
+  }, [setPagina, pagina]);
 
   useEffect(() => {
-    fetchCompras(pagina, busqueda);
-  }, [fetchCompras]);
+    fetchCompras(pagina, busqueda, getEstadoParam(filtroEstado));
+  }, [fetchCompras, pagina, busqueda, filtroEstado]);
 
   const handleChangePagina = (event, value) => {
-    fetchCompras(value, busqueda);
+    setPagina(value);
+    fetchCompras(value, busqueda, getEstadoParam(filtroEstado));
   };
 
   const handleSearchChange = (e) => {
     setBusqueda(e.target.value);
   };
-
-  const [filtroEstado, setFiltroEstado] = useState('');
 
   const comprasFiltradas = compras
     .filter(compra => {
@@ -263,7 +276,7 @@ const Compras = () => {
           popup.style.zIndex = 9999;
         }
       });
-      fetchCompras(pagina, busqueda);
+      fetchCompras(pagina, busqueda, getEstadoParam(filtroEstado));
     }
   };
 
@@ -463,39 +476,82 @@ const Compras = () => {
 
   const handleCrearCompra = async () => {
     // Validaciones finales
-    const validationErrors = {};
-    if (!crearForm.nrodecompra || !/^\d{5,}$/.test(crearForm.nrodecompra)) {
-      validationErrors.nrodecompra = 'Debe ser un número entero de al menos 5 dígitos.';
+    if (!crearForm.nrodecompra) {
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'error',
+        title: 'El número de compra es obligatorio.',
+        showConfirmButton: false,
+        timer: 1800,
+        background: '#fff',
+        width: 350,
+        customClass: { popup: 'swal2-toast', title: 'swal2-title-custom' },
+      });
+      return;
+    } else if (!/^\d{5,}$/.test(crearForm.nrodecompra)) {
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'error',
+        title: 'Debe ser un número entero de al menos 5 dígitos.',
+        showConfirmButton: false,
+        timer: 1800,
+        background: '#fff',
+        width: 350,
+        customClass: { popup: 'swal2-toast', title: 'swal2-title-custom' },
+      });
+      return;
     }
     if (!crearForm.nitproveedor) {
-      openSnackbar('Debe seleccionar un proveedor.', 'error');
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'error',
+        title: 'Debe seleccionar un proveedor.',
+        showConfirmButton: false,
+        timer: 1800,
+        background: '#fff',
+        width: 350,
+        customClass: { popup: 'swal2-toast', title: 'swal2-title-custom' },
+      });
       return;
     }
     if (crearForm.productos.length === 0) {
-      openSnackbar('Debe agregar al menos un producto a la compra.', 'error');
-      return;
-    }
-    if (Object.keys(validationErrors).length > 0) {
-      setCrearValidation(validationErrors);
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'error',
+        title: 'Debe agregar al menos un producto a la compra.',
+        showConfirmButton: false,
+        timer: 1800,
+        background: '#fff',
+        width: 350,
+        customClass: { popup: 'swal2-toast', title: 'swal2-title-custom' },
+      });
       return;
     }
 
     setCrearLoading(true);
+    setCrearError('');
     const dataToSend = {
       ...crearForm,
-      productos: crearForm.productos.map(({ nombre, codigoproducto, ...rest }) => rest) // Excluir campos del frontend
+      productos: crearForm.productos.map(({ nombre, codigoproducto, ...rest }) => rest)
     };
 
     const result = await createCompra(dataToSend);
     setCrearLoading(false);
 
     if (result.error || !result.success) {
+      const errorMsg = result.message || result.detalles || result.error || (typeof result === 'string' ? result : JSON.stringify(result)) || 'Ocurrió un error inesperado.';
+      setCrearError(errorMsg);
       Swal.fire({
         icon: 'error',
         title: 'Error al crear la compra',
-        text: result.message || result.detalles || 'Ocurrió un error inesperado.',
+        text: errorMsg,
       });
     } else {
+      setCrearError('');
       handleCrearClose();
       Swal.fire({
         icon: 'success',
@@ -504,7 +560,7 @@ const Compras = () => {
         timer: 2000,
         showConfirmButton: false,
       });
-      fetchCompras(1, '');
+      fetchCompras(1, '', getEstadoParam(filtroEstado));
     }
   };
 
@@ -514,7 +570,10 @@ const Compras = () => {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   const handleDescargarPDF = async (idcompras) => {
+    setPdfLoading(true);
     try {
       const result = await getCompraPDF(idcompras);
       if (result.success && result.data) {
@@ -531,6 +590,8 @@ const Compras = () => {
       }
     } catch (err) {
       openSnackbar('Error inesperado al generar PDF', 'error');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -549,10 +610,13 @@ const Compras = () => {
     }
   }, []);
 
-  // Helper para obtener el nombre del proveedor
-  const getNombreProveedor = (nit) => {
-    return proveedoresActivos.find(p => p.nitproveedor === nit)?.nombre || 'N/A';
+  const handleFiltroEstado = (nuevoEstado) => {
+    setFiltroEstado(nuevoEstado);
+    fetchCompras(1, busqueda, getEstadoParam(nuevoEstado));
   };
+
+  // 1. Agrega un estado para controlar si ya se mostró el SweetAlert
+  const [alertaNoProducto, setAlertaNoProducto] = useState(false);
 
   return (
     <Box p={3}>
@@ -577,9 +641,9 @@ const Compras = () => {
       </Box>
       {/* Filtros de compras */}
       <Box display="flex" justifyContent="center" gap={2} my={2}>
-        <Button variant={filtroEstado === 'activa' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('activa')}>Activas</Button>
-        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('anulada')}>Anuladas</Button>
-        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => setFiltroEstado('')}>Todas</Button>
+        <Button variant={filtroEstado === 'activa' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('activa')}>Activas</Button>
+        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
+        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
@@ -611,7 +675,7 @@ const Compras = () => {
                   <TableCell>{(pagina - 1) * COMPRAS_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{compra.nrodecompra}</TableCell>
                   <TableCell>{formatDate(compra.fechadecompra)}</TableCell>
-                  <TableCell>{getNombreProveedor(compra.nitproveedor)}</TableCell>
+                  <TableCell>{compra.proveedor_nombre}</TableCell>
                   <TableCell align="right">{formatCurrency(compra.total)}</TableCell>
                   <TableCell align="center">
                     <Chip 
@@ -623,7 +687,7 @@ const Compras = () => {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                       <IconButton 
                         color="info" 
                         size="small" 
@@ -645,7 +709,7 @@ const Compras = () => {
                       >
                         <PictureAsPdfIcon fontSize="small" />
                       </IconButton>
-                      {compraActiva && (
+                      {compraActiva ? (
                         <IconButton 
                           color="error" 
                           size="small" 
@@ -654,6 +718,8 @@ const Compras = () => {
                         >
                           <CancelIcon fontSize="small" />
                         </IconButton>
+                      ) : (
+                        <span style={{ width: 40, display: 'inline-block' }}></span>
                       )}
                     </Stack>
                   </TableCell>
@@ -664,14 +730,16 @@ const Compras = () => {
         </Table>
       </TableContainer>
       {!loading && totalPaginasAPI > 1 && (
-        <Pagination
-          count={totalPaginasAPI}
-          page={pagina}
-          onChange={handleChangePagina}
-          color="primary"
-          showFirstButton 
-          showLastButton
-        />
+        <Box display="flex" justifyContent="center" mt={2}>
+          <Pagination
+            count={totalPaginasAPI}
+            page={pagina}
+            onChange={handleChangePagina}
+            color="primary"
+            showFirstButton 
+            showLastButton
+          />
+        </Box>
       )}
       <Snackbar
         open={snackbar.open}
@@ -717,7 +785,7 @@ const Compras = () => {
                     <Typography variant="subtitle1" color="text.secondary">ID Compra</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>{compraDetalle.compra?.idcompras}</Typography>
                     <Typography variant="subtitle1" color="text.secondary">Proveedor</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{compraDetalle.compra?.nitproveedor}</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{compraDetalle.compra?.proveedor_nombre}</Typography>
                   </Paper>
                 </Grid>
                 {/* Fechas */}
@@ -887,8 +955,6 @@ const Compras = () => {
                   fullWidth
                   required
                   margin="normal"
-                  error={!!crearValidation.nrodecompra}
-                  helperText={crearValidation.nrodecompra || " "}
                   type="number"
                 />
                 <TextField
@@ -981,9 +1047,6 @@ const Compras = () => {
                       placeholder="Nombre o NIT"
                       fullWidth
                       margin="normal"
-                      required
-                      error={!!crearValidation.nitproveedor}
-                      helperText={crearValidation.nitproveedor}
                     />
                   )}
                   noOptionsText="No se encontró ningún proveedor"
@@ -1098,6 +1161,12 @@ const Compras = () => {
               </Paper>
             </Grid>
           </Grid>
+          {/* Mostrar error de creación si existe */}
+          {crearError && (
+            <Alert severity="error" sx={{ mt: 3 }}>
+              {crearError}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCrearClose} color="secondary">Cancelar</Button>
@@ -1116,6 +1185,40 @@ const Compras = () => {
             onChange={(e) => setProductosBusqueda(e.target.value)}
             placeholder="Buscar producto por nombre o código..."
             sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
+            onBlur={() => {
+              const productosFiltrados = productosActivos.filter(p =>
+                p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
+                p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
+              );
+              if (productosBusqueda.trim() && productosFiltrados.length === 0 && !alertaNoProducto) {
+                setAlertaNoProducto(true);
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'No se encontró ningún producto',
+                  text: 'No se encontró ningún producto con ese código o nombre.',
+                  timer: 1800,
+                  showConfirmButton: false
+                });
+              }
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                const productosFiltrados = productosActivos.filter(p =>
+                  p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
+                  p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
+                );
+                if (productosBusqueda.trim() && productosFiltrados.length === 0 && !alertaNoProducto) {
+                  setAlertaNoProducto(true);
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'No se encontró ningún producto',
+                    text: 'No se encontró ningún producto con ese código o nombre.',
+                    timer: 1800,
+                    showConfirmButton: false
+                  });
+                }
+              }
+            }}
           />
           <TableContainer component={Paper} sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
             <Table stickyHeader>
@@ -1129,12 +1232,22 @@ const Compras = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {productosActivos
-                  .filter(p => 
-                    p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
-                    p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
-                  )
-                  .map(p => (
+                {(() => {
+                  const productosFiltrados = productosActivos
+                    .filter(p => 
+                      p.nombre.toLowerCase().includes(productosBusqueda.toLowerCase()) ||
+                      p.codigoproducto.toLowerCase().includes(productosBusqueda.toLowerCase())
+                    );
+                  if (productosFiltrados.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" style={{ color: '#888' }}>
+                          No se encontró ningún producto
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return productosFiltrados.slice(0, 5).map(p => (
                     <TableRow key={p.idproducto} hover onClick={() => handleSelectProducto(p)} selected={productoSeleccionado?.idproducto === p.idproducto}>
                       <TableCell sx={{ minWidth: 200 }}>{p.nombre}</TableCell>
                       <TableCell>{p.codigoproducto}</TableCell>
@@ -1144,7 +1257,8 @@ const Compras = () => {
                         <Button variant="outlined" size="small" onClick={() => handleSelectProducto(p)}>Seleccionar</Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ));
+                })()}
               </TableBody>
             </Table>
           </TableContainer>
@@ -1265,6 +1379,12 @@ const Compras = () => {
           <Button onClick={() => setProductosModalOpen(false)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Loader para generación de PDF */}
+      <Backdrop open={pdfLoading} sx={{ zIndex: 2000, color: '#fff' }}>
+        <CircularProgress color="inherit" />
+        <span style={{ marginLeft: 16, fontWeight: 600 }}>Generando PDF...</span>
+      </Backdrop>
     </Box>
   );
 };
