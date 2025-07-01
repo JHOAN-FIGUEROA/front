@@ -821,181 +821,191 @@ const Clientes = () => {
                 <PersonIcon color="primary" sx={{ fontSize: 32 }} />
                 Información del Cliente
               </Typography>
-              <Grid container spacing={3}>
-                {/* Tipo de documento y documento */}
-                <Grid item xs={12} sm={6}>
+              <Box display="flex" flexDirection="column" gap={3}>
+                {/* Identificación */}
+                <Box mb={2}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                   </Box>
-                  <Box display="flex" gap={1} mb={2}>
-                    {['CC', 'CE', 'TI'].map(opt => (
-                      <Button
-                        key={opt}
-                        variant={crearForm.tipodocumento === opt ? 'contained' : 'outlined'}
-                        color={crearForm.tipodocumento === opt ? 'primary' : 'inherit'}
-                        size="small"
-                        sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
-                        onClick={() => setCrearForm(prev => ({ ...prev, tipodocumento: opt }))}
-                      >
-                        {opt}
-                      </Button>
-                    ))}
+                  <Box display="flex" gap={2} mb={2}>
+                    <Box display="flex" gap={1}>
+                      {['CC', 'CE', 'TI'].map(opt => (
+                        <Button
+                          key={opt}
+                          variant={crearForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                          color={crearForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                          size="small"
+                          sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                          onClick={() => setCrearForm(prev => ({ ...prev, tipodocumento: opt }))}
+                        >
+                          {opt}
+                        </Button>
+                      ))}
+                    </Box>
+                    <TextField
+                      label="Documento"
+                      name="documentocliente"
+                      value={crearForm.documentocliente}
+                      onChange={handleCrearChange}
+                      required
+                      error={!!crearValidation.documentocliente}
+                      helperText={crearValidation.documentocliente}
+                      sx={{ flex: 1 }}
+                    />
                   </Box>
-                  <TextField
-                    label="Documento"
-                    name="documentocliente"
-                    value={crearForm.documentocliente}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.documentocliente}
-                    helperText={crearValidation.documentocliente}
-                  />
-                </Grid>
-                {/* Información personal */}
-                <Grid item xs={12} sm={6}>
+                </Box>
+                {/* Información Personal */}
+                <Box mb={2}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
                   </Box>
-                  <TextField
-                    label="Nombre"
-                    name="nombre"
-                    value={crearForm.nombre}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.nombre}
-                    helperText={crearValidation.nombre}
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    label="Apellido"
-                    name="apellido"
-                    value={crearForm.apellido}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.apellido}
-                    helperText={crearValidation.apellido}
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    label="Contraseña"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={crearForm.password}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.password}
-                    helperText={crearValidation.password}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            size="large"
-                            sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
-                            title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                          >
-                            {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    label="Confirmar Contraseña"
-                    name="confirmarPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirmarPassword}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!confirmarPasswordError}
-                    helperText={confirmarPasswordError}
-                    sx={{ mb: 2 }}
-                  />
-                </Grid>
+                  <Box display="flex" gap={2} mb={2}>
+                    <TextField
+                      label="Nombre"
+                      name="nombre"
+                      value={crearForm.nombre}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!crearValidation.nombre}
+                      helperText={crearValidation.nombre}
+                    />
+                    <TextField
+                      label="Apellido"
+                      name="apellido"
+                      value={crearForm.apellido}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!crearValidation.apellido}
+                      helperText={crearValidation.apellido}
+                    />
+                  </Box>
+                  <Box display="flex" gap={2}>
+                    <TextField
+                      label="Contraseña"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={crearForm.password}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!crearValidation.password}
+                      helperText={crearValidation.password}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                              onClick={handleClickShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                              size="large"
+                              sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                              title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            >
+                              {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+                    <TextField
+                      label="Confirmar Contraseña"
+                      name="confirmarPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={confirmarPassword}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!confirmarPasswordError}
+                      helperText={confirmarPasswordError}
+                    />
+                  </Box>
+                </Box>
                 {/* Contacto */}
-                <Grid item xs={12} sm={6}>
+                <Box mb={2}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
                   </Box>
-                  <TextField
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={crearForm.email}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.email}
-                    helperText={crearValidation.email}
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    label="Teléfono"
-                    name="telefono"
-                    value={crearForm.telefono}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    required
-                    error={!!crearValidation.telefono}
-                    helperText={crearValidation.telefono}
-                  />
-                </Grid>
+                  <Box display="flex" gap={2} mb={2}>
+                    <TextField
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={crearForm.email}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!crearValidation.email}
+                      helperText={crearValidation.email}
+                    />
+                    <TextField
+                      label="Teléfono"
+                      name="telefono"
+                      value={crearForm.telefono}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={!!crearValidation.telefono}
+                      helperText={crearValidation.telefono}
+                    />
+                  </Box>
+                </Box>
                 {/* Ubicación */}
-                <Grid item xs={12} sm={6}>
+                <Box mb={2}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
                   </Box>
-                  <TextField
-                    label="Municipio"
-                    name="municipio"
-                    value={crearForm.municipio}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    error={false}
-                    helperText={''}
-                  />
-                  <TextField
-                    label="Barrio"
-                    name="barrio"
-                    value={crearForm.barrio}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    error={false}
-                    helperText={''}
-                  />
-                  <TextField
-                    label="Dirección"
-                    name="direccion"
-                    value={crearForm.direccion}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    error={false}
-                    helperText={''}
-                  />
-                  <TextField
-                    label="Complemento"
-                    name="complemento"
-                    value={crearForm.complemento}
-                    onChange={handleCrearChange}
-                    fullWidth
-                    error={false}
-                    helperText={''}
-                  />
-                </Grid>
-              </Grid>
+                  <Box display="flex" gap={2} mb={2}>
+                    <TextField
+                      label="Municipio"
+                      name="municipio"
+                      value={crearForm.municipio}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={false}
+                      helperText={''}
+                    />
+                    <TextField
+                      label="Barrio"
+                      name="barrio"
+                      value={crearForm.barrio}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={false}
+                      helperText={''}
+                    />
+                  </Box>
+                  <Box display="flex" gap={2}>
+                    <TextField
+                      label="Dirección"
+                      name="direccion"
+                      value={crearForm.direccion}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      required
+                      error={false}
+                      helperText={''}
+                    />
+                    <TextField
+                      label="Complemento"
+                      name="complemento"
+                      value={crearForm.complemento}
+                      onChange={handleCrearChange}
+                      fullWidth
+                      error={false}
+                      helperText={''}
+                    />
+                  </Box>
+                </Box>
+              </Box>
               {crearError && <Alert severity="error" sx={{ mt: 3 }}>{crearError}</Alert>}
             </Paper>
           </DialogContent>
@@ -1134,45 +1144,43 @@ const Clientes = () => {
                 <CircularProgress size={40} />
               </Box>
             ) : (
-              <Grid container spacing={3}>
+              <Box display="flex" flexDirection="column" gap={3}>
                 {/* Identificación */}
-                <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
-                    </Box>
-                    <Box display="flex" gap={1} mb={2}>
-                      {['TI', 'CC', 'CE'].map(opt => (
-                        <Button
-                          key={opt}
-                          variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
-                          color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
-                          size="small"
-                          sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
-                          onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
-                        >
-                          {opt}
-                        </Button>
-                      ))}
-                    </Box>
-                    <TextField
-                      label="Documento"
-                      name="documentocliente"
-                      value={editForm.documentocliente}
-                      onChange={handleEditChange}
-                      fullWidth
-                      required
-                    />
-                  </Paper>
-                </Grid>
-                {/* Información personal */}
-                <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
-                    </Box>
+                <Box mb={2}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
+                  </Box>
+                  <Box display="flex" gap={2}>
+                    {['TI', 'CC', 'CE'].map(opt => (
+                      <Button
+                        key={opt}
+                        variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                        color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                        size="small"
+                        sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                        onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
+                      >
+                        {opt}
+                      </Button>
+                    ))}
+                  </Box>
+                  <TextField
+                    label="Documento"
+                    name="documentocliente"
+                    value={editForm.documentocliente}
+                    onChange={handleEditChange}
+                    fullWidth
+                    required
+                  />
+                </Box>
+                {/* Información Personal */}
+                <Box mb={2}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Información Personal</Typography>
+                  </Box>
+                  <Box display="flex" gap={2} mb={2}>
                     <TextField
                       label="Nombre"
                       name="nombre"
@@ -1182,7 +1190,6 @@ const Clientes = () => {
                       required
                       error={!!editValidation.nombre}
                       helperText={editValidation.nombre}
-                      sx={{ mb: 2 }}
                     />
                     <TextField
                       label="Apellido"
@@ -1194,15 +1201,45 @@ const Clientes = () => {
                       error={!!editValidation.apellido}
                       helperText={editValidation.apellido}
                     />
-                  </Paper>
-                </Grid>
+                  </Box>
+                  <Box display="flex" gap={2}>
+                    <TextField
+                      label="Contraseña"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={editForm.password}
+                      onChange={handleEditChange}
+                      fullWidth
+                      required
+                      error={!!editValidation.password}
+                      helperText={editValidation.password}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                              onClick={handleClickShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                              size="large"
+                              sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
+                              title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            >
+                              {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+                  </Box>
+                </Box>
                 {/* Contacto */}
-                <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
-                    </Box>
+                <Box mb={2}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Contacto</Typography>
+                  </Box>
+                  <Box display="flex" gap={2} mb={2}>
                     <TextField
                       label="Email"
                       name="email"
@@ -1212,7 +1249,6 @@ const Clientes = () => {
                       required
                       error={!!editValidation.email}
                       helperText={editValidation.email}
-                      sx={{ mb: 2 }}
                     />
                     <TextField
                       label="Teléfono"
@@ -1224,24 +1260,24 @@ const Clientes = () => {
                       error={!!editValidation.telefono}
                       helperText={editValidation.telefono}
                     />
-                  </Paper>
-                </Grid>
+                  </Box>
+                </Box>
                 {/* Ubicación */}
-                <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
-                    </Box>
+                <Box mb={2}>
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Ubicación</Typography>
+                  </Box>
+                  <Box display="flex" gap={2} mb={2}>
                     <TextField
                       label="Municipio"
                       name="municipio"
                       value={editForm.municipio}
                       onChange={handleEditChange}
                       fullWidth
+                      required
                       error={false}
                       helperText={''}
-                      sx={{ mb: 2 }}
                     />
                     <TextField
                       label="Barrio"
@@ -1249,19 +1285,21 @@ const Clientes = () => {
                       value={editForm.barrio}
                       onChange={handleEditChange}
                       fullWidth
+                      required
                       error={false}
                       helperText={''}
-                      sx={{ mb: 2 }}
                     />
+                  </Box>
+                  <Box display="flex" gap={2}>
                     <TextField
                       label="Dirección"
                       name="direccion"
                       value={editForm.direccion}
                       onChange={handleEditChange}
                       fullWidth
+                      required
                       error={false}
                       helperText={''}
-                      sx={{ mb: 2 }}
                     />
                     <TextField
                       label="Complemento"
@@ -1271,11 +1309,10 @@ const Clientes = () => {
                       fullWidth
                       error={false}
                       helperText={''}
-                      sx={{ mb: 2 }}
                     />
-                  </Paper>
-                </Grid>
-              </Grid>
+                  </Box>
+                </Box>
+              </Box>
             )}
             {editError && <Alert severity="error" sx={{ mt: 3 }}>{editError}</Alert>}
           </DialogContent>

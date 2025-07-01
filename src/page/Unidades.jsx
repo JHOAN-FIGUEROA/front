@@ -476,58 +476,58 @@ const Unidades = () => {
           </DialogTitle>
           <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
             <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
-              <Grid container spacing={3}>
-                {/* Producto asociado */}
-                <Grid item xs={12} sm={6}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box width="100%" mb={1.5}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <ShieldIcon color="primary" sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Producto Asociado</Typography>
                   </Box>
-                  <TextField
-                    label="Código de Barras del Producto"
-                    name="codigoproducto"
-                    value={crearForm.codigoproducto || ''}
-                    onChange={async (e) => {
-                      const value = e.target.value;
-                      setCrearForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
-                      if (value.length > 0) {
-                        try {
-                          const data = await getProductoByCodigo(value);
-                          if (data && data.success && data.data && data.data.idproducto) {
-                            setCrearForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
-                            setCrearProductoNombre(data.data.nombre || '');
-                            setCrearValidation(prev => ({ ...prev, producto_idproducto: '' }));
-                          } else {
-                            setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+                  <Box width="100%" mb={3}>
+                    <TextField
+                      label="Código de Barras del Producto"
+                      name="codigoproducto"
+                      value={crearForm.codigoproducto || ''}
+                      onChange={async (e) => {
+                        const value = e.target.value;
+                        setCrearForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
+                        if (value.length > 0) {
+                          try {
+                            const data = await getProductoByCodigo(value);
+                            if (data && data.success && data.data && data.data.idproducto) {
+                              setCrearForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
+                              setCrearProductoNombre(data.data.nombre || '');
+                              setCrearValidation(prev => ({ ...prev, producto_idproducto: '' }));
+                            } else {
+                              setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+                              setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
+                              setCrearProductoNombre('');
+                            }
+                          } catch (err) {
+                            setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
                             setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
                             setCrearProductoNombre('');
                           }
-                        } catch (err) {
-                          setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
+                        } else {
+                          setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
                           setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
                           setCrearProductoNombre('');
                         }
-                      } else {
-                        setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
-                        setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
-                        setCrearProductoNombre('');
-                      }
-                    }}
-                    fullWidth
-                    required
-                    error={!!crearValidation.producto_idproducto}
-                    helperText={crearValidation.producto_idproducto}
-                    sx={{ mb: 2 }}
-                  />
+                      }}
+                      fullWidth
+                      required
+                      error={!!crearValidation.producto_idproducto}
+                      helperText={crearValidation.producto_idproducto}
+                      sx={{ width: '100%' }}
+                    />
+                  </Box>
                   {crearForm.producto_idproducto && (
                     <Alert severity="success" sx={{ mt: 1 }}>
                       Producto seleccionado correctamente (ID: {crearForm.producto_idproducto})<br />
                       <b>{crearProductoNombre}</b>
                     </Alert>
                   )}
-                </Grid>
-                {/* Datos de la unidad */}
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box width="100%" mb={1.5}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <AddIcon color="primary" sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Datos de la Unidad</Typography>
@@ -541,7 +541,7 @@ const Unidades = () => {
                     required
                     error={!!crearValidation.nombre}
                     helperText={crearValidation.nombre}
-                    sx={{ mb: 2 }}
+                    sx={{ width: '100%' }}
                   />
                   <TextField
                     label="Factor de Conversión"
@@ -553,7 +553,7 @@ const Unidades = () => {
                     error={!!crearValidation.factor_conversion}
                     helperText={crearValidation.factor_conversion}
                     inputProps={{ inputMode: 'decimal', pattern: '^\\d+(\\.\\d{1,4})?$', min: 0.0001 }}
-                    sx={{ mb: 2 }}
+                    sx={{ width: '100%', mt: 2 }}
                   />
                   <TextField
                     label="Código de Barras de la Unidad"
@@ -564,9 +564,10 @@ const Unidades = () => {
                     required
                     error={!!crearValidation.codigobarras}
                     helperText={crearValidation.codigobarras}
+                    sx={{ width: '100%', mt: 2 }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
               {crearError && <Alert severity="error" sx={{ mt: 3 }}>{crearError}</Alert>}
             </Paper>
           </DialogContent>
@@ -596,58 +597,58 @@ const Unidades = () => {
           </DialogTitle>
           <DialogContent dividers sx={{ p: 0, backgroundColor: '#f8f9fa' }}>
             <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 4, backgroundColor: '#fff', m: { xs: 1, sm: 3 }, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
-              <Grid container spacing={3}>
-                {/* Producto asociado */}
-                <Grid item xs={12} sm={6}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box width="100%" mb={1.5}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <ShieldIcon color="primary" sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Producto Asociado</Typography>
                   </Box>
-                  <TextField
-                    label="Código de Barras del Producto"
-                    name="codigoproducto"
-                    value={editForm.codigoproducto || ''}
-                    onChange={async (e) => {
-                      const value = e.target.value;
-                      setEditForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
-                      if (value.length > 0) {
-                        try {
-                          const data = await getProductoByCodigo(value);
-                          if (data && data.success && data.data && data.data.idproducto) {
-                            setEditForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
-                            setEditProductoNombre(data.data.nombre || '');
-                            setEditValidation(prev => ({ ...prev, producto_idproducto: '' }));
-                          } else {
-                            setEditValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+                  <Box width="100%" mb={3}>
+                    <TextField
+                      label="Código de Barras del Producto"
+                      name="codigoproducto"
+                      value={editForm.codigoproducto || ''}
+                      onChange={async (e) => {
+                        const value = e.target.value;
+                        setEditForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
+                        if (value.length > 0) {
+                          try {
+                            const data = await getProductoByCodigo(value);
+                            if (data && data.success && data.data && data.data.idproducto) {
+                              setEditForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
+                              setEditProductoNombre(data.data.nombre || '');
+                              setEditValidation(prev => ({ ...prev, producto_idproducto: '' }));
+                            } else {
+                              setEditValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+                              setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
+                              setEditProductoNombre('');
+                            }
+                          } catch (err) {
+                            setEditValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
                             setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
                             setEditProductoNombre('');
                           }
-                        } catch (err) {
-                          setEditValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
+                        } else {
+                          setEditValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
                           setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
                           setEditProductoNombre('');
                         }
-                      } else {
-                        setEditValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
-                        setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
-                        setEditProductoNombre('');
-                      }
-                    }}
-                    fullWidth
-                    required
-                    error={!!editValidation.producto_idproducto}
-                    helperText={editValidation.producto_idproducto}
-                    sx={{ mb: 2 }}
-                  />
+                      }}
+                      fullWidth
+                      required
+                      error={!!editValidation.producto_idproducto}
+                      helperText={editValidation.producto_idproducto}
+                      sx={{ width: '100%' }}
+                    />
+                  </Box>
                   {editForm.producto_idproducto && (
                     <Alert severity="success" sx={{ mt: 1 }}>
                       Producto seleccionado correctamente (ID: {editForm.producto_idproducto})<br />
                       <b>{editProductoNombre}</b>
                     </Alert>
                   )}
-                </Grid>
-                {/* Datos de la unidad */}
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box width="100%" mb={1.5}>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <EditIcon color="primary" sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Datos de la Unidad</Typography>
@@ -661,7 +662,7 @@ const Unidades = () => {
                     required
                     error={!!editValidation.nombre}
                     helperText={editValidation.nombre}
-                    sx={{ mb: 2 }}
+                    sx={{ width: '100%' }}
                   />
                   <TextField
                     label="Factor de Conversión"
@@ -673,7 +674,7 @@ const Unidades = () => {
                     error={!!editValidation.factor_conversion}
                     helperText={editValidation.factor_conversion}
                     inputProps={{ inputMode: 'decimal', pattern: '^\\d+(\\.\\d{1,4})?$', min: 0.0001 }}
-                    sx={{ mb: 2 }}
+                    sx={{ width: '100%', mt: 2 }}
                   />
                   <TextField
                     label="Código de Barras de la Unidad"
@@ -684,9 +685,10 @@ const Unidades = () => {
                     required
                     error={!!editValidation.codigobarras}
                     helperText={editValidation.codigobarras}
+                    sx={{ width: '100%', mt: 2 }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
               {editError && <Alert severity="error" sx={{ mt: 3 }}>{editError}</Alert>}
             </Paper>
           </DialogContent>
