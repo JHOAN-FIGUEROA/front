@@ -329,6 +329,7 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
                     color: 'primary.main',
                   },
                 }}
+                InputLabelProps={{ shrink: Boolean(form[name]) }}
               />
             )}
           </Grid>
@@ -353,200 +354,202 @@ const Crear = ({ open, onClose, onCreado, campos, loading: loadingProp = false, 
               <PersonAddIcon color="primary" sx={{ fontSize: 32 }} />
               Información del Usuario
             </Typography>
-            <Grid container spacing={3}>
-              {/* Identificación */}
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
-                </Box>
-                <Box display="flex" gap={1} mb={2}>
-                  {tipoDocOptions.map(opt => (
-                    <Button
-                      key={opt}
-                      variant={form.tipodocumento === opt ? 'contained' : 'outlined'}
-                      color={form.tipodocumento === opt ? 'primary' : 'inherit'}
-                      size="small"
-                      sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
-                      onClick={() => handleSeleccionarTipoDocumento(opt)}
-                    >
-                      {opt}
-                    </Button>
-                  ))}
-                </Box>
-                <TextField
-                  label="Documento"
-                  name="documento"
-                  value={form.documento}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!validationErrors.documento}
-                  helperText={validationErrors.documento}
-                />
-              </Grid>
-              {/* Información Personal */}
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <PersonIcon color="primary" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
-                </Box>
-                <TextField
-                  label="Nombre"
-                  name="nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!validationErrors.nombre}
-                  helperText={validationErrors.nombre}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Apellido"
-                  name="apellido"
-                  value={form.apellido}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!validationErrors.apellido}
-                  helperText={validationErrors.apellido}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Contraseña"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!validationErrors.password}
-                  helperText={validationErrors.password}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                        onClick={() => setShowPassword((show) => !show)}
-                        edge="end"
-                        size="large"
-                        sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
-                        title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      >
-                        {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
-                      </IconButton>
-                    )
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Confirmar Contraseña"
-                  name="confirmarPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmarPassword}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!confirmarPasswordError}
-                  helperText={confirmarPasswordError}
-                  sx={{ mb: 2 }}
-                />
-              </Grid>
-              {/* Contacto */}
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <EmailIcon color="primary" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
-                </Box>
-                <TextField
-                  label="Email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!validationErrors.email}
-                  helperText={validationErrors.email}
-                  sx={{ mb: 2 }}
-                />
-              </Grid>
-              {/* Ubicación */}
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
-                </Box>
-                <TextField
-                  label="Municipio"
-                  name="municipio"
-                  value={form.municipio}
-                  onChange={handleChange}
-                  fullWidth
-                  error={!!validationErrors.municipio}
-                  helperText={validationErrors.municipio}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Barrio"
-                  name="barrio"
-                  value={form.barrio}
-                  onChange={handleChange}
-                  fullWidth
-                  error={!!validationErrors.barrio}
-                  helperText={validationErrors.barrio}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Dirección"
-                  name="dirrecion"
-                  value={form.dirrecion}
-                  onChange={handleChange}
-                  fullWidth
-                  error={!!validationErrors.dirrecion}
-                  helperText={validationErrors.dirrecion}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Complemento"
-                  name="complemento"
-                  value={form.complemento}
-                  onChange={handleChange}
-                  fullWidth
-                  error={!!validationErrors.complemento}
-                  helperText={validationErrors.complemento}
-                />
-              </Grid>
-              {/* Rol */}
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <GroupIcon color="primary" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Rol</Typography>
-                </Box>
-                <Grid container spacing={2}>
-                  {rolesOptions.length === 0 && (
-                    <Grid>
-                      <Alert severity="info">No hay roles disponibles</Alert>
-                    </Grid>
-                  )}
-                  {rolesOptions.map(opt => (
-                    <Grid key={opt.value || opt}>
-                      <Button
-                        variant={rolSeleccionado === (opt.value || opt) ? 'contained' : 'outlined'}
-                        color={rolSeleccionado === (opt.value || opt) ? 'primary' : 'inherit'}
-                        size="large"
-                        sx={{ minWidth: 120, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none', mb: 1 }}
-                        onClick={() => handleSeleccionarRol(opt.value || opt)}
-                      >
-                        {opt.label || opt}
-                      </Button>
-                    </Grid>
-                  ))}
-                </Grid>
-                {validationErrors['rol_idrol'] && (
-                  <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
-                )}
-              </Grid>
-            </Grid>
+            {/* Identificación */}
+            <Box display="flex" alignItems="center" gap={1} mb={2}>
+              <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Identificación</Typography>
+            </Box>
+            <Box display="flex" gap={0} mb={2}>
+              <Box display="flex" gap={1} flex={1}>
+                {tipoDocOptions.map(opt => (
+                  <Button
+                    key={opt}
+                    variant={form.tipodocumento === opt ? 'contained' : 'outlined'}
+                    color={form.tipodocumento === opt ? 'primary' : 'inherit'}
+                    size="small"
+                    sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                    onClick={() => handleSeleccionarTipoDocumento(opt)}
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </Box>
+              <TextField
+                label="Documento"
+                name="documento"
+                value={form.documento}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.documento}
+                helperText={validationErrors.documento}
+                sx={{ ml: 2 }}
+                InputLabelProps={{ shrink: Boolean(form.documento) }}
+              />
+            </Box>
+            {/* Información Personal */}
+            <Box display="flex" alignItems="center" gap={1} mt={3} mb={2}>
+              <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Información Personal</Typography>
+            </Box>
+            {/* Fila 1: Nombre y Apellido */}
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                label="Nombre"
+                name="nombre"
+                value={form.nombre}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.nombre}
+                helperText={validationErrors.nombre}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.nombre) }}
+              />
+              <TextField
+                label="Apellido"
+                name="apellido"
+                value={form.apellido}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.apellido}
+                helperText={validationErrors.apellido}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.apellido) }}
+              />
+            </Box>
+            {/* Fila 2: Contraseña y Confirmar Contraseña */}
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                label="Contraseña"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.password}
+                helperText={validationErrors.password}
+                InputLabelProps={{ shrink: Boolean(form.password) }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Confirmar Contraseña"
+                name="confirmarPassword"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmarPassword}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!confirmarPasswordError}
+                helperText={confirmarPasswordError}
+                InputLabelProps={{ shrink: Boolean(confirmarPassword) }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+            {/* Contacto */}
+            <Box display="flex" alignItems="center" gap={1} mt={3} mb={2}>
+              <EmailIcon color="primary" sx={{ fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Contacto</Typography>
+            </Box>
+            <Box display="flex" gap={0} mb={2}>
+              <TextField
+                label="Email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.email}
+                helperText={validationErrors.email}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.email) }}
+              />
+            </Box>
+            {/* Ubicación */}
+            <Box display="flex" alignItems="center" gap={1} mt={3} mb={2}>
+              <LocationOnIcon color="primary" sx={{ fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Ubicación</Typography>
+            </Box>
+            {/* Fila 1: Municipio y Barrio */}
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                label="Municipio"
+                name="municipio"
+                value={form.municipio}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.municipio}
+                helperText={validationErrors.municipio}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.municipio) }}
+              />
+              <TextField
+                label="Barrio"
+                name="barrio"
+                value={form.barrio}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.barrio}
+                helperText={validationErrors.barrio}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.barrio) }}
+              />
+            </Box>
+            {/* Fila 2: Dirección y Complemento */}
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                label="Dirección"
+                name="dirrecion"
+                value={form.dirrecion}
+                onChange={handleChange}
+                fullWidth
+                required
+                error={!!validationErrors.dirrecion}
+                helperText={validationErrors.dirrecion}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.dirrecion) }}
+              />
+              <TextField
+                label="Complemento"
+                name="complemento"
+                value={form.complemento}
+                onChange={handleChange}
+                fullWidth
+                error={!!validationErrors.complemento}
+                helperText={validationErrors.complemento}
+                sx={{ flex: 1 }}
+                InputLabelProps={{ shrink: Boolean(form.complemento) }}
+              />
+            </Box>
+            {/* Rol */}
+            <Box display="flex" alignItems="center" gap={1} mt={3} mb={2}>
+              <GroupIcon color="primary" sx={{ fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Rol</Typography>
+            </Box>
+            <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+              {rolesOptions.length === 0 && (
+                <Alert severity="info">No hay roles disponibles</Alert>
+              )}
+              {rolesOptions.map(opt => (
+                <Button
+                  key={opt.value || opt}
+                  variant={rolSeleccionado === (opt.value || opt) ? 'contained' : 'outlined'}
+                  color={rolSeleccionado === (opt.value || opt) ? 'primary' : 'inherit'}
+                  size="large"
+                  sx={{ minWidth: 120, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none', mb: 1 }}
+                  onClick={() => handleSeleccionarRol(opt.value || opt)}
+                >
+                  {opt.label || opt}
+                </Button>
+              ))}
+            </Box>
+            {validationErrors['rol_idrol'] && (
+              <Alert severity="error" sx={{ mt: 2 }}>{validationErrors['rol_idrol']}</Alert>
+            )}
             {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
           </Paper>
         </DialogContent>
