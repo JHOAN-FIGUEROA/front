@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, Typography, Button, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import PostWareLogo from "../img/logotipo.png";
+import logo from "../img/logotipo.PNG";
 import { useAuth } from '../context/AuthContext';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useTheme, useMediaQuery } from '@mui/material';
@@ -65,7 +65,7 @@ const Navbar = ({ onMenuToggle, navbarHeight = '72px', desktopDrawerWidth = 0, i
           </IconButton>
         )}
         {/* Eliminar ícono de menú para desktop de aquí */}
-        <Logo src={PostWareLogo} alt="PostWare Logo" />
+        <Logo src={logo} alt="PostWare Logo" />
         <Typography variant={isMobile ? 'h6' : 'h4'} component="div" sx={{ flexGrow: 1, textAlign: 'start', color: 'white' }}>
           POSTWARE
         </Typography>
