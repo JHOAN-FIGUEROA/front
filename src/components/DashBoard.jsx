@@ -106,29 +106,28 @@ const DashBoard = () => {
   const lastPurchase = stats?.comprasPorMes?.length > 0 ? stats.comprasPorMes[stats.comprasPorMes.length - 1].total : 0;
 
   return (
-    <Box p={{ xs: 1, md: 2 }} sx={{ boxSizing: 'border-box', width: '100%', maxWidth: '100%' }}>
+    <Box p={{ xs: 1, md: 2 }} sx={{ boxSizing: 'border-box', width: '100%', maxWidth: '100%', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
         Dashboard Principal
       </Typography>
 
-      {/* KPIs en una sola fila */}
-      <Grid container spacing={{ xs: 1, sm: 2 }}>
-        <Grid item xs={12} md={4}>
+      {/* KPIs */}
+      <Box display="flex" gap={2} flexDirection={{ xs: 'column', md: 'row' }} mb={2} sx={{ height: '120px', minHeight: 0 }}>
+        <Box flex={1} minWidth={0}>
           <KpiCard title="Total Clientes" value={stats?.totalClientes || 0} icon={<PeopleIcon fontSize="small" />} color="#29b6f6" />
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box flex={1} minWidth={0}>
           <KpiCard title="Ventas del Último Mes" value={formatCurrency(lastSale)} icon={<PointOfSaleIcon fontSize="small" />} color="#66bb6a" />
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box flex={1} minWidth={0}>
           <KpiCard title="Compras del Último Mes" value={formatCurrency(lastPurchase)} icon={<ShoppingCartIcon fontSize="small" />} color="#ffa726" />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
-      {/* Layout de gráficos: dos columnas iguales en desktop, apilado en móvil */}
-      <Grid container spacing={2} sx={{ mt: { xs: 2, md: 2 } }}>
-        {/* Columna izquierda: Ventas por mes arriba, Compras por mes abajo */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <ChartContainer title="Ventas por mes" sx={{ width: '100%', height: { xs: 200, md: 260 } }}>
+      {/* Gráficas */}
+      <Box display="flex" gap={2} flexDirection={{ xs: 'column', md: 'row' }} width="100%" flex={1} minHeight={0}>
+        <Box flex={1} display="flex" flexDirection="column" gap={2} height="100%" minHeight={0}>
+          <ChartContainer title="Ventas por mes" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
             <AreaChart data={stats?.ventasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
@@ -138,7 +137,7 @@ const DashBoard = () => {
               <Area type="monotone" dataKey="total" stroke="#66bb6a" fill="#66bb6a" fillOpacity={0.3} name="Total Ventas" />
             </AreaChart>
           </ChartContainer>
-          <ChartContainer title="Compras por mes" sx={{ width: '100%', height: { xs: 200, md: 260 } }}>
+          <ChartContainer title="Compras por mes" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
             <AreaChart data={stats?.comprasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
@@ -148,10 +147,9 @@ const DashBoard = () => {
               <Area type="monotone" dataKey="total" stroke="#ffa726" fill="#ffa726" fillOpacity={0.3} name="Total Compras" />
             </AreaChart>
           </ChartContainer>
-        </Grid>
-        {/* Columna derecha: Productos más vendidos (ocupa el alto de ambas) */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <ChartContainer title="Productos más vendidos" sx={{ width: '100%', height: { xs: 220, md: 540 }, alignSelf: 'center' }}>
+        </Box>
+        <Box flex={1} display="flex" flexDirection="column" justifyContent="center" height="100%" minHeight={0}>
+          <ChartContainer title="Productos más vendidos" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
             <BarChart data={stats?.productosMasVendidos} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" hide />
@@ -161,8 +159,8 @@ const DashBoard = () => {
               <Bar dataKey="cantidad" fill="#29b6f6" name="Cantidad Vendida" />
             </BarChart>
           </ChartContainer>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -68,8 +68,8 @@ const DashboardLayout = ({ children }) => {
           paddingTop: navbarHeight,
           boxSizing: 'border-box',
           overflowX: 'hidden',
-          overflowY: 'auto',
-          height: '100%',
+          overflowY: 'hidden',
+          height: '100vh',
           transition: theme.transitions.create('padding-left', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -82,8 +82,8 @@ const DashboardLayout = ({ children }) => {
           width: '100%',
           padding: (Array.isArray(children) ? children.some(child => child?.type === DashBoard) : children?.type === DashBoard) ? 0 : '16px',
           boxSizing: 'border-box',
-          height: '100%', // Ocupar la altura completa del padre (main)
-          overflowY: 'auto', // Permitir scroll vertical DENTRO de este Box si su contenido se desborda
+          height: '100vh',
+          overflowY: 'hidden',
         }}>{children}</Box>
       </Box>
     </Box>
