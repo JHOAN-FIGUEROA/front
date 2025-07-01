@@ -809,35 +809,28 @@ const Roles = () => {
                       Información General
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid sx={{ xs: 12 }}>
-                      <TextField
-                        label="Nombre del Rol"
-                        name="nombre"
-                        value={nuevoRol.nombre}
-                        onChange={(e) => setNuevoRol((prev) => ({ ...prev, nombre: e.target.value }))}
-                        fullWidth
-                        required
-                        autoFocus
-                        error={!!crearValidation.nombre}
-                        helperText={crearValidation.nombre}
-                      />
-                    </Grid>
-                    <Grid sx={{ xs: 12 }}>
-                      <TextField
-                        label="Descripción del Rol"
-                        name="descripcion"
-                        value={nuevoRol.descripcion}
-                        onChange={(e) => setNuevoRol((prev) => ({ ...prev, descripcion: e.target.value }))}
-                        fullWidth
-                        multiline
-                        rows={3}
-                        placeholder="Ingrese una descripción detallada del rol..."
-                        error={!!crearValidation.descripcion}
-                        helperText={crearValidation.descripcion}
-                      />
-                    </Grid>
-                  </Grid>
+                  <Box display="flex" gap={2} width="100%">
+                    <TextField
+                      label="Nombre del Rol"
+                      name="nombre"
+                      value={nuevoRol.nombre}
+                      onChange={(e) => setNuevoRol((prev) => ({ ...prev, nombre: e.target.value }))}
+                      required
+                      autoFocus
+                      error={!!crearValidation.nombre}
+                      helperText={crearValidation.nombre}
+                      sx={{ height: 56, width: 320, flex: 'none' }}
+                    />
+                    <TextField
+                      label="Descripción del Rol"
+                      name="descripcion"
+                      value={nuevoRol.descripcion}
+                      onChange={(e) => setNuevoRol((prev) => ({ ...prev, descripcion: e.target.value }))}
+                      error={!!crearValidation.descripcion}
+                      helperText={crearValidation.descripcion}
+                      sx={{ height: 56, flex: 5, width: 320, minWidth: 0 }}
+                    />
+                  </Box>
                 </Paper>
               </Grid>
               {/* Permisos Asignados */}
@@ -1157,35 +1150,28 @@ const Roles = () => {
                         Información General
                       </Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid sx={{ xs: 12 }}>
-                        <TextField
-                          label="Nombre del Rol"
-                          name="nombre"
-                          value={editRolData.nombre}
-                          onChange={handleEditRolFormChange}
-                          fullWidth
-                          required
-                          autoFocus
-                          error={!!editValidationErrors.nombre}
-                          helperText={editValidationErrors.nombre}
-                        />
-                      </Grid>
-                      <Grid sx={{ xs: 12 }}>
-                        <TextField
-                          label="Descripción del Rol"
-                          name="descripcion"
-                          value={editRolData.descripcion}
-                          onChange={handleEditRolFormChange}
-                          fullWidth
-                          multiline
-                          rows={3}
-                          placeholder="Ingrese una descripción detallada del rol..."
-                          error={!!editValidationErrors.descripcion}
-                          helperText={editValidationErrors.descripcion}
-                        />
-                      </Grid>
-                    </Grid>
+                    <Box display="flex" gap={2} width="100%">
+                      <TextField
+                        label="Nombre del Rol"
+                        name="nombre"
+                        value={editRolData.nombre}
+                        onChange={handleEditRolFormChange}
+                        required
+                        autoFocus
+                        error={!!editValidationErrors.nombre}
+                        helperText={editValidationErrors.nombre}
+                        sx={{ height: 56, width: 320, flex: 'none' }}
+                      />
+                      <TextField
+                        label="Descripción del Rol"
+                        name="descripcion"
+                        value={editRolData.descripcion}
+                        onChange={handleEditRolFormChange}
+                        error={!!editValidationErrors.descripcion}
+                        helperText={editValidationErrors.descripcion}
+                        sx={{ height: 56, flex: 5, width: 320, minWidth: 0 }}
+                      />
+                    </Box>
                   </Paper>
                 </Grid>
                 {/* Permisos Asignados */}
