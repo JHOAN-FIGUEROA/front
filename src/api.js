@@ -5,10 +5,11 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 // Configuración base de Axios
 const api = axios.create({
-  baseURL: '/',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Interceptores ==============================================================
