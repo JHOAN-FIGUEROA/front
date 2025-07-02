@@ -222,11 +222,19 @@ const Ventas = () => {
       clientesArray = Array.isArray(result.data?.clientes) ? result.data.clientes : [];
       setClientes(clientesArray);
       setCrearForm(prev => {
+        let nuevoForm = { ...prev };
         if (prev.tipo === 'VENTA_RAPIDA') {
           const cf = clientesArray.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
-          return { ...prev, documentocliente: cf ? cf.id : '' };
+          if (cf) {
+            nuevoForm.documentocliente = cf.id;
+          } else {
+            Swal.fire({ icon: 'error', title: 'Cliente "Consumidor Final" no encontrado', text: 'No existe el cliente "Consumidor Final" en la base de datos. Por favor créalo antes de realizar una venta rápida.' });
+            nuevoForm.documentocliente = '';
+          }
+        } else {
+          nuevoForm.documentocliente = '';
         }
-        return prev;
+        return nuevoForm;
       });
     } else {
       openSnackbar(result.detalles || 'Error al cargar clientes', 'error');
@@ -896,7 +904,24 @@ const Ventas = () => {
                       name="tipo"
                       value={crearForm.tipo}
                       label="Tipo de Venta"
-                      onChange={(e) => setCrearForm(prev => ({ ...prev, tipo: e.target.value }))}
+                      onChange={(e) => {
+                        const nuevoTipo = e.target.value;
+                        setCrearForm(prev => {
+                          let nuevoForm = { ...prev, tipo: nuevoTipo };
+                          if (nuevoTipo === 'VENTA_RAPIDA') {
+                            const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
+                            if (cf) {
+                              nuevoForm.documentocliente = cf.id;
+                            } else {
+                              Swal.fire({ icon: 'error', title: 'Cliente "Consumidor Final" no encontrado', text: 'No existe el cliente "Consumidor Final" en la base de datos. Por favor créalo antes de realizar una venta rápida.' });
+                              nuevoForm.documentocliente = '';
+                            }
+                          } else {
+                            nuevoForm.documentocliente = '';
+                          }
+                          return nuevoForm;
+                        });
+                      }}
                     >
                       <MenuItem value="VENTA_DIRECTA">Venta Directa</MenuItem>
                       <MenuItem value="VENTA_RAPIDA">Venta Rápida</MenuItem>
