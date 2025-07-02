@@ -1151,28 +1151,32 @@ const Clientes = () => {
                     <BadgeIcon color="primary" sx={{ fontSize: 24 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>Identificación</Typography>
                   </Box>
-                  <Box display="flex" gap={2}>
-                    {['TI', 'CC', 'CE'].map(opt => (
-                      <Button
-                        key={opt}
-                        variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
-                        color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
-                        size="small"
-                        sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
-                        onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
-                      >
-                        {opt}
-                      </Button>
-                    ))}
+                  <Box display="flex" gap={2} mb={2}>
+                    <Box display="flex" gap={1}>
+                      {['CC', 'CE', 'TI'].map(opt => (
+                        <Button
+                          key={opt}
+                          variant={editForm.tipodocumento === opt ? 'contained' : 'outlined'}
+                          color={editForm.tipodocumento === opt ? 'primary' : 'inherit'}
+                          size="small"
+                          sx={{ minWidth: 48, fontWeight: 700, borderRadius: 2, px: 2, py: 1, boxShadow: 'none' }}
+                          onClick={() => setEditForm(prev => ({ ...prev, tipodocumento: opt }))}
+                        >
+                          {opt}
+                        </Button>
+                      ))}
+                    </Box>
+                    <TextField
+                      label="Documento"
+                      name="documentocliente"
+                      value={editForm.documentocliente}
+                      onChange={handleEditChange}
+                      required
+                      error={!!editValidation.documentocliente}
+                      helperText={editValidation.documentocliente}
+                      sx={{ flex: 1 }}
+                    />
                   </Box>
-                  <TextField
-                    label="Documento"
-                    name="documentocliente"
-                    value={editForm.documentocliente}
-                    onChange={handleEditChange}
-                    fullWidth
-                    required
-                  />
                 </Box>
                 {/* Información Personal */}
                 <Box mb={2}>
@@ -1200,36 +1204,6 @@ const Clientes = () => {
                       required
                       error={!!editValidation.apellido}
                       helperText={editValidation.apellido}
-                    />
-                  </Box>
-                  <Box display="flex" gap={2}>
-                    <TextField
-                      label="Contraseña"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={editForm.password}
-                      onChange={handleEditChange}
-                      fullWidth
-                      required
-                      error={!!editValidation.password}
-                      helperText={editValidation.password}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                              onClick={handleClickShowPassword}
-                              onMouseDown={handleMouseDownPassword}
-                              edge="end"
-                              size="large"
-                              sx={{ color: showPassword ? 'primary.main' : 'grey.600', fontSize: 28, boxShadow: showPassword ? 2 : 0 }}
-                              title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                            >
-                              {showPassword ? <VisibilityOff sx={{ fontSize: 28 }} /> : <Visibility sx={{ fontSize: 28 }} />}
-                            </IconButton>
-                          </InputAdornment>
-                        )
-                      }}
                     />
                   </Box>
                 </Box>

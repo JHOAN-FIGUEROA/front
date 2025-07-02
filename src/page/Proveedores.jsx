@@ -176,12 +176,12 @@ const Proveedores = () => {
   };
 
   const validateDocumento = (documento, tipoDocumento) => {
-    if (!documento?.trim()) {
+    if (!String(documento).trim()) {
       return 'El documento es requerido';
     }
     // Validar según el tipo de documento
     if (tipoDocumento === 'NIT' || tipoDocumento === 'CC' || tipoDocumento === 'CE') {
-      if (!/^\d{7,10}$/.test(documento)) {
+      if (!/^\d{7,10}$/.test(String(documento))) {
         return 'El documento debe tener entre 7 y 10 dígitos numéricos';
       }
     }
@@ -192,8 +192,8 @@ const Proveedores = () => {
     if (!valor?.trim()) {
       return `El ${campo} es requerido`;
     }
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,10}$/.test(valor)) {
-      return `El ${campo} debe tener entre 3 y 10 letras`;
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,20}$/.test(valor)) {
+      return `El ${campo} debe tener entre 3 y 20 letras`;
     }
     return '';
   };
@@ -262,7 +262,6 @@ const Proveedores = () => {
     switch (name) {
       case 'tipodocumento':
         errorMessage = validateTipoDocumento(value);
-        // Validar documento cuando cambia el tipo de documento
         if (crearForm.documento) {
           const docError = validateDocumento(crearForm.documento, value);
           setCrearValidation(prev => ({ ...prev, documento: docError }));
@@ -475,9 +474,15 @@ const Proveedores = () => {
     let errorMessage = '';
     switch (name) {
       case 'tipodocumento':
+        errorMessage = validateTipoDocumento(value);
+        if (editForm.documento) {
+          const docError = validateDocumento(editForm.documento, value);
+          setEditValidation(prev => ({ ...prev, documento: docError }));
+        }
+        break;
       case 'documento':
-        // Estos campos no se pueden editar, no procesar cambios
-        return;
+        errorMessage = validateDocumento(value, editForm.tipodocumento);
+        break;
       case 'nombre':
       case 'contacto':
         errorMessage = validateNombreContacto(value, name);
@@ -506,12 +511,11 @@ const Proveedores = () => {
     const newErrors = {};
     let isValid = true;
 
-    // No validar tipodocumento y documento ya que no se pueden editar
-    // const tipoDocumentoError = validateTipoDocumento(editForm.tipodocumento);
-    // if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
+    const tipoDocumentoError = validateTipoDocumento(editForm.tipodocumento);
+    if (tipoDocumentoError) { newErrors.tipodocumento = tipoDocumentoError; isValid = false; }
 
-    // const documentoError = validateDocumento(editForm.documento, editForm.tipodocumento);
-    // if (documentoError) { newErrors.documento = documentoError; isValid = false; }
+    const documentoError = validateDocumento(editForm.documento, editForm.tipodocumento);
+    if (documentoError) { newErrors.documento = documentoError; isValid = false; }
 
     const nombreError = validateNombreContacto(editForm.nombre, 'nombre');
     if (nombreError) { newErrors.nombre = nombreError; isValid = false; }
@@ -568,14 +572,7 @@ const Proveedores = () => {
     }
 
     const datosParaEnviar = {};
-
-    // Solo enviar campos que han cambiado (excluyendo campos no editables)
-    const camposNoEditables = ['tipodocumento', 'documento'];
-    
     Object.keys(editForm).forEach(key => {
-      // Saltar campos no editables
-      if (camposNoEditables.includes(key)) return;
-      
       const originalValue = originalEditData[key] || '';
       const currentValue = editForm[key] || '';
       if (originalValue !== currentValue) {
@@ -583,7 +580,7 @@ const Proveedores = () => {
       }
     });
 
-    if (!hasEditChanges()) {
+    if (Object.keys(datosParaEnviar).length === 0) {
       Swal.fire({
         icon: 'info',
         title: 'Sin Cambios',
@@ -603,7 +600,7 @@ const Proveedores = () => {
 
     setEditLoading(true);
     try {
-      await updateProveedor(proveedorAEditar.nitproveedor, datosParaEnviar);
+      await updateProveedor(editForm.documento, datosParaEnviar);
       Swal.fire({
         icon: 'success',
         title: '¡Proveedor Actualizado!',

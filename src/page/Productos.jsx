@@ -495,7 +495,7 @@ const Productos = () => {
   // VALIDACIONES EN TIEMPO REAL
   const validateNombreProducto = (nombre) => {
     if (!nombre.trim()) return 'El nombre es obligatorio';
-    if (nombre.length > 50) return 'El nombre debe tener máximo 50 caracteres';
+    if (nombre.length < 3 || nombre.length > 20) return 'El nombre debe tener entre 3 y 20 caracteres';
     return '';
   };
 
