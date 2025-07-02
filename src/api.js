@@ -487,10 +487,12 @@ export const deleteCategoria = async (id) => {
   }
 };
 
-export const getProductosActivos = async () => {
+export const getProductosActivos = async (soloConStock = false) => {
   try {
     // Traer todos los productos (hasta 1000)
-    const response = await api.get('/api/productos', { params: { page: 1, limit: 1000 } });
+    const params = { page: 1, limit: 1000 };
+    if (soloConStock) params.soloConStock = true;
+    const response = await api.get('/api/productos', { params });
     let productos = [];
     if (response.data && response.data.data && Array.isArray(response.data.data.productos)) {
       productos = response.data.data.productos.filter(p => p.estado === true || p.estado === 1 || p.estado === 'true');
@@ -998,9 +1000,11 @@ export const getVentaPDF = async (id) => {
 };
 
 // Buscar unidad/presentación por código de barras
-export const buscarUnidadPorCodigo = async (codigo) => {
+export const buscarUnidadPorCodigo = async (codigo, soloConStock = false) => {
   try {
-    const response = await api.get('/api/unidades/buscar', { params: { codigobarras: codigo } });
+    const params = { codigobarras: codigo };
+    if (soloConStock) params.soloConStock = true;
+    const response = await api.get('/api/unidades/buscar', { params });
     return { success: true, data: response.data };
   } catch (error) {
     return {
