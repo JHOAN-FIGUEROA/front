@@ -274,8 +274,8 @@ const Ventas = () => {
   const handleOpenProductosModal = async () => {
     setProductosModalOpen(true);
     setProductosLoading(true);
-    // Obtener productos activos
-    const result = await getProductosActivos();
+    // Obtener productos activos SOLO con stock
+    const result = await getProductosActivos(true);
     let productosActivos = [];
     if (result.success) {
       productosActivos = Array.isArray(result.data?.productos) ? result.data.productos : [];
@@ -385,6 +385,23 @@ const Ventas = () => {
     if (crearForm.productos.length === 0) validationErrors.productos = 'Debe agregar al menos un producto a la venta.';
     setCrearValidation(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
+      // Mostrar SweetAlert para cada error
+      if (validationErrors.tipo) {
+        Swal.fire({ icon: 'warning', title: 'Tipo de venta requerido', text: validationErrors.tipo });
+        return;
+      }
+      if (validationErrors.fechaventa) {
+        Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: validationErrors.fechaventa });
+        return;
+      }
+      if (validationErrors.documentocliente) {
+        Swal.fire({ icon: 'warning', title: 'Cliente requerido', text: validationErrors.documentocliente });
+        return;
+      }
+      if (validationErrors.productos) {
+        Swal.fire({ icon: 'warning', title: 'Productos requeridos', text: validationErrors.productos });
+        return;
+      }
       return;
     }
     setCrearLoading(true);
@@ -860,210 +877,217 @@ const Ventas = () => {
           <Typography variant="h6">Registrar Nueva Venta</Typography>
         </DialogTitle>
         <DialogContent dividers>
-          <Grid container spacing={3}>
-            {/* Columna Izquierda: Datos Generales y Cliente */}
-            <Grid item xs={12} md={5}>
-              <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom>Datos Generales</Typography>
-                {/* Tipo de venta */}
-                <FormControl fullWidth margin="normal">
-                  <InputLabel id="tipo-venta-label">Tipo de Venta</InputLabel>
-                  <Select
-                    labelId="tipo-venta-label"
-                    name="tipo"
-                    value={crearForm.tipo}
-                    label="Tipo de Venta"
-                    onChange={(e) => setCrearForm(prev => ({ ...prev, tipo: e.target.value }))}
-                  >
-                    <MenuItem value="VENTA_DIRECTA">Venta Directa</MenuItem>
-                    <MenuItem value="VENTA_RAPIDA">Venta Rápida</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Fecha de Venta"
-                  name="fechaventa"
-                  value={new Date().toISOString().split('T')[0]}
-                  fullWidth
-                  required
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                  InputProps={{ readOnly: true, disabled: true }}
-                />
-              </Paper>
-              <Paper sx={{ p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom>Cliente</Typography>
-                {crearForm.tipo === 'VENTA_RAPIDA' ? (
+          {crearLoading ? (
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={200}>
+              <CircularProgress size={40} />
+              <Typography variant="h6" mt={2}>Cargando datos...</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {/* Columna Izquierda: Datos Generales y Cliente */}
+              <Grid item xs={12} md={5}>
+                <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
+                  <Typography variant="h6" gutterBottom>Datos Generales</Typography>
+                  {/* Tipo de venta */}
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel id="tipo-venta-label">Tipo de Venta</InputLabel>
+                    <Select
+                      labelId="tipo-venta-label"
+                      name="tipo"
+                      value={crearForm.tipo}
+                      label="Tipo de Venta"
+                      onChange={(e) => setCrearForm(prev => ({ ...prev, tipo: e.target.value }))}
+                    >
+                      <MenuItem value="VENTA_DIRECTA">Venta Directa</MenuItem>
+                      <MenuItem value="VENTA_RAPIDA">Venta Rápida</MenuItem>
+                    </Select>
+                  </FormControl>
                   <TextField
-                    label="Cliente"
-                    value={(() => {
-                      const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
-                      return cf ? `${cf.nombre} ${cf.apellido}` : '';
-                    })()}
+                    label="Fecha de Venta"
+                    name="fechaventa"
+                    value={new Date().toISOString().split('T')[0]}
                     fullWidth
+                    required
                     margin="normal"
-                    InputProps={{ readOnly: true }}
-                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{ readOnly: true, disabled: true }}
                   />
-                ) : (
-                  <Autocomplete
-                    options={clientes.filter(c => !(c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final'))}
-                    getOptionLabel={option => `${option.nombre} ${option.apellido} (${option.id})`}
-                    renderOption={(props, option) => (
-                      <li {...props} key={option.id}>
-                        <PersonIcon sx={{ mr: 1 }} />
-                        {option.nombre} {option.apellido} <span style={{ color: '#888', marginLeft: 8 }}>({option.id})</span>
-                      </li>
-                    )}
-                    value={clientes.find(c => c.id === crearForm.documentocliente) || null}
-                    onChange={(_, value) => setCrearForm(prev => ({ ...prev, documentocliente: value ? value.id : '' }))}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                    renderInput={params => (
-                      <TextField
-                        {...params}
-                        label="Buscar Cliente"
-                        placeholder="Nombre, apellido o documento"
-                        fullWidth
-                        margin="normal"
-                        required
-                        error={!!crearValidation.documentocliente}
-                        helperText={crearValidation.documentocliente}
-                      />
-                    )}
-                    noOptionsText="No se encontró ningún cliente"
-                    sx={{ minWidth: 250 }}
-                  />
-                )}
-              </Paper>
-            </Grid>
-            {/* Columna Derecha: Productos */}
-            <Grid item xs={12} md={7}>
-              <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6">Productos</Typography>
-                  <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
-                    Agregar Productos
-                  </Button>
-                </Box>
-                <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
-                  <Table stickyHeader>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Producto</TableCell>
-                        <TableCell>Presentación</TableCell>
-                        <TableCell align="center">Cantidad</TableCell>
-                        <TableCell align="right">Precio Unitario</TableCell>
-                        <TableCell align="right">Subtotal</TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {crearForm.productos.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center">Aún no hay productos</TableCell>
-                        </TableRow>
-                      ) : (
-                        crearForm.productos.map(prod => {
-                          const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
-                          const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                          const stockDisponible = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
-                          const precioUnitario = prod.precioventa;
-                          const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                          const subtotal = (Number(prod.cantidad) || 0) * factor * precioUnitario;
-                          return (
-                            <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
-                              <TableCell>{prod.nombre}</TableCell>
-                              <TableCell>
-                                <FormControl fullWidth size="small">
-                                  <Select
-                                    value={prod.idpresentacion}
-                                    onChange={e => {
-                                      const nueva = (presentacionesPorProducto[prod.idproducto] || []).find(pr => pr.idpresentacion === Number(e.target.value));
-                                      // Si la presentación no tiene stock, asígnale el stock del producto seleccionado
-                                      if (nueva && (nueva.stock === undefined || nueva.stock === null)) {
-                                        nueva.stock = prod.stock;
-                                      }
-                                      setPresentacionSeleccionada(nueva);
-                                    }}
-                                    displayEmpty
-                                  >
-                                    {presentaciones.map(pr => (
-                                      <MenuItem key={pr.idpresentacion} value={pr.idpresentacion}>
-                                        {pr.nombre} (factor: {pr.factor_conversion})
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              </TableCell>
-                              <TableCell align="center">
-                                <TextField
-                                  type="number"
-                                  value={prod.cantidad === '' ? '' : prod.cantidad}
-                                  onChange={e => {
-                                    const nuevaCantidad = e.target.value === '' ? '' : Number(e.target.value);
-                                    // Validar stock disponible según factor de conversión
-                                    const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
-                                    const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                                    const stock = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
-                                    const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                                    const maxCantidad = Math.floor(stock / factor);
-                                    if (nuevaCantidad !== '' && nuevaCantidad > maxCantidad) {
-                                      Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para esta presentación. Máximo permitido: ${maxCantidad}` });
-                                      handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', maxCantidad);
-                                      return;
-                                    }
-                                    handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', nuevaCantidad);
-                                  }}
-                                  onBlur={e => {
-                                    if (prod.cantidad === '' || prod.cantidad < 1) {
-                                      handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', 1);
-                                    }
-                                  }}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
-                                      e.preventDefault();
-                                      handleAddProducto();
-                                    }
-                                  }}
-                                  sx={{ width: '80px' }}
-                                  inputProps={{ min: 1, style: { textAlign: 'center' } }}
-                                  size="small"
-                                />
-                              </TableCell>
-                              <TableCell align="right">{formatCurrency(precioUnitario)}</TableCell>
-                              <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
-                              <TableCell>
-                                <IconButton size="small" color="error" onClick={() => handleRemoveProducto(prod.idproducto)}>
-                                  <DeleteIcon />
-                                </IconButton>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                </Paper>
+                <Paper sx={{ p: { xs: 1, sm: 2 } }}>
+                  <Typography variant="h6" gutterBottom>Cliente</Typography>
+                  {crearForm.tipo === 'VENTA_RAPIDA' ? (
+                    <TextField
+                      label="Cliente"
+                      value={(() => {
+                        const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
+                        return cf ? `${cf.nombre} ${cf.apellido}` : '';
+                      })()}
+                      fullWidth
+                      margin="normal"
+                      InputProps={{ readOnly: true }}
+                      disabled
+                    />
+                  ) : (
+                    <Autocomplete
+                      options={clientes.filter(c => !(c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final'))}
+                      getOptionLabel={option => `${option.nombre} ${option.apellido} (${option.id})`}
+                      renderOption={(props, option) => (
+                        <li {...props} key={option.id}>
+                          <PersonIcon sx={{ mr: 1 }} />
+                          {option.nombre} {option.apellido} <span style={{ color: '#888', marginLeft: 8 }}>({option.id})</span>
+                        </li>
                       )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Box mt={2} textAlign="right">
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                    Total de productos (unidades reales): {crearForm.productos.reduce((acc, p) => {
-                      const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
-                    }, 0)}
-                  </Typography>
-                  <Typography variant="h6">
-                    Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
-                      const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                      return acc + ((Number(p.cantidad) || 0) * factor * p.precioventa);
-                    }, 0))}
-                  </Typography>
-                </Box>
-              </Paper>
+                      value={clientes.find(c => c.id === crearForm.documentocliente) || null}
+                      onChange={(_, value) => setCrearForm(prev => ({ ...prev, documentocliente: value ? value.id : '' }))}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      renderInput={params => (
+                        <TextField
+                          {...params}
+                          label="Buscar Cliente"
+                          placeholder="Nombre, apellido o documento"
+                          fullWidth
+                          margin="normal"
+                          required
+                          error={!!crearValidation.documentocliente}
+                          helperText={crearValidation.documentocliente}
+                        />
+                      )}
+                      noOptionsText="No se encontró ningún cliente"
+                      sx={{ minWidth: 250 }}
+                    />
+                  )}
+                </Paper>
+              </Grid>
+              {/* Columna Derecha: Productos */}
+              <Grid item xs={12} md={7}>
+                <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="h6">Productos</Typography>
+                    <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
+                      Agregar Productos
+                    </Button>
+                  </Box>
+                  <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
+                    <Table stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Producto</TableCell>
+                          <TableCell>Presentación</TableCell>
+                          <TableCell align="center">Cantidad</TableCell>
+                          <TableCell align="right">Precio Unitario</TableCell>
+                          <TableCell align="right">Subtotal</TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {crearForm.productos.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center">Aún no hay productos</TableCell>
+                          </TableRow>
+                        ) : (
+                          crearForm.productos.map(prod => {
+                            const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
+                            const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
+                            const stockDisponible = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
+                            const precioUnitario = prod.precioventa;
+                            const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                            const subtotal = (Number(prod.cantidad) || 0) * factor * precioUnitario;
+                            return (
+                              <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
+                                <TableCell>{prod.nombre}</TableCell>
+                                <TableCell>
+                                  <FormControl fullWidth size="small">
+                                    <Select
+                                      value={prod.idpresentacion}
+                                      onChange={e => {
+                                        const nueva = (presentacionesPorProducto[prod.idproducto] || []).find(pr => pr.idpresentacion === Number(e.target.value));
+                                        // Si la presentación no tiene stock, asígnale el stock del producto seleccionado
+                                        if (nueva && (nueva.stock === undefined || nueva.stock === null)) {
+                                          nueva.stock = prod.stock;
+                                        }
+                                        setPresentacionSeleccionada(nueva);
+                                      }}
+                                      displayEmpty
+                                    >
+                                      {presentaciones.map(pr => (
+                                        <MenuItem key={pr.idpresentacion} value={pr.idpresentacion}>
+                                          {pr.nombre} (factor: {pr.factor_conversion})
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                </TableCell>
+                                <TableCell align="center">
+                                  <TextField
+                                    type="number"
+                                    value={prod.cantidad === '' ? '' : prod.cantidad}
+                                    onChange={e => {
+                                      const nuevaCantidad = e.target.value === '' ? '' : Number(e.target.value);
+                                      // Validar stock disponible según factor de conversión
+                                      const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
+                                      const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
+                                      const stock = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
+                                      const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                                      const maxCantidad = Math.floor(stock / factor);
+                                      if (nuevaCantidad !== '' && nuevaCantidad > maxCantidad) {
+                                        Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para esta presentación. Máximo permitido: ${maxCantidad}` });
+                                        handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', maxCantidad);
+                                        return;
+                                      }
+                                      handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', nuevaCantidad);
+                                    }}
+                                    onBlur={e => {
+                                      if (prod.cantidad === '' || prod.cantidad < 1) {
+                                        handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', 1);
+                                      }
+                                    }}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
+                                        e.preventDefault();
+                                        handleAddProducto();
+                                      }
+                                    }}
+                                    sx={{ width: '80px' }}
+                                    inputProps={{ min: 1, style: { textAlign: 'center' } }}
+                                    size="small"
+                                  />
+                                </TableCell>
+                                <TableCell align="right">{formatCurrency(precioUnitario)}</TableCell>
+                                <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
+                                <TableCell>
+                                  <IconButton size="small" color="error" onClick={() => handleRemoveProducto(prod.idproducto)}>
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  <Box mt={2} textAlign="right">
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                      Total de productos (unidades reales): {crearForm.productos.reduce((acc, p) => {
+                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
+                        return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
+                      }, 0)}
+                    </Typography>
+                    <Typography variant="h6">
+                      Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
+                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
+                        const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                        return acc + ((Number(p.cantidad) || 0) * factor * p.precioventa);
+                      }, 0))}
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
             </Grid>
-          </Grid>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCrearOpen(false)} color="secondary">Cancelar</Button>
+          <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading}>Cancelar</Button>
           <Button onClick={handleCrearVenta} variant="contained" color="primary" disabled={crearLoading}>
             {crearLoading ? <CircularProgress size={24} /> : 'Guardar Venta'}
           </Button>
@@ -1080,7 +1104,7 @@ const Ventas = () => {
             sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
             onKeyDown={async (e) => {
               if (e.key === 'Enter' && productosBusqueda.trim() !== '') {
-                const res = await buscarUnidadPorCodigo(productosBusqueda.trim());
+                const res = await buscarUnidadPorCodigo(productosBusqueda.trim(), true);
                 if (res.success && res.data && res.data.data) {
                   const unidad = res.data.data;
                   const producto = unidad.producto;
