@@ -102,33 +102,54 @@ const DashBoard = () => {
   }
 
   const formatCurrency = (value) => `COP $${Number(value || 0).toLocaleString('es-CO')}`;
-  const lastSale = stats?.ventasPorMes?.length > 0 ? stats.ventasPorMes[stats.ventasPorMes.length - 1].total : 0;
-  const lastPurchase = stats?.comprasPorMes?.length > 0 ? stats.comprasPorMes[stats.comprasPorMes.length - 1].total : 0;
+
+  // KPIs
+  const ventasDia = stats?.ventasDia || 0;
+  const totalClientes = stats?.totalClientes || 0;
+  const ventasPorMes = stats?.ventasPorMes || [];
+  const comprasPorMes = stats?.comprasPorMes || [];
+  const ventasMes = typeof stats?.ventasMes === 'number' ? stats.ventasMes : (ventasPorMes.length > 0 ? ventasPorMes[ventasPorMes.length - 1].total : 0);
+  const comprasMes = typeof stats?.comprasMes === 'number' ? stats.comprasMes : (comprasPorMes.length > 0 ? comprasPorMes[comprasPorMes.length - 1].total : 0);
+
+  // Productos más vendidos del último mes con datos
+  const productosMasVendidosPorMes = stats?.productosMasVendidosPorMes || [];
+  const productosMesActual = (() => {
+    if (!productosMasVendidosPorMes.length) return [];
+    for (let i = productosMasVendidosPorMes.length - 1; i >= 0; i--) {
+      if (productosMasVendidosPorMes[i].productos && productosMasVendidosPorMes[i].productos.length > 0) {
+        return productosMasVendidosPorMes[i].productos;
+      }
+    }
+    return [];
+  })();
 
   return (
-    <Box p={{ xs: 1, md: 2 }} sx={{ boxSizing: 'border-box', width: '100%', maxWidth: '100%', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
+    <Box p={{ xs: 1, md: 2 }} sx={{ boxSizing: 'border-box', width: '100%', maxWidth: '100%', height: '100%', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' }, mb: 1 }}>
         Dashboard Principal
       </Typography>
 
-      {/* KPIs */}
-      <Box display="flex" gap={2} flexDirection={{ xs: 'column', md: 'row' }} mb={2} sx={{ height: '120px', minHeight: 0 }}>
+      {/* KPIs: Total ventas del día + originales */}
+      <Box display="flex" gap={1} flexDirection={{ xs: 'column', md: 'row' }} mb={1} sx={{ height: '90px', minHeight: 0 }}>
         <Box flex={1} minWidth={0}>
-          <KpiCard title="Total Clientes" value={stats?.totalClientes || 0} icon={<PeopleIcon fontSize="small" />} color="#29b6f6" />
+          <KpiCard title="Ventas del Día" value={formatCurrency(ventasDia)} icon={<PointOfSaleIcon fontSize="small" />} color="#43a047" />
         </Box>
         <Box flex={1} minWidth={0}>
-          <KpiCard title="Ventas del Último Mes" value={formatCurrency(lastSale)} icon={<PointOfSaleIcon fontSize="small" />} color="#66bb6a" />
+          <KpiCard title="Total Clientes" value={totalClientes} icon={<PeopleIcon fontSize="small" />} color="#29b6f6" />
         </Box>
         <Box flex={1} minWidth={0}>
-          <KpiCard title="Compras del Último Mes" value={formatCurrency(lastPurchase)} icon={<ShoppingCartIcon fontSize="small" />} color="#ffa726" />
+          <KpiCard title="Ventas del Último Mes" value={formatCurrency(ventasMes)} icon={<PointOfSaleIcon fontSize="small" />} color="#66bb6a" />
+        </Box>
+        <Box flex={1} minWidth={0}>
+          <KpiCard title="Compras del Último Mes" value={formatCurrency(comprasMes)} icon={<ShoppingCartIcon fontSize="small" />} color="#ffa726" />
         </Box>
       </Box>
 
-      {/* Gráficas */}
-      <Box display="flex" gap={2} flexDirection={{ xs: 'column', md: 'row' }} width="100%" flex={1} minHeight={0}>
-        <Box flex={1} display="flex" flexDirection="column" gap={2} height="100%" minHeight={0}>
-          <ChartContainer title="Ventas por mes" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
-            <AreaChart data={stats?.ventasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+      {/* Gráficas originales */}
+      <Box display="flex" gap={1} flexDirection={{ xs: 'column', md: 'row' }} width="100%" flex={1} minHeight={0} height={0}>
+        <Box flex={1} display="flex" flexDirection="column" gap={1} height="100%" minHeight={0}>
+          <ChartContainer title="Ventas por mes" sx={{ width: '100%', flex: 1, minHeight: 0, height: '100%' }}>
+            <AreaChart data={ventasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }} height={undefined} width={undefined}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
               <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
@@ -137,8 +158,8 @@ const DashBoard = () => {
               <Area type="monotone" dataKey="total" stroke="#66bb6a" fill="#66bb6a" fillOpacity={0.3} name="Total Ventas" />
             </AreaChart>
           </ChartContainer>
-          <ChartContainer title="Compras por mes" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
-            <AreaChart data={stats?.comprasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+          <ChartContainer title="Compras por mes" sx={{ width: '100%', flex: 1, minHeight: 0, height: '100%' }}>
+            <AreaChart data={comprasPorMes} margin={{ top: 5, right: 20, left: 10, bottom: 5 }} height={undefined} width={undefined}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
               <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-CO', { notation: "compact", compactDisplay: "short" }).format(value)} />
@@ -149,8 +170,8 @@ const DashBoard = () => {
           </ChartContainer>
         </Box>
         <Box flex={1} display="flex" flexDirection="column" justifyContent="center" height="100%" minHeight={0}>
-          <ChartContainer title="Productos más vendidos" sx={{ width: '100%', flex: 1, minHeight: 0 }}>
-            <BarChart data={stats?.productosMasVendidos} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+          <ChartContainer title="Productos más vendidos" sx={{ width: '100%', flex: 1, minHeight: 0, height: '100%' }}>
+            <BarChart data={productosMesActual} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }} height={undefined} width={undefined}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" hide />
               <YAxis dataKey="nombre" type="category" width={100} tick={{ fontSize: 12 }} />

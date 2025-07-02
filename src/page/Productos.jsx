@@ -1190,6 +1190,18 @@ const Productos = () => {
                     sx={{ flex: 1 }}
                   />
                   <TextField
+                    label="Precio de Compra"
+                    name="preciocompra"
+                    type="number"
+                    value={editProductoData.preciocompra}
+                    onChange={handleEditProductoFormChange}
+                    required
+                    error={!!editValidation.preciocompra}
+                    helperText={editValidation.preciocompra}
+                    InputProps={{ startAdornment: <AttachMoneyIcon color="primary" sx={{ mr: 1 }} /> }}
+                    sx={{ flex: 1 }}
+                  />
+                  <TextField
                     label="Margen de Ganancia (%)"
                     name="margenganancia"
                     type="number"

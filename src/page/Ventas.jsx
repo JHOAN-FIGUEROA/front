@@ -967,7 +967,8 @@ const Ventas = () => {
                           const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
                           const stockDisponible = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
                           const precioUnitario = prod.precioventa;
-                          const subtotal = stockDisponible * precioUnitario;
+                          const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                          const subtotal = (Number(prod.cantidad) || 0) * factor * precioUnitario;
                           return (
                             <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
                               <TableCell>{prod.nombre}</TableCell>
@@ -1052,8 +1053,8 @@ const Ventas = () => {
                   <Typography variant="h6">
                     Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
                       const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                      const stockDisponible = p.stock_presentacion !== undefined ? p.stock_presentacion : (p.stock !== undefined ? p.stock : (p.producto_stock !== undefined ? p.producto_stock : (p.producto?.stock || 0)));
-                      return acc + (stockDisponible * p.precioventa);
+                      const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                      return acc + ((Number(p.cantidad) || 0) * factor * p.precioventa);
                     }, 0))}
                   </Typography>
                 </Box>

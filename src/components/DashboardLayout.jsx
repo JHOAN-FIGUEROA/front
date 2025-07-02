@@ -70,6 +70,7 @@ const DashboardLayout = ({ children }) => {
           overflowX: 'hidden',
           overflowY: 'hidden',
           height: '100vh',
+          minHeight: 0,
           transition: theme.transitions.create('padding-left', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -82,8 +83,11 @@ const DashboardLayout = ({ children }) => {
           width: '100%',
           padding: (Array.isArray(children) ? children.some(child => child?.type === DashBoard) : children?.type === DashBoard) ? 0 : '16px',
           boxSizing: 'border-box',
-          height: '100vh',
+          height: '100%',
+          minHeight: 0,
           overflowY: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }}>{children}</Box>
       </Box>
     </Box>
