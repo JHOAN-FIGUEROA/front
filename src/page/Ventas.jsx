@@ -18,7 +18,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
-import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -535,7 +535,7 @@ const Ventas = () => {
         </Button>
       </Box>
       <Box display="flex" justifyContent="center" gap={2} my={2}>
-        <Button variant={filtroEstado === 'pendiente' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('pendiente')}>Pendientes</Button>
+        <Button variant={filtroEstado === 'pendiente' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('pendiente')}>Pedidos</Button>
         <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('completada')}>Completadas</Button>
         <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
         <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
@@ -570,7 +570,7 @@ const Ventas = () => {
               let labelEstado = estado || 'SIN ESTADO';
               if (estado === 'ACTIVA' || estado === 'COMPLETADA') { colorEstado = 'success'; iconEstado = <CheckCircleIcon />; }
               else if (estado === 'ANULADA') { colorEstado = 'error'; iconEstado = <CancelIcon />; }
-              else if (estado === 'PENDIENTE') { colorEstado = 'warning'; iconEstado = <QrCodeScannerIcon />; }
+              else if (estado === 'PENDIENTE') { colorEstado = 'warning'; iconEstado = <ScheduleIcon />; labelEstado = 'PEDIDO'; }
               else if (estado === 'CONFIRMADA') { colorEstado = 'info'; iconEstado = <CheckCircleIcon />; }
               else { colorEstado = 'default'; iconEstado = null; }
               return (
