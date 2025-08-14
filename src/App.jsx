@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -56,6 +57,17 @@ const HomePage = () => (
 );
 
 function App() {
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500); // medio segundo
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <div className="loader">Cargando...</div>;
+  }
+
   return (
     <Router>
       <AuthProvider>
