@@ -185,3 +185,49 @@ button:focus-visible {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(180deg); }
 }
+
+/* Estilos para SweetAlert2 personalizado */
+.swal2-custom-popup {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.swal2-custom-title {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #2c3e50 !important;
+}
+
+.swal2-custom-confirm {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  font-size: 1rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.swal2-custom-cancel {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  font-size: 1rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.swal2-success-popup {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3) !important;
+}
+
+/* Animación para el toast de éxito */
+.swal2-toast {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal2-title-custom {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}

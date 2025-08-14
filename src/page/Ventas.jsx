@@ -631,14 +631,50 @@ const Ventas = () => {
                             color="success"
                             size="small"
                             onClick={async () => {
-                              setConfirmarLoading(true);
-                              const result = await confirmarVenta(venta.idventas);
-                              setConfirmarLoading(false);
-                              if (result && result.success) {
-                                openSnackbar('Pedido confirmado correctamente', 'success');
-                                fetchVentas(pagina, busqueda);
-                              } else {
-                                openSnackbar(result.message || result.detalles || 'Error al confirmar pedido', 'error');
+                              const result = await Swal.fire({
+                                title: '¿Confirmar Pedido?',
+                                text: `¿Estás seguro de que deseas confirmar el pedido #${venta.idventas}?`,
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonColor: '#28a745',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Sí, Confirmar',
+                                cancelButtonText: 'Cancelar',
+                                reverseButtons: true,
+                                customClass: {
+                                  popup: 'swal2-custom-popup',
+                                  title: 'swal2-custom-title',
+                                  confirmButton: 'swal2-custom-confirm',
+                                  cancelButton: 'swal2-custom-cancel'
+                                }
+                              });
+
+                              if (result.isConfirmed) {
+                                setConfirmarLoading(true);
+                                const apiResult = await confirmarVenta(venta.idventas);
+                                setConfirmarLoading(false);
+                                
+                                if (apiResult && apiResult.success) {
+                                  Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Pedido Confirmado!',
+                                    text: 'El pedido ha sido confirmado y convertido en venta exitosamente.',
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    background: '#f8fff8',
+                                    customClass: {
+                                      popup: 'swal2-success-popup'
+                                    }
+                                  });
+                                  fetchVentas(pagina, busqueda);
+                                } else {
+                                  Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al Confirmar',
+                                    text: apiResult.message || apiResult.detalles || 'Ocurrió un error al confirmar el pedido.',
+                                    confirmButtonColor: '#dc3545'
+                                  });
+                                }
                               }
                             }}
                           >
