@@ -134,6 +134,7 @@ const Ventas = () => {
   const getEstadoParamVentas = (estado) => {
     if (estado === 'anulada') return 'ANULADA';
     if (estado === 'completada') return 'COMPLETADA';
+    if (estado === 'pendiente') return 'PENDIENTE';
     return '';
   };
 
@@ -179,6 +180,7 @@ const Ventas = () => {
       if (filtroEstado === 'activa') return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
       if (filtroEstado === 'anulada') return venta.estado === 'ANULADA';
       if (filtroEstado === 'completada') return venta.estado === 'COMPLETADA';
+      if (filtroEstado === 'pendiente') return venta.estado === 'PENDIENTE';
       return true;
     })
     .filter(venta => {
@@ -533,8 +535,9 @@ const Ventas = () => {
         </Button>
       </Box>
       <Box display="flex" justifyContent="center" gap={2} my={2}>
-        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
+        <Button variant={filtroEstado === 'pendiente' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('pendiente')}>Pendientes</Button>
         <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('completada')}>Completadas</Button>
+        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
         <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
@@ -567,7 +570,7 @@ const Ventas = () => {
               let labelEstado = estado || 'SIN ESTADO';
               if (estado === 'ACTIVA' || estado === 'COMPLETADA') { colorEstado = 'success'; iconEstado = <CheckCircleIcon />; }
               else if (estado === 'ANULADA') { colorEstado = 'error'; iconEstado = <CancelIcon />; }
-              else if (estado === 'PEDIDO') { colorEstado = 'warning'; iconEstado = <QrCodeScannerIcon />; }
+              else if (estado === 'PENDIENTE') { colorEstado = 'warning'; iconEstado = <QrCodeScannerIcon />; }
               else if (estado === 'CONFIRMADA') { colorEstado = 'info'; iconEstado = <CheckCircleIcon />; }
               else { colorEstado = 'default'; iconEstado = null; }
               return (
@@ -622,8 +625,8 @@ const Ventas = () => {
                           <CancelIcon fontSize="small" />
                         </IconButton>
                       )}
-                      {estado === 'PEDIDO' && (
-                        <Tooltip title="Confirmar Venta"><span>
+                      {estado === 'PENDIENTE' && (
+                        <Tooltip title="Confirmar Pedido"><span>
                           <IconButton
                             color="success"
                             size="small"
@@ -632,10 +635,10 @@ const Ventas = () => {
                               const result = await confirmarVenta(venta.idventas);
                               setConfirmarLoading(false);
                               if (result && result.success) {
-                                openSnackbar('Venta confirmada correctamente', 'success');
+                                openSnackbar('Pedido confirmado correctamente', 'success');
                                 fetchVentas(pagina, busqueda);
                               } else {
-                                openSnackbar(result.message || result.detalles || 'Error al confirmar venta', 'error');
+                                openSnackbar(result.message || result.detalles || 'Error al confirmar pedido', 'error');
                               }
                             }}
                           >
@@ -732,16 +735,16 @@ const Ventas = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CheckCircleIcon color={['ACTIVA','COMPLETADA'].includes(ventaDetalle.data.estado) ? "success" : ventaDetalle.data.estado === 'ANULADA' ? "error" : ventaDetalle.data.estado === 'PEDIDO' ? "warning" : "info"} sx={{ fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
-                    <Chip 
-                      label={ventaDetalle.data.estado || 'Sin Estado'} 
-                      color={['ACTIVA','COMPLETADA'].includes(ventaDetalle.data.estado) ? "success" : ventaDetalle.data.estado === 'ANULADA' ? "error" : ventaDetalle.data.estado === 'PEDIDO' ? "warning" : "info"}
-                      icon={<CheckCircleIcon />}
-                      sx={{ fontWeight: 600, ml: 2 }}
-                    />
-                  </Paper>
+                                      <Paper elevation={0} sx={{ p: { xs: 1, sm: 2 }, backgroundColor: '#f8f9fa', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <CheckCircleIcon color={['ACTIVA','COMPLETADA'].includes(ventaDetalle.data.estado) ? "success" : ventaDetalle.data.estado === 'ANULADA' ? "error" : ventaDetalle.data.estado === 'PENDIENTE' ? "warning" : "info"} sx={{ fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>Estado</Typography>
+                      <Chip 
+                        label={ventaDetalle.data.estado || 'Sin Estado'} 
+                        color={['ACTIVA','COMPLETADA'].includes(ventaDetalle.data.estado) ? "success" : ventaDetalle.data.estado === 'ANULADA' ? "error" : ventaDetalle.data.estado === 'PENDIENTE' ? "warning" : "info"}
+                        icon={<CheckCircleIcon />}
+                        sx={{ fontWeight: 600, ml: 2 }}
+                      />
+                    </Paper>
                 </Grid>
                 {/* Motivo de anulación */}
                 {ventaDetalle.data.estado === 'ANULADA' && ventaDetalle.data.motivo_anulacion && (
