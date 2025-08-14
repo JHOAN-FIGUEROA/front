@@ -65,7 +65,21 @@ function App() {
   }, []);
 
   if (loading) {
-    return <div className="loader">Cargando...</div>;
+    return (
+      <div className="loader">
+        <div className="loader-content">
+          <h1 className="loader-title">POSTWARE</h1>
+          <p className="loader-subtitle">Sistema de Gestión Empresarial</p>
+          <div className="spinner"></div>
+          <p>Cargando aplicación</p>
+          <div className="loading-dots">
+            <div className="dot"></div>
+            <div className="dot"></div>
+            <div className="dot"></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
