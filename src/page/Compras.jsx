@@ -936,17 +936,36 @@ const Compras = () => {
       </Dialog>
 
       {/* --- Modal Crear Compra --- */}
-      <Dialog open={crearOpen} onClose={handleCrearClose} maxWidth="xl" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AddShoppingCartIcon color="primary" />
-          <Typography variant="h6">Registrar Nueva Compra</Typography>
+      <Dialog open={crearOpen} onClose={handleCrearClose} maxWidth="md" fullWidth
+        PaperProps={{
+          sx: {
+            maxWidth: 1200,
+            borderRadius: 3,
+            background: '#f8f9fa',
+            p: 0
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          background: '#1976d2',
+          color: '#fff',
+          py: 3,
+          px: 4,
+          fontSize: 28,
+          fontWeight: 700
+        }}>
+          <AddShoppingCartIcon sx={{ fontSize: 36 }} />
+          Registrar Nueva Compra
         </DialogTitle>
-        <DialogContent dividers sx={{ p: { xs: 1, sm: 3 }, maxHeight: { xs: '80vh', sm: '70vh' }, overflowY: 'auto' }}>
-          <Grid container spacing={3}>
+        <DialogContent sx={{ px: 4, py: 3 }}>
+          <Grid container spacing={2}>
             {/* Columna Izquierda: Datos Generales y Proveedor */}
-            <Grid item xs={12} md={5}>
-              <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom>Datos Generales</Typography>
+            <Grid item xs={12} md={6}>
+              <Paper elevation={0} sx={{ p: 2, mb: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Datos Generales</Typography>
                 <TextField
                   label="Número de Compra"
                   name="nrodecompra"
@@ -954,8 +973,11 @@ const Compras = () => {
                   onChange={handleCrearChange}
                   fullWidth
                   required
-                  margin="normal"
+                  margin="dense"
                   type="number"
+                  size="small"
+                  error={!!crearValidation.nrodecompra}
+                  helperText={crearValidation.nrodecompra}
                 />
                 <TextField
                   label="Fecha de Compra"
@@ -963,10 +985,11 @@ const Compras = () => {
                   value={crearForm.fechadecompra}
                   fullWidth
                   required
-                  margin="normal"
+                  margin="dense"
+                  size="small"
                   InputLabelProps={{ shrink: true }}
                   error={!!crearValidation.fechadecompra}
-                  helperText={crearValidation.fechadecompra || `Solo se permite entre ${minDate.toISOString().split('T')[0]} y ${todayStr}`}
+                  helperText={crearValidation.fechadecompra}
                   InputProps={{
                     readOnly: true,
                     endAdornment: (
@@ -1026,17 +1049,11 @@ const Compras = () => {
                   </div>
                 )}
               </Paper>
-              <Paper sx={{ p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom>Proveedor</Typography>
+              <Paper elevation={0} sx={{ p: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Proveedor</Typography>
                 <Autocomplete
                   options={proveedoresActivos}
                   getOptionLabel={option => `${option.nombre} (${option.nitproveedor})`}
-                  renderOption={(props, option) => (
-                    <li {...props} key={option.nitproveedor}>
-                      <StorefrontIcon sx={{ mr: 1 }} />
-                      {option.nombre} <span style={{ color: '#888', marginLeft: 8 }}>({option.nitproveedor})</span>
-                    </li>
-                  )}
                   value={proveedoresActivos.find(p => p.nitproveedor === crearForm.nitproveedor) || null}
                   onChange={(_, value) => setCrearForm(prev => ({ ...prev, nitproveedor: value ? value.nitproveedor : null }))}
                   isOptionEqualToValue={(option, value) => option.nitproveedor === value.nitproveedor}
@@ -1046,7 +1063,8 @@ const Compras = () => {
                       label="Buscar Proveedor"
                       placeholder="Nombre o NIT"
                       fullWidth
-                      margin="normal"
+                      margin="dense"
+                      size="small"
                     />
                   )}
                   noOptionsText="No se encontró ningún proveedor"
@@ -1054,18 +1072,22 @@ const Compras = () => {
                 />
               </Paper>
             </Grid>
-
             {/* Columna Derecha: Productos */}
-            <Grid item xs={12} md={7}>
-              <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6">Productos</Typography>
-                  <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
-                    Agregar Productos
-                  </Button>
-                </Box>
-                <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
-                  <Table stickyHeader>
+            <Grid item xs={12} md={6}>
+              <Paper elevation={0} sx={{ p: 2, height: '100%' }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Productos</Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  sx={{ mb: 2, fontWeight: 700, fontSize: 16 }}
+                  onClick={handleOpenProductosModal}
+                  startIcon={<AddIcon />}
+                >
+                  + AGREGAR PRODUCTOS
+                </Button>
+                <TableContainer>
+                  <Table size="small">
                     <TableHead>
                       <TableRow>
                         <TableCell>Producto</TableCell>
@@ -1073,13 +1095,18 @@ const Compras = () => {
                         <TableCell align="center">Cantidad</TableCell>
                         <TableCell align="right">Precio Unitario</TableCell>
                         <TableCell align="right">Subtotal</TableCell>
-                        <TableCell></TableCell>
+                        <TableCell align="center">{/* Eliminar */}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {crearForm.productos.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} align="center">Aún no hay productos</TableCell>
+                          <TableCell colSpan={6} align="center">
+                            <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                              <AddShoppingCartIcon sx={{ fontSize: 48, color: '#bdbdbd', mb: 1 }} />
+                              <Typography color="text.secondary">Aún no hay productos</Typography>
+                            </Box>
+                          </TableCell>
                         </TableRow>
                       ) : (
                         crearForm.productos.map(prod => {
@@ -1087,7 +1114,6 @@ const Compras = () => {
                           const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
                           const cantidadPresentaciones = Number(prod.cantidad) || 0;
                           const precioPresentacion = Number(prod.preciodecompra) || 0;
-                          const factor = presentacion ? parseFloat(presentacion.factor_conversion) : 1;
                           const subtotal = cantidadPresentaciones * precioPresentacion;
                           return (
                             <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
@@ -1126,7 +1152,7 @@ const Compras = () => {
                               </TableCell>
                               <TableCell align="right">{formatCurrency(precioPresentacion)}</TableCell>
                               <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
-                              <TableCell>
+                              <TableCell align="center">
                                 <IconButton size="small" color="error" onClick={() => handleRemoveProducto(prod.idproducto)}>
                                   <DeleteIcon />
                                 </IconButton>
@@ -1139,18 +1165,9 @@ const Compras = () => {
                   </Table>
                 </TableContainer>
                 <Box mt={2} textAlign="right">
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                    Total de productos (unidades reales): {
-                      crearForm.productos.reduce((acc, p) => {
-                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                        return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
-                      }, 0)
-                    }
-                  </Typography>
-                  <Typography variant="h6">
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     Total: {formatCurrency(
                       crearForm.productos.reduce((acc, p) => {
-                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
                         const cantidadPresentaciones = Number(p.cantidad) || 0;
                         const precioPresentacion = Number(p.preciodecompra) || 0;
                         return acc + (cantidadPresentaciones * precioPresentacion);
@@ -1168,10 +1185,12 @@ const Compras = () => {
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCrearClose} color="secondary">Cancelar</Button>
-          <Button onClick={handleCrearCompra} variant="contained" color="primary" disabled={crearLoading}>
-            {crearLoading ? <CircularProgress size={24} /> : 'Guardar Compra'}
+        <DialogActions sx={{ px: 4, pb: 3, pt: 2 }}>
+          <Button onClick={handleCrearClose} color="error" variant="text" sx={{ fontWeight: 700, fontSize: 16 }}>
+            CANCELAR
+          </Button>
+          <Button onClick={handleCrearCompra} variant="contained" color="success" sx={{ fontWeight: 700, fontSize: 16 }} disabled={crearLoading}>
+            {crearLoading ? <CircularProgress size={24} /> : 'GUARDAR COMPRA'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1389,4 +1408,4 @@ const Compras = () => {
   );
 };
 
-export default Compras; 
+export default Compras;
