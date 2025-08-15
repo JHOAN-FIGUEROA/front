@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Button, Snackbar, Pagination, IconButton, Stack, Grid
 } from '@mui/material';
@@ -6,6 +6,7 @@ import { getUnidades, getProductos, createUnidad, deleteUnidad, updateUnidad, ge
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
 import Buscador from '../components/Buscador';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -16,6 +17,8 @@ import ShieldIcon from '@mui/icons-material/Security';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import Eliminar from '../components/Eliminar';
+import InputAdornment from '@mui/material/InputAdornment';
+
 
 const UNIDADES_POR_PAGINA = 5;
 const BACKEND_URL = 'https://backend-wi7t.onrender.com';
@@ -45,6 +48,92 @@ const Unidades = () => {
   const [originalEditData, setOriginalEditData] = useState(null);
   const [crearProductoNombre, setCrearProductoNombre] = useState('');
   const [editProductoNombre, setEditProductoNombre] = useState('');
+  const searchTimeoutRef = useRef(null);
+  const [productoSearchLoading, setProductoSearchLoading] = useState(false);
+
+  // Función helper para buscar productos (crear)
+  const handleBuscarProducto = async (codigo) => {
+    if (!codigo.trim()) return;
+    
+    setProductoSearchLoading(true);
+    try {
+      const data = await getProductoByCodigo(codigo.trim());
+      console.log('Respuesta de búsqueda de producto:', data);
+      
+      if (data && data.success && data.data) {
+        if (data.data.idproducto && data.data.nombre) {
+          setCrearForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
+          setCrearProductoNombre(data.data.nombre);
+          setCrearValidation(prev => ({ ...prev, producto_idproducto: '' }));
+          console.log('Producto encontrado:', data.data.nombre, 'ID:', data.data.idproducto);
+        } else {
+          console.warn('Producto encontrado pero faltan datos:', data.data);
+          setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Producto encontrado pero faltan datos' }));
+          setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
+          setCrearProductoNombre('');
+        }
+      } else if (data && data.error) {
+        console.warn('Error en la búsqueda:', data.message || data.detalles);
+        setCrearValidation(prev => ({ ...prev, producto_idproducto: data.message || data.detalles || 'Producto no encontrado' }));
+        setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
+        setCrearProductoNombre('');
+      } else {
+        console.warn('Respuesta inesperada:', data);
+        setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+        setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
+        setCrearProductoNombre('');
+      }
+    } catch (err) {
+      console.error('Error en búsqueda de producto:', err);
+      setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
+      setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
+      setCrearProductoNombre('');
+    } finally {
+      setProductoSearchLoading(false);
+    }
+  };
+
+  // Función helper para buscar productos (editar)
+  const handleBuscarProductoEdit = async (codigo) => {
+    if (!codigo.trim()) return;
+    
+    setProductoSearchLoading(true);
+    try {
+      const data = await getProductoByCodigo(codigo.trim());
+      console.log('Respuesta de búsqueda de producto (edición):', data);
+      
+      if (data && data.success && data.data) {
+        if (data.data.idproducto && data.data.nombre) {
+          setEditForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
+          setEditProductoNombre(data.data.nombre);
+          setEditValidation(prev => ({ ...prev, producto_idproducto: '' }));
+          console.log('Producto encontrado (edición):', data.data.nombre, 'ID:', data.data.idproducto);
+        } else {
+          console.warn('Producto encontrado pero faltan datos (edición):', data.data);
+          setEditValidation(prev => ({ ...prev, producto_idproducto: 'Producto encontrado pero faltan datos' }));
+          setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
+          setEditProductoNombre('');
+        }
+      } else if (data && data.error) {
+        console.warn('Error en la búsqueda (edición):', data.message || data.detalles);
+        setEditValidation(prev => ({ ...prev, producto_idproducto: data.message || data.detalles || 'Producto no encontrado' }));
+        setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
+        setEditProductoNombre('');
+      } else {
+        console.warn('Respuesta inesperada (edición):', data);
+        setEditValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
+        setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
+        setEditProductoNombre('');
+      }
+    } catch (err) {
+      console.error('Error en búsqueda de producto (edición):', err);
+      setEditValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
+      setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
+      setEditProductoNombre('');
+    } finally {
+      setProductoSearchLoading(false);
+    }
+  };
 
   const fetchUnidades = useCallback(async (currentPage) => {
     setLoading(true);
@@ -94,8 +183,16 @@ const Unidades = () => {
   };
 
   const handleSearchChange = (e) => {
-    setBusqueda(e.target.value);
-    setPagina(1);
+    const newSearchTerm = e.target.value;
+    setBusqueda(newSearchTerm);
+    
+    // Resetear a la primera página cuando se busca
+    if (pagina !== 1) {
+      setPagina(1);
+    }
+    
+    // Log para debugging
+    console.log('Búsqueda cambiada:', newSearchTerm);
   };
 
   const handleCloseSnackbar = (event, reason) => {
@@ -105,28 +202,45 @@ const Unidades = () => {
     setSnackbar({ open: false, message: '', severity: 'info' });
   };
 
-  // Filtrado local igual que proveedores
+  // Filtrado local mejorado
   const unidadesFiltradas = unidades.filter(unidad => {
-    if (!busqueda) return true;
+    // Si no hay búsqueda, mostrar todas las unidades
+    if (!busqueda || !busqueda.trim()) return true;
+    
     const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    // Validar que la unidad existe
+    if (!unidad) return false;
 
     // Buscar por estado
-    if (terminoBusquedaLower === 'activo') {
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
       return unidad.estado === true || unidad.estado === 1 || unidad.estado === 'true';
     }
-    if (terminoBusquedaLower === 'inactivo') {
+    if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
       return !(unidad.estado === true || unidad.estado === 1 || unidad.estado === 'true');
     }
 
-    // Buscar por nombre de unidad, nombre de producto o factor de conversión
-    const nombreUnidad = (unidad.nombre || '').toLowerCase();
-    const nombreProducto = (unidad.producto_nombre || unidad.producto?.nombre || '').toLowerCase();
+    // Buscar por nombre de unidad
+    const nombreUnidad = String(unidad.nombre || '').toLowerCase();
+    if (nombreUnidad.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por nombre de producto
+    const nombreProducto = String(unidad.producto_nombre || unidad.producto?.nombre || '').toLowerCase();
+    if (nombreProducto.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por factor de conversión
     const factorConversion = String(unidad.factor_conversion || '').toLowerCase();
-    return (
-      nombreUnidad.includes(terminoBusquedaLower) ||
-      nombreProducto.includes(terminoBusquedaLower) ||
-      factorConversion.includes(terminoBusquedaLower)
-    );
+    if (factorConversion.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por código de barras
+    const codigoBarras = String(unidad.codigobarras || '').toLowerCase();
+    if (codigoBarras.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por ID de producto
+    const idProducto = String(unidad.producto_idproducto || '').toLowerCase();
+    if (idProducto.includes(terminoBusquedaLower)) return true;
+
+    return false;
   });
 
   // Validaciones
@@ -383,8 +497,24 @@ const Unidades = () => {
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar Unidad"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por nombre, producto, factor..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => setBusqueda('')}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -406,6 +536,11 @@ const Unidades = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {unidadesFiltradas.length} unidad{unidadesFiltradas.length !== 1 ? 'es' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -421,7 +556,12 @@ const Unidades = () => {
           <TableBody>
             {!loading && unidadesFiltradas.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={5} align="center">No hay unidades registradas.</TableCell>
+                <TableCell colSpan={5} align="center">
+                  {busqueda ? 
+                    `No se encontraron unidades que coincidan con "${busqueda}"` : 
+                    'No hay unidades registradas.'
+                  }
+                </TableCell>
               </TableRow>
             )}
             {unidadesFiltradas.map((unidad, idx) => (
@@ -485,40 +625,45 @@ const Unidades = () => {
                   <Box width="100%" mb={3}>
                     <TextField
                       label="Código de Barras del Producto"
-                      name="codigoproducto"
                       value={crearForm.codigoproducto || ''}
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const value = e.target.value;
                         setCrearForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
-                        if (value.length > 0) {
-                          try {
-                            const data = await getProductoByCodigo(value);
-                            if (data && data.success && data.data && data.data.idproducto) {
-                              setCrearForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
-                              setCrearProductoNombre(data.data.nombre || '');
-                              setCrearValidation(prev => ({ ...prev, producto_idproducto: '' }));
-                            } else {
-                              setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
-                              setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
-                              setCrearProductoNombre('');
-                            }
-                          } catch (err) {
-                            setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
-                            setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
-                            setCrearProductoNombre('');
-                          }
-                        } else {
-                          setCrearValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
-                          setCrearForm(prev => ({ ...prev, producto_idproducto: '' }));
-                          setCrearProductoNombre('');
+                        setCrearProductoNombre('');
+                        setCrearValidation(prev => ({ ...prev, producto_idproducto: '' }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && crearForm.codigoproducto.trim()) {
+                          e.preventDefault();
+                          handleBuscarProducto(crearForm.codigoproducto.trim());
                         }
                       }}
                       fullWidth
                       required
                       error={!!crearValidation.producto_idproducto}
                       helperText={crearValidation.producto_idproducto}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => handleBuscarProducto(crearForm.codigoproducto.trim())}
+                              disabled={productoSearchLoading || !crearForm.codigoproducto.trim()}
+                              edge="end"
+                              size="small"
+                            >
+                              {productoSearchLoading ? <CircularProgress size={20} /> : <SearchIcon />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      placeholder="Ingrese el código del producto..."
                       sx={{ width: '100%' }}
                     />
+                    {crearValidation.producto_idproducto && (
+                      <Alert severity="error" sx={{ mt: 1 }}>
+                        {crearValidation.producto_idproducto}
+                      </Alert>
+                    )}
                   </Box>
                   {crearForm.producto_idproducto && (
                     <Alert severity="success" sx={{ mt: 1 }}>
@@ -606,40 +751,45 @@ const Unidades = () => {
                   <Box width="100%" mb={3}>
                     <TextField
                       label="Código de Barras del Producto"
-                      name="codigoproducto"
                       value={editForm.codigoproducto || ''}
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const value = e.target.value;
                         setEditForm(prev => ({ ...prev, codigoproducto: value, producto_idproducto: '' }));
-                        if (value.length > 0) {
-                          try {
-                            const data = await getProductoByCodigo(value);
-                            if (data && data.success && data.data && data.data.idproducto) {
-                              setEditForm(prev => ({ ...prev, producto_idproducto: data.data.idproducto }));
-                              setEditProductoNombre(data.data.nombre || '');
-                              setEditValidation(prev => ({ ...prev, producto_idproducto: '' }));
-                            } else {
-                              setEditValidation(prev => ({ ...prev, producto_idproducto: 'Producto no encontrado' }));
-                              setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
-                              setEditProductoNombre('');
-                            }
-                          } catch (err) {
-                            setEditValidation(prev => ({ ...prev, producto_idproducto: 'Error al buscar producto' }));
-                            setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
-                            setEditProductoNombre('');
-                          }
-                        } else {
-                          setEditValidation(prev => ({ ...prev, producto_idproducto: 'Debe ingresar un código' }));
-                          setEditForm(prev => ({ ...prev, producto_idproducto: '' }));
-                          setEditProductoNombre('');
+                        setEditProductoNombre('');
+                        setEditValidation(prev => ({ ...prev, producto_idproducto: '' }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && editForm.codigoproducto.trim()) {
+                          e.preventDefault();
+                          handleBuscarProductoEdit(editForm.codigoproducto.trim());
                         }
                       }}
                       fullWidth
                       required
                       error={!!editValidation.producto_idproducto}
                       helperText={editValidation.producto_idproducto}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => handleBuscarProductoEdit(editForm.codigoproducto.trim())}
+                              disabled={productoSearchLoading || !editForm.codigoproducto.trim()}
+                              edge="end"
+                              size="small"
+                            >
+                              {productoSearchLoading ? <CircularProgress size={20} /> : <SearchIcon />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      placeholder="Ingrese el código del producto..."
                       sx={{ width: '100%' }}
                     />
+                    {editValidation.producto_idproducto && (
+                      <Alert severity="error" sx={{ mt: 1 }}>
+                        {editValidation.producto_idproducto}
+                      </Alert>
+                    )}
                   </Box>
                   {editForm.producto_idproducto && (
                     <Alert severity="success" sx={{ mt: 1 }}>

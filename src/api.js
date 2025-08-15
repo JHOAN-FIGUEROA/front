@@ -787,13 +787,76 @@ export const updateUnidad = async (idpresentacion, data) => {
 // Buscar producto por código de barras
 export const getProductoByCodigo = async (codigoproducto) => {
   try {
-    const response = await api.get('/api/productos/buscar', { params: { codigoproducto } });
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+    console.log('Buscando producto con código:', codigoproducto);
+    const response = await api.get(`/api/productos/buscar/codigo?codigoproducto=${codigoproducto}`);
+    console.log('Respuesta completa de la API:', response);
+    console.log('Datos de la respuesta:', response.data);
+    
+    // Verificar si la respuesta tiene el formato esperado
+    if (response.data && typeof response.data === 'object') {
+      return response.data;
     } else {
-      throw new Error(error.message || 'Error al conectar con el servidor');
+      console.warn('Respuesta inesperada de la API:', response.data);
+      return {
+        success: false,
+        error: true,
+        message: 'Formato de respuesta inesperado',
+        detalles: 'La API devolvió un formato de respuesta no válido'
+      };
+    }
+  } catch (error) {
+    console.error('Error completo en getProductoByCodigo:', error);
+    console.error('Error response:', error.response);
+    console.error('Error message:', error.message);
+    
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+      
+      // Si el producto no existe, devolver un formato consistente
+      if (error.response.status === 404) {
+        return { 
+          success: false, 
+          error: true,
+          message: 'Producto no encontrado',
+          detalles: 'El producto con este código no existe en la base de datos'
+        };
+      }
+      
+      // Si hay un error específico del servidor
+      if (error.response.data) {
+        return { 
+          success: false, 
+          error: true,
+          message: error.response.data.message || error.response.data.error || `Error HTTP ${error.response.status}`,
+          detalles: error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: true,
+        message: `Error del servidor (${error.response.status})`,
+        detalles: `Error HTTP ${error.response.status}: ${error.response.statusText}`
+      };
+    } else if (error.request) {
+      // Error de red
+      console.error('Error de red:', error.request);
+      return { 
+        success: false, 
+        error: true,
+        message: 'Error de conexión',
+        detalles: 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+      };
+    } else {
+      // Error de configuración
+      console.error('Error de configuración:', error.message);
+      return { 
+        success: false, 
+        error: true,
+        message: 'Error de configuración',
+        detalles: error.message || 'Error al conectar con el servidor'
+      };
     }
   }
 };

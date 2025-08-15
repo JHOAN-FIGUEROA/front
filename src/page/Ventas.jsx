@@ -918,245 +918,219 @@ const Ventas = () => {
         </DialogActions>
       </Dialog>
       {/* Modal de creación de venta */}
-      <Dialog open={crearOpen} onClose={() => setCrearOpen(false)} maxWidth="xl" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AddShoppingCartIcon color="primary" />
-          <Typography variant="h6">Registrar Nueva Venta</Typography>
-        </DialogTitle>
-        <DialogContent dividers>
-          {crearLoading ? (
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={200}>
-              <CircularProgress size={40} />
-              <Typography variant="h6" mt={2}>Cargando datos...</Typography>
-            </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {/* Columna Izquierda: Datos Generales y Cliente */}
-              <Grid item xs={12} md={5}>
-                <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 0, sm: 2 } }}>
-                  <Typography variant="h6" gutterBottom>Datos Generales</Typography>
-                  {/* Tipo de venta */}
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel id="tipo-venta-label">Tipo de Venta</InputLabel>
-                    <Select
-                      labelId="tipo-venta-label"
-                      name="tipo"
-                      value={crearForm.tipo}
-                      label="Tipo de Venta"
-                      onChange={(e) => {
-                        const nuevoTipo = e.target.value;
-                        setCrearForm(prev => {
-                          let nuevoForm = { ...prev, tipo: nuevoTipo };
-                          if (nuevoTipo === 'VENTA_RAPIDA') {
-                            const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
-                            if (cf) {
-                              nuevoForm.documentocliente = cf.id;
-                            } else {
-                              Swal.fire({ icon: 'error', title: 'Cliente "Consumidor Final" no encontrado', text: 'No existe el cliente "Consumidor Final" en la base de datos. Por favor créalo antes de realizar una venta rápida.' });
-                              nuevoForm.documentocliente = '';
-                            }
-                          } else {
-                            nuevoForm.documentocliente = '';
-                          }
-                          return nuevoForm;
-                        });
-                      }}
-                    >
-                      <MenuItem value="VENTA_DIRECTA">Venta Directa</MenuItem>
-                      <MenuItem value="VENTA_RAPIDA">Venta Rápida</MenuItem>
-                    </Select>
-                  </FormControl>
+      <Dialog
+  open={crearOpen}
+  onClose={() => setCrearOpen(false)}
+  maxWidth="md"
+  fullWidth
+  PaperProps={{
+    sx: {
+      maxWidth: 990, // más compacto
+      borderRadius: 3,
+      background: '#f8f9fa',
+      p: 0
+    }
+  }}
+>
+  <DialogTitle sx={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    background: '#1976d2',
+    color: '#fff',
+    py: 3,
+    px: 4,
+    fontSize: 28,
+    fontWeight: 700
+  }}>
+    <AddShoppingCartIcon sx={{ fontSize: 36 }} />
+    Registrar Nueva Venta
+  </DialogTitle>
+  <DialogContent sx={{ px: 4, py: 3 }}>
+    {crearLoading ? (
+      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={200}>
+        <CircularProgress size={40} />
+        <Typography variant="h6" mt={2}>Cargando datos...</Typography>
+      </Box>
+    ) : (
+      <Grid container spacing={2}>
+        {/* Columna izquierda: Datos Generales y Cliente */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Datos Generales</Typography>
+            <FormControl fullWidth margin="dense">
+              <InputLabel id="tipo-venta-label">Tipo de Venta</InputLabel>
+              <Select
+                labelId="tipo-venta-label"
+                name="tipo"
+                value={crearForm.tipo}
+                label="Tipo de Venta"
+                onChange={(e) => {
+                  const nuevoTipo = e.target.value;
+                  setCrearForm(prev => {
+                    let nuevoForm = { ...prev, tipo: nuevoTipo };
+                    if (nuevoTipo === 'VENTA_RAPIDA') {
+                      const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
+                      nuevoForm.documentocliente = cf ? cf.id : '';
+                    } else {
+                      nuevoForm.documentocliente = '';
+                    }
+                    return nuevoForm;
+                  });
+                }}
+                size="small"
+              >
+                <MenuItem value="VENTA_DIRECTA">Venta Directa</MenuItem>
+                <MenuItem value="VENTA_RAPIDA">Venta Rápida</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Fecha de Venta"
+              name="fechaventa"
+              type="date"
+              value={crearForm.fechaventa}
+              onChange={handleCrearChange}
+              fullWidth
+              required
+              margin="dense"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+              error={!!crearValidation.fechaventa}
+              helperText={crearValidation.fechaventa}
+            />
+          </Paper>
+          <Paper elevation={0} sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Cliente</Typography>
+            {crearForm.tipo === 'VENTA_RAPIDA' ? (
+              <TextField
+                label="Cliente"
+                value={(() => {
+                  const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
+                  return cf ? `${cf.nombre} ${cf.apellido}` : '';
+                })()}
+                fullWidth
+                margin="dense"
+                InputProps={{ readOnly: true }}
+                disabled
+                size="small"
+              />
+            ) : (
+              <Autocomplete
+                options={clientes.filter(c => !(c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final'))}
+                getOptionLabel={option => `${option.nombre} ${option.apellido} (${option.id})`}
+                value={clientes.find(c => c.id === crearForm.documentocliente) || null}
+                onChange={(_, value) => setCrearForm(prev => ({ ...prev, documentocliente: value ? value.id : '' }))}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderInput={params => (
                   <TextField
-                    label="Fecha de Venta"
-                    name="fechaventa"
-                    value={new Date().toISOString().split('T')[0]}
+                    {...params}
+                    label="Buscar Cliente"
+                    placeholder="Nombre, apellido o documento"
                     fullWidth
+                    margin="dense"
                     required
-                    margin="normal"
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{ readOnly: true, disabled: true }}
+                    size="small"
+                    error={!!crearValidation.documentocliente}
+                    helperText={crearValidation.documentocliente}
                   />
-                </Paper>
-                <Paper sx={{ p: { xs: 1, sm: 2 } }}>
-                  <Typography variant="h6" gutterBottom>Cliente</Typography>
-                  {crearForm.tipo === 'VENTA_RAPIDA' ? (
-                    <TextField
-                      label="Cliente"
-                      value={(() => {
-                        const cf = clientes.find(c => c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final');
-                        return cf ? `${cf.nombre} ${cf.apellido}` : '';
-                      })()}
-                      fullWidth
-                      margin="normal"
-                      InputProps={{ readOnly: true }}
-                      disabled
-                    />
+                )}
+                noOptionsText="No se encontró ningún cliente"
+              />
+            )}
+          </Paper>
+        </Grid>
+        {/* Columna derecha: Productos */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Productos</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mb: 2, fontWeight: 700, fontSize: 16 }}
+              onClick={handleOpenProductosModal}
+              startIcon={<AddIcon />}
+            >
+              + AGREGAR PRODUCTOS
+            </Button>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Producto</TableCell>
+                    <TableCell>Presentación</TableCell>
+                    <TableCell align="center">Cantidad</TableCell>
+                    <TableCell align="right">Subtotal</TableCell>
+                    <TableCell align="center">{/* Columna para eliminar */}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {crearForm.productos.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">
+                        <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                          <AddShoppingCartIcon sx={{ fontSize: 48, color: '#bdbdbd', mb: 1 }} />
+                          <Typography color="text.secondary">Aún no hay productos</Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   ) : (
-                    <Autocomplete
-                      options={clientes.filter(c => !(c.nombre?.toLowerCase() === 'consumidor' && c.apellido?.toLowerCase() === 'final'))}
-                      getOptionLabel={option => `${option.nombre} ${option.apellido} (${option.id})`}
-                      renderOption={(props, option) => (
-                        <li {...props} key={option.id}>
-                          <PersonIcon sx={{ mr: 1 }} />
-                          {option.nombre} {option.apellido} <span style={{ color: '#888', marginLeft: 8 }}>({option.id})</span>
-                        </li>
-                      )}
-                      value={clientes.find(c => c.id === crearForm.documentocliente) || null}
-                      onChange={(_, value) => setCrearForm(prev => ({ ...prev, documentocliente: value ? value.id : '' }))}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                      renderInput={params => (
-                        <TextField
-                          {...params}
-                          label="Buscar Cliente"
-                          placeholder="Nombre, apellido o documento"
-                          fullWidth
-                          margin="normal"
-                          required
-                          error={!!crearValidation.documentocliente}
-                          helperText={crearValidation.documentocliente}
-                        />
-                      )}
-                      noOptionsText="No se encontró ningún cliente"
-                      sx={{ minWidth: 250 }}
-                    />
-                  )}
-                </Paper>
-              </Grid>
-              {/* Columna Derecha: Productos */}
-              <Grid item xs={12} md={7}>
-                <Paper sx={{ p: { xs: 1, sm: 2 }, height: '100%' }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">Productos</Typography>
-                    <Button variant="outlined" onClick={handleOpenProductosModal} startIcon={<AddIcon />}>
-                      Agregar Productos
-                    </Button>
-                  </Box>
-                  <TableContainer sx={{ maxHeight: 400, overflowX: { xs: 'auto', sm: 'visible' } }}>
-                    <Table stickyHeader>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Producto</TableCell>
-                          <TableCell>Presentación</TableCell>
-                          <TableCell align="center">Cantidad</TableCell>
-                          <TableCell align="right">Precio Unitario</TableCell>
-                          <TableCell align="right">Subtotal</TableCell>
-                          <TableCell></TableCell>
+                    crearForm.productos.map(prod => {
+                      const presentacion = (presentacionesPorProducto[prod.idproducto] || []).find(p => p.idpresentacion === prod.idpresentacion);
+                      const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                      const subtotal = (Number(prod.cantidad) || 0) * factor * prod.precioventa;
+                      return (
+                        <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
+                          <TableCell>{prod.nombre}</TableCell>
+                          <TableCell>{presentacion?.nombre || ''}</TableCell>
+                          <TableCell align="center">{prod.cantidad}</TableCell>
+                          <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleRemoveProducto(prod.idproducto)}
+                              title="Eliminar producto"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
                         </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {crearForm.productos.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} align="center">Aún no hay productos</TableCell>
-                          </TableRow>
-                        ) : (
-                          crearForm.productos.map(prod => {
-                            const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
-                            const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                            const stockDisponible = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
-                            const precioUnitario = prod.precioventa;
-                            const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                            const subtotal = (Number(prod.cantidad) || 0) * factor * precioUnitario;
-                            return (
-                              <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
-                                <TableCell>{prod.nombre}</TableCell>
-                                <TableCell>
-                                  <FormControl fullWidth size="small">
-                                    <Select
-                                      value={prod.idpresentacion}
-                                      onChange={e => {
-                                        const nueva = (presentacionesPorProducto[prod.idproducto] || []).find(pr => pr.idpresentacion === Number(e.target.value));
-                                        // Si la presentación no tiene stock, asígnale el stock del producto seleccionado
-                                        if (nueva && (nueva.stock === undefined || nueva.stock === null)) {
-                                          nueva.stock = prod.stock;
-                                        }
-                                        setPresentacionSeleccionada(nueva);
-                                      }}
-                                      displayEmpty
-                                    >
-                                      {presentaciones.map(pr => (
-                                        <MenuItem key={pr.idpresentacion} value={pr.idpresentacion}>
-                                          {pr.nombre} (factor: {pr.factor_conversion})
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                </TableCell>
-                                <TableCell align="center">
-                                  <TextField
-                                    type="number"
-                                    value={prod.cantidad === '' ? '' : prod.cantidad}
-                                    onChange={e => {
-                                      const nuevaCantidad = e.target.value === '' ? '' : Number(e.target.value);
-                                      // Validar stock disponible según factor de conversión
-                                      const presentaciones = presentacionesPorProducto[prod.idproducto] || [];
-                                      const presentacion = presentaciones.find(p => p.idpresentacion === prod.idpresentacion);
-                                      const stock = prod.stock_presentacion !== undefined ? prod.stock_presentacion : (prod.stock !== undefined ? prod.stock : (prod.producto_stock !== undefined ? prod.producto_stock : (prod.producto?.stock || 0)));
-                                      const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                                      const maxCantidad = Math.floor(stock / factor);
-                                      if (nuevaCantidad !== '' && nuevaCantidad > maxCantidad) {
-                                        Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para esta presentación. Máximo permitido: ${maxCantidad}` });
-                                        handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', maxCantidad);
-                                        return;
-                                      }
-                                      handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', nuevaCantidad);
-                                    }}
-                                    onBlur={e => {
-                                      if (prod.cantidad === '' || prod.cantidad < 1) {
-                                        handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', 1);
-                                      }
-                                    }}
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter' && productoSeleccionado && presentacionSeleccionada && cantidadPresentacion > 0) {
-                                        e.preventDefault();
-                                        handleAddProducto();
-                                      }
-                                    }}
-                                    sx={{ width: '80px' }}
-                                    inputProps={{ min: 1, style: { textAlign: 'center' } }}
-                                    size="small"
-                                  />
-                                </TableCell>
-                                <TableCell align="right">{formatCurrency(precioUnitario)}</TableCell>
-                                <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
-                                <TableCell>
-                                  <IconButton size="small" color="error" onClick={() => handleRemoveProducto(prod.idproducto)}>
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  <Box mt={2} textAlign="right">
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                      Total de productos (unidades reales): {crearForm.productos.reduce((acc, p) => {
-                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                        return acc + ((Number(p.cantidad) || 0) * (presentacion ? parseFloat(presentacion.factor_conversion) : 1));
-                      }, 0)}
-                    </Typography>
-                    <Typography variant="h6">
-                      Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
-                        const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
-                        const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
-                        return acc + ((Number(p.cantidad) || 0) * factor * p.precioventa);
-                      }, 0))}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCrearOpen(false)} color="secondary" disabled={crearLoading}>Cancelar</Button>
-          <Button onClick={handleCrearVenta} variant="contained" color="primary" disabled={crearLoading}>
-            {crearLoading ? <CircularProgress size={24} /> : 'Guardar Venta'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box mt={2} textAlign="right">
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Total: {formatCurrency(crearForm.productos.reduce((acc, p) => {
+                  const presentacion = (presentacionesPorProducto[p.idproducto] || []).find(pr => pr.idpresentacion === p.idpresentacion);
+                  const factor = presentacion?.factor_conversion ? parseFloat(presentacion.factor_conversion) : 1;
+                  return acc + ((Number(p.cantidad) || 0) * factor * p.precioventa);
+                }, 0))}
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+    )}
+  </DialogContent>
+  <DialogActions sx={{ px: 4, pb: 3, pt: 2 }}>
+    <Button onClick={() => setCrearOpen(false)} color="error" variant="text" sx={{ fontWeight: 700, fontSize: 16 }}>
+      CANCELAR
+    </Button>
+    <Button
+      onClick={handleCrearVenta}
+      variant="contained"
+      color="success"
+      sx={{ fontWeight: 700, fontSize: 16 }}
+      disabled={crearLoading}
+    >
+      GUARDAR VENTA
+    </Button>
+  </DialogActions>
+</Dialog>
       {/* Sub-Modal para Agregar Productos */}
       <Dialog open={productosModalOpen} onClose={handleCloseProductosModal} maxWidth="md" fullWidth>
         <DialogTitle>Seleccionar Productos</DialogTitle>
@@ -1412,4 +1386,4 @@ const Ventas = () => {
   );
 };
 
-export default Ventas; 
+export default Ventas;
