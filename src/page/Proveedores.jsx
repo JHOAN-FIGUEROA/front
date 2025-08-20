@@ -359,7 +359,22 @@ const Proveedores = () => {
       });
       fetchProveedores(pagina, busqueda);
     } catch (err) {
-      setCrearError(err.message || 'Error al crear proveedor');
+      const errorMessage = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Error al crear proveedor';
+      setCrearError(errorMessage);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Crear Proveedor',
+        text: errorMessage,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
     } finally {
       setCrearLoading(false);
     }
@@ -620,7 +635,7 @@ const Proveedores = () => {
       setProveedorAEditar(null);
       fetchProveedores(pagina, busqueda);
     } catch (err) {
-      const errorMsg = err.message || 'Error al guardar el proveedor.';
+      const errorMsg = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Error al guardar el proveedor.';
       setEditError(errorMsg);
       Swal.fire({
         icon: 'error',

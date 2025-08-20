@@ -421,7 +421,7 @@ const Clientes = () => {
       setClienteAEditar(null);
       fetchClientes(pagina, busqueda);
     } catch (err) {
-      const errorMsg = err.message || 'Error al guardar el cliente.';
+      const errorMsg = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Error al guardar el cliente.';
       setEditError(errorMsg);
       Swal.fire({
         icon: 'error',
@@ -622,6 +622,20 @@ const Clientes = () => {
     } catch (err) {
       const msg = extractErrorMessage(err);
       setCrearError(msg);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al Crear Cliente',
+        text: msg,
+        confirmButtonColor: '#2E8B57',
+        background: '#fff',
+        customClass: {
+          popup: 'animated fadeInDown'
+        },
+        zIndex: 9999,
+        didOpen: (popup) => {
+          popup.style.zIndex = 9999;
+        }
+      });
     } finally {
       setCrearLoading(false);
     }

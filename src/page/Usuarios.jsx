@@ -790,6 +790,23 @@ const Usuarios = () => {
         loading={editLoading}
         error={editError}
         validationErrors={editValidationErrors}
+        onError={(errorMessage) => {
+          setEditError(errorMessage);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al Actualizar',
+            text: errorMessage,
+            confirmButtonColor: '#2E8B57',
+            background: '#fff',
+            customClass: {
+              popup: 'animated fadeInDown'
+            },
+            zIndex: 9999,
+            didOpen: (popup) => {
+              popup.style.zIndex = 9999;
+            }
+          });
+        }}
         camposEditables={CAMPOS_EDITABLES.map(campo => {
           if (campo.name === 'rol_idrol') {
             return { ...campo, options: rolSelectOptions };
@@ -940,7 +957,7 @@ const Usuarios = () => {
         onCreado={handleUsuarioCreadoExitosamente}
         campos={camposCrearConRoles}
         titulo="Registrar Usuario"
-        onError={(errorMessage) => openSnackbar(errorMessage, 'error')}
+        onError={handleCrearError}
       />
     </Box>
   );
