@@ -918,8 +918,24 @@ export const createCompra = async (data) => {
     return response.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data.detalles || error.response.data.error || `Error HTTP ${error.response.status}`);
+      // Error del backend (400, 409, 500, etc.)
+      const errorData = error.response.data;
+      const errorMessage = errorData.detalles || errorData.error || errorData.message || `Error HTTP ${error.response.status}`;
+      
+      // Crear un objeto de error consistente
+      const errorObj = new Error(errorMessage);
+      errorObj.response = error.response;
+      errorObj.status = error.response.status;
+      
+      // Si es un error de duplicidad (409 Conflict) o validación (400 Bad Request)
+      if (error.response.status === 409 || error.response.status === 400) {
+        errorObj.isValidationError = true;
+        errorObj.isDuplicateError = error.response.status === 409;
+      }
+      
+      throw errorObj;
     } else {
+      // Error de red o conexión
       throw new Error(error.message || 'Error al conectar con el servidor');
     }
   }

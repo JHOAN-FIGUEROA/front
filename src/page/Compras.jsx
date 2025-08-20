@@ -534,33 +534,98 @@ const Compras = () => {
 
     setCrearLoading(true);
     setCrearError('');
-    const dataToSend = {
-      ...crearForm,
-      productos: crearForm.productos.map(({ nombre, codigoproducto, ...rest }) => rest)
-    };
+    
+    try {
+      const dataToSend = {
+        ...crearForm,
+        productos: crearForm.productos.map(({ nombre, codigoproducto, ...rest }) => rest)
+      };
 
-    const result = await createCompra(dataToSend);
-    setCrearLoading(false);
-
-    if (result.error || !result.success) {
-      const errorMsg = result.message || result.detalles || result.error || (typeof result === 'string' ? result : JSON.stringify(result)) || 'Ocurrió un error inesperado.';
+      const result = await createCompra(dataToSend);
+      
+      if (result.error || !result.success) {
+        const errorMsg = result.message || result.detalles || result.error || (typeof result === 'string' ? result : JSON.stringify(result)) || 'Ocurrió un error inesperado.';
+        setCrearError(errorMsg);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al crear la compra',
+          text: errorMsg,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          zIndex: 9999,
+          didOpen: (popup) => {
+            popup.style.zIndex = 9999;
+          }
+        });
+      } else {
+        setCrearError('');
+        handleCrearClose();
+        Swal.fire({
+          icon: 'success',
+          title: '¡Compra Creada!',
+          text: 'La compra ha sido registrada correctamente.',
+          timer: 2000,
+          showConfirmButton: false,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          zIndex: 9999,
+          didOpen: (popup) => {
+            popup.style.zIndex = 9999;
+          }
+        });
+        fetchCompras(1, '', getEstadoParam(filtroEstado));
+      }
+    } catch (err) {
+      // Capturar errores de duplicidad y otros errores del backend
+      const errorMsg = err.response?.data?.error || err.response?.data?.detalles || err.message || 'Error al crear la compra';
       setCrearError(errorMsg);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error al crear la compra',
-        text: errorMsg,
-      });
-    } else {
-      setCrearError('');
-      handleCrearClose();
-      Swal.fire({
-        icon: 'success',
-        title: '¡Compra Creada!',
-        text: 'La compra ha sido registrada correctamente.',
-        timer: 2000,
-        showConfirmButton: false,
-      });
-      fetchCompras(1, '', getEstadoParam(filtroEstado));
+      
+      // Detectar errores de duplicidad usando las propiedades del error
+      const isDuplicateError = err.isDuplicateError || 
+                              err.status === 409 || 
+                              errorMsg.toLowerCase().includes('duplicado') || 
+                              errorMsg.toLowerCase().includes('ya existe') || 
+                              errorMsg.toLowerCase().includes('ya está registrado');
+      
+      if (isDuplicateError) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Número de Compra Duplicado',
+          text: `El número de compra ${crearForm.nrodecompra} ya está registrado en el sistema.`,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          zIndex: 9999,
+          didOpen: (popup) => {
+            popup.style.zIndex = 9999;
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al crear la compra',
+          text: errorMsg,
+          confirmButtonColor: '#2E8B57',
+          background: '#fff',
+          customClass: {
+            popup: 'animated fadeInDown'
+          },
+          zIndex: 9999,
+          didOpen: (popup) => {
+            popup.style.zIndex = 9999;
+          }
+        });
+      }
+    } finally {
+      setCrearLoading(false);
     }
   };
 
@@ -939,7 +1004,7 @@ const Compras = () => {
       <Dialog open={crearOpen} onClose={handleCrearClose} maxWidth="md" fullWidth
         PaperProps={{
           sx: {
-            maxWidth: 1200,
+            maxWidth: 1380,
             borderRadius: 3,
             background: '#f8f9fa',
             p: 0
