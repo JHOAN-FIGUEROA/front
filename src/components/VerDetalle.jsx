@@ -10,11 +10,28 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BadgeIcon from '@mui/icons-material/Badge';
 import GroupIcon from '@mui/icons-material/Group';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
-const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor }) => {
+const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedorDetalle, nitproveedor, roles = [] }) => {
   const esRol = usuarioDetalle && 'permisos_asociados' in usuarioDetalle;
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [errorDetalle, setErrorDetalle] = useState('');
+
+  // Función para obtener el nombre del rol basado en el ID del rol
+  const getRoleName = (roleId) => {
+    if (!roles || roles.length === 0) {
+      const defaultRoles = {
+        1: 'Administrador',
+        2: 'Vendedor',
+        3: 'Comprador',
+        4: 'Cliente'
+      };
+      return defaultRoles[roleId] || 'Usuario';
+    }
+    
+    const role = roles.find(r => r.idrol === roleId);
+    return role ? role.nombre : 'Usuario';
+  };
 
   useEffect(() => {
     const fetchProveedor = async () => {
@@ -109,6 +126,21 @@ const VerDetalle = ({ open, onClose, usuarioDetalle, loading, error, setProveedo
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>{usuarioDetalle.tipodocumento}</Typography>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>Número de Documento</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>{usuarioDetalle.documento}</Typography>
+              </Grid>
+              {/* Rol del Usuario */}
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <AdminPanelSettingsIcon color="primary" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>Rol del Usuario</Typography>
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>Rol Asignado</Typography>
+                <Chip
+                  icon={<GroupIcon />}
+                  label={getRoleName(usuarioDetalle.rol_idrol)}
+                  color="primary"
+                  size="medium"
+                  sx={{ mt: 0.5, fontWeight: 600, fontSize: 16, px: 2, py: 1 }}
+                />
               </Grid>
               {/* Ubicación */}
               <Grid item xs={12} sm={6}>

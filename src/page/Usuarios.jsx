@@ -676,6 +676,7 @@ const Usuarios = () => {
           <TableHead>
             <TableRow>
               <TableCell><b>#</b></TableCell>
+              <TableCell><b>Documento</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
               <TableCell><b>Email</b></TableCell>
               <TableCell align="center"><b>Estado</b></TableCell>
@@ -685,7 +686,7 @@ const Usuarios = () => {
           <TableBody>
             { !loading && usuariosFiltrados.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   {busqueda ? 'No se encontraron usuarios que coincidan con la búsqueda.' : 'No se encontraron usuarios.'}
                 </TableCell>
               </TableRow>
@@ -695,6 +696,13 @@ const Usuarios = () => {
               return (
               <TableRow key={usuario.idusuario || idx} hover>
                 <TableCell>{(pagina - 1) * USUARIOS_POR_PAGINA + idx + 1}</TableCell>
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {usuario.tipodocumento} {usuario.documento}
+                    </Typography>
+                  </Box>
+                </TableCell>
                 <TableCell>{usuario.nombre} {usuario.apellido}</TableCell>
                 <TableCell>{usuario.email}</TableCell>
                 <TableCell align="center">

@@ -43,7 +43,14 @@ const DashboardLayout = ({ children }) => {
 
       {/* Navbar fijo en la parte superior, ocupa todo el ancho */}
       {/* Pasa el handler de toggle de mobile al Navbar */}
-      <Navbar onMenuToggle={handleMobileToggle} navbarHeight={navbarHeight} desktopDrawerWidth={desktopDrawerWidth} sidebarOpen={sidebarOpen} isMobile={isMobile} />{/* <- Pasar info para alineación */}
+      <Navbar 
+        onMenuToggle={handleMobileToggle} 
+        navbarHeight={navbarHeight} 
+        desktopDrawerWidth={desktopDrawerWidth} 
+        sidebarOpen={sidebarOpen} 
+        isMobile={isMobile}
+        showUserInfo={true}
+      />
 
       {/* Sidebar/Drawer */}
       <SideBar

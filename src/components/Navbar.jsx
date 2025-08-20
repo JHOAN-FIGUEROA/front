@@ -1,9 +1,10 @@
-import { AppBar, Toolbar, Typography, Button, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Box, Avatar } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import logo from "../img/logotipo.PNG";
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useTheme, useMediaQuery } from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: '#4169E1', // Azul real
@@ -23,16 +24,38 @@ const StyledToolbar = styled(Toolbar)({
   alignItems: 'center',
 });
 
-const Navbar = ({ onMenuToggle, navbarHeight = '72px', desktopDrawerWidth = 0, isMobile = false }) => {
-  // Removed isAuthenticated and logout as the logout is now handled in the sidebar
-  // const { isAuthenticated, logout } = useAuth();
+const UserInfo = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  color: 'white',
+  marginLeft: 'auto',
+  [theme.breakpoints.down('sm')]: {
+    display: 'none', // Ocultar en pantallas muy pequeñas
+  },
+}));
 
-  // Removed handleLogout as the logout is now handled in the sidebar
-  // const handleLogout = () => {
-  //   logout();
-  // };
+const UserDetails = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  lineHeight: 1.2,
+});
 
+const Navbar = ({ onMenuToggle, navbarHeight = '72px', desktopDrawerWidth = 0, isMobile = false, showUserInfo = false }) => {
+  const { user } = useAuth();
   const theme = useTheme();
+
+  // Función para obtener el nombre del rol basado en el ID del rol
+  const getRoleName = (roleId) => {
+    const roles = {
+      1: 'Administrador',
+      2: 'Vendedor',
+      3: 'Comprador',
+      4: 'Cliente'
+    };
+    return roles[roleId] || 'Usuario';
+  };
 
   return (
     <StyledAppBar
@@ -69,6 +92,23 @@ const Navbar = ({ onMenuToggle, navbarHeight = '72px', desktopDrawerWidth = 0, i
         <Typography variant={isMobile ? 'h6' : 'h4'} component="div" sx={{ flexGrow: 1, textAlign: 'start', color: 'white' }}>
           POSTWARE
         </Typography>
+        
+        {/* Información del usuario - solo mostrar si showUserInfo es true y hay usuario */}
+        {showUserInfo && user && (
+          <UserInfo>
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.2)' }}>
+              <PersonIcon />
+            </Avatar>
+            <UserDetails>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>
+                {user.nombre || 'Usuario'}
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                {getRoleName(user.rol)}
+              </Typography>
+            </UserDetails>
+          </UserInfo>
+        )}
       </StyledToolbar>
     </StyledAppBar>
   );

@@ -679,6 +679,7 @@ const Proveedores = () => {
           <TableHead>
             <TableRow>
               <TableCell><b>#</b></TableCell>
+              <TableCell><b>Documento</b></TableCell>
               <TableCell><b>Nombre</b></TableCell>
               <TableCell><b>Email</b></TableCell>
               <TableCell><b>Teléfono</b></TableCell>
@@ -689,7 +690,7 @@ const Proveedores = () => {
           <TableBody>
             {!loading && proveedoresFiltrados.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} align="center">No hay proveedores registrados.</TableCell>
+                <TableCell colSpan={7} align="center">No hay proveedores registrados.</TableCell>
               </TableRow>
             )}
             {proveedoresFiltrados.map((proveedor, idx) => {
@@ -697,6 +698,13 @@ const Proveedores = () => {
               return (
                 <TableRow key={idx}>
                   <TableCell>{(pagina - 1) * PROVEEDORES_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {proveedor.tipodocumento} {proveedor.nitproveedor}
+                      </Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell>{proveedor.nombre}</TableCell>
                   <TableCell>{proveedor.email}</TableCell>
                   <TableCell>{proveedor.telefono}</TableCell>

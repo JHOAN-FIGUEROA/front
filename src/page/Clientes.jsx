@@ -718,6 +718,7 @@ const Clientes = () => {
           <TableHead>
             <TableRow>
               <TableCell><b>#</b></TableCell>
+              <TableCell><b>Documento</b></TableCell>
               <TableCell><b>Nombre Completo</b></TableCell>
               <TableCell><b>Teléfono</b></TableCell>
               <TableCell align="center"><b>Estado</b></TableCell>
@@ -727,7 +728,7 @@ const Clientes = () => {
           <TableBody>
             {!loading && clientesFiltrados.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={5} align="center">No hay clientes registrados.</TableCell>
+                <TableCell colSpan={6} align="center">No hay clientes registrados.</TableCell>
               </TableRow>
             )}
             {clientesFiltrados.map((cliente, idx) => {
@@ -737,6 +738,13 @@ const Clientes = () => {
               return (
                 <TableRow key={cliente.id || idx}>
                   <TableCell>{(pagina - 1) * CLIENTES_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {cliente.tipodocumento} {cliente.id}
+                      </Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell>{nombreCompleto}</TableCell>
                   <TableCell>{cliente.telefono}</TableCell>
                   <TableCell align="center">
