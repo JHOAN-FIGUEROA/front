@@ -164,35 +164,7 @@ const Editar = ({
                 InputLabelProps={{ shrink: Boolean(form.apellido) }}
               />
             </Box>
-            {/* Fila 2: Contraseña y Confirmar Contraseña */}
-            <Box display="flex" gap={2} mb={2}>
-              <TextField
-                label="Contraseña"
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={onFormChange}
-                fullWidth
-                required
-                error={!!validationErrors.password}
-                helperText={validationErrors.password}
-                InputLabelProps={{ shrink: Boolean(form.password) }}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Confirmar Contraseña"
-                name="confirmarPassword"
-                type="password"
-                value={form.confirmarPassword}
-                onChange={onFormChange}
-                fullWidth
-                required
-                error={!!validationErrors.confirmarPassword}
-                helperText={validationErrors.confirmarPassword}
-                InputLabelProps={{ shrink: Boolean(form.confirmarPassword) }}
-                sx={{ flex: 1 }}
-              />
-            </Box>
+
             {/* Contacto */}
             <Box display="flex" alignItems="center" gap={1} mt={3} mb={2}>
               <EmailIcon color="primary" sx={{ fontSize: 24 }} />

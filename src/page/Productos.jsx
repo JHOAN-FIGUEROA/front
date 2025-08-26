@@ -124,6 +124,66 @@ const Productos = () => {
     setSnackbar({ open: false, message: '', severity: 'info' });
   };
 
+  // Filtrado local mejorado para productos
+  const productosFiltrados = productos.filter(producto => {
+    // Si no hay búsqueda, mostrar todos los productos
+    if (!busqueda || !busqueda.trim()) return true;
+    
+    const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    // Validar que el producto existe
+    if (!producto) return false;
+
+    // Buscar por estado
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+      return producto.estado === true || producto.estado === 1 || producto.estado === 'true';
+    }
+    if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
+      return !(producto.estado === true || producto.estado === 1 || producto.estado === 'true');
+    }
+
+    // Buscar por nombre
+    const nombre = String(producto.nombre || '').toLowerCase();
+    if (nombre.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por código de producto
+    const codigo = String(producto.codigoproducto || '').toLowerCase();
+    if (codigo.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por ID de producto
+    const id = String(producto.idproducto || '').toLowerCase();
+    if (id.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por descripción
+    const descripcion = String(producto.detalleproducto || '').toLowerCase();
+    if (descripcion.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por precio de compra
+    const precioCompra = String(producto.preciocompra || '').toLowerCase();
+    if (precioCompra.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por precio de venta
+    const precioVenta = String(producto.precioventa || '').toLowerCase();
+    if (precioVenta.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por margen de ganancia
+    const margen = String(producto.margenganancia || '').toLowerCase();
+    if (margen.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por stock
+    const stock = String(producto.stock || '').toLowerCase();
+    if (stock.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por categoría
+    const categoria = categorias.find(cat => cat.idcategoria === producto.idcategoria);
+    if (categoria) {
+      const nombreCategoria = String(categoria.nombre || '').toLowerCase();
+      if (nombreCategoria.includes(terminoBusquedaLower)) return true;
+    }
+
+    return false;
+  });
+
   const fetchProductosCallback = useCallback(async (currentPage, currentSearch) => {
     setLoading(true);
     setError('');
@@ -826,8 +886,30 @@ const Productos = () => {
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar producto (Nombre, Descripción, Estado...)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por nombre, código, categoría..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => {
+                setBusqueda('');
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.set('page', '1');
+                setSearchParams(newSearchParams);
+              }}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         
         <Button
@@ -844,6 +926,11 @@ const Productos = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
@@ -861,15 +948,18 @@ const Productos = () => {
           </TableHead>
           
           <TableBody>
-            {!loading && productos.length === 0 && !error && (
+            {!loading && productosFiltrados.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={7} align="center"> 
-                  {busqueda ? 'No se encontraron productos' : 'No hay productos registrados'}
+                  {busqueda ? 
+                    `No se encontraron productos que coincidan con "${busqueda}"` : 
+                    'No hay productos registrados'
+                  }
                 </TableCell>
               </TableRow>
             )}
             
-            {productos.map((producto, idx) => (
+            {productosFiltrados.map((producto, idx) => (
               <TableRow key={producto.idproducto || idx}>
                 <TableCell>{(pagina - 1) * PRODUCTOS_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{producto.nombre}</TableCell>

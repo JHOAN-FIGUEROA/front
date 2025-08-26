@@ -183,21 +183,67 @@ const Compras = () => {
     setBusqueda(e.target.value);
   };
 
+  // Filtrado local mejorado para compras
   const comprasFiltradas = compras
     .filter(compra => {
+      // Filtro por estado
       if (filtroEstado === 'activa') return compra.estado === 1;
       if (filtroEstado === 'anulada') return compra.estado === 0;
       return true;
     })
     .filter(compra => {
-      if (!busqueda) return true;
-      const termino = busqueda.toLowerCase().trim();
-      const proveedorNombre = proveedoresActivos.find(p => p.nitproveedor === compra.nitproveedor)?.nombre?.toLowerCase() || '';
-      return (
-        compra.nrodecompra?.toString().includes(termino) ||
-        proveedorNombre.includes(termino) ||
-        compra.total?.toString().includes(termino)
-      );
+      // Si no hay búsqueda, mostrar todas las compras
+      if (!busqueda || !busqueda.trim()) return true;
+      
+      const terminoBusquedaLower = busqueda.toLowerCase().trim();
+      
+      // Validar que la compra existe
+      if (!compra) return false;
+
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activa' || terminoBusquedaLower === 'activo') {
+        return compra.estado === 1;
+      }
+      if (terminoBusquedaLower === 'anulada' || terminoBusquedaLower === 'anulado') {
+        return compra.estado === 0;
+      }
+
+      // Buscar por número de compra
+      const numeroCompra = String(compra.nrodecompra || '').toLowerCase();
+      if (numeroCompra.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por ID de compra
+      const idCompra = String(compra.idcompras || '').toLowerCase();
+      if (idCompra.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por nombre de proveedor
+      const proveedorNombre = String(compra.proveedor_nombre || '').toLowerCase();
+      if (proveedorNombre.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por NIT de proveedor
+      const nitProveedor = String(compra.nitproveedor || '').toLowerCase();
+      if (nitProveedor.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por fecha de compra (formato dd/mm/yyyy)
+      const fechaCompra = compra.fechadecompra;
+      if (fechaCompra) {
+        const fechaFormateada = new Date(fechaCompra).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).toLowerCase();
+        if (fechaFormateada.includes(terminoBusquedaLower)) return true;
+        
+        // También buscar por fecha en formato ISO
+        const fechaISO = fechaCompra.toLowerCase();
+        if (fechaISO.includes(terminoBusquedaLower)) return true;
+      }
+
+      // Buscar por total
+      const total = String(compra.total || '').toLowerCase();
+      if (total.includes(terminoBusquedaLower)) return true;
+
+      return false;
     });
 
   const handleCloseSnackbar = (event, reason) => {
@@ -691,8 +737,28 @@ const Compras = () => {
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar Compra"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por proveedor, número, fecha..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => {
+                setBusqueda('');
+                // Limpiar búsqueda y recargar datos
+                fetchCompras(1, '', getEstadoParam(filtroEstado));
+              }}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -713,6 +779,11 @@ const Compras = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {comprasFiltradas.length} compra{comprasFiltradas.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -730,7 +801,12 @@ const Compras = () => {
           <TableBody>
             {!loading && comprasFiltradas.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={7} align="center">No hay compras registradas.</TableCell>
+                <TableCell colSpan={7} align="center">
+                  {busqueda ? 
+                    `No se encontraron compras que coincidan con "${busqueda}"` : 
+                    'No hay compras registradas.'
+                  }
+                </TableCell>
               </TableRow>
             )}
             {comprasFiltradas.map((compra, idx) => {

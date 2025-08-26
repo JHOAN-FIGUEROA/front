@@ -112,12 +112,17 @@ const Ventas = () => {
   };
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-CO', {
@@ -151,6 +156,13 @@ const Ventas = () => {
         setTotalPaginasAPI(1);
       } else if (result.success && result.data) {
         const ventasBase = result.data.ventas || [];
+        // Debug: Log de la estructura de datos para verificar campos disponibles
+        if (ventasBase.length > 0) {
+          console.log('Estructura de venta ejemplo:', ventasBase[0]);
+          console.log('Campos disponibles:', Object.keys(ventasBase[0]));
+          console.log('Fecha de venta:', ventasBase[0].fechaventa);
+          console.log('Cliente:', ventasBase[0].cliente);
+        }
         setVentas(ventasBase);
         const totalPaginas = result.data.pages || 1;
         setTotalPaginasAPI(totalPaginas);
@@ -174,9 +186,10 @@ const Ventas = () => {
     fetchVentas(pageFromUrl, searchFromUrl, getEstadoParamVentas(filtroEstado));
   }, [searchParams, fetchVentas, filtroEstado]);
 
-  // Filtrado frontend de ventas
+  // Filtrado local mejorado para ventas
   const ventasFiltradas = ventas
     .filter(venta => {
+      // Filtro por estado
       if (filtroEstado === 'activa') return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
       if (filtroEstado === 'anulada') return venta.estado === 'ANULADA';
       if (filtroEstado === 'completada') return venta.estado === 'COMPLETADA';
@@ -184,14 +197,95 @@ const Ventas = () => {
       return true;
     })
     .filter(venta => {
-      if (!busqueda) return true;
-      const termino = busqueda.toLowerCase().trim();
-      const clienteNombre = venta.cliente?.toLowerCase?.() || '';
-      return (
-        venta.fechaventa?.toString().includes(termino) ||
-        clienteNombre.includes(termino) ||
-        venta.total?.toString().includes(termino)
-      );
+      // Si no hay búsqueda, mostrar todas las ventas
+      if (!busqueda || !busqueda.trim()) return true;
+      
+      const terminoBusqueda = busqueda.trim();
+      const terminoBusquedaLower = terminoBusqueda.toLowerCase();
+      
+      // Validar que la venta existe
+      if (!venta) return false;
+
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+        return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
+      }
+      if (terminoBusquedaLower === 'anulada' || terminoBusquedaLower === 'anulado') {
+        return venta.estado === 'ANULADA';
+      }
+      if (terminoBusquedaLower === 'completada' || terminoBusquedaLower === 'completado') {
+        return venta.estado === 'COMPLETADA';
+      }
+      if (terminoBusquedaLower === 'pendiente' || terminoBusquedaLower === 'pedido') {
+        return venta.estado === 'PENDIENTE';
+      }
+
+      // Buscar por nombre de cliente (múltiples formatos posibles)
+      let nombreCliente = '';
+      if (typeof venta.cliente === 'string') {
+        nombreCliente = venta.cliente;
+      } else if (venta.cliente && typeof venta.cliente === 'object') {
+        nombreCliente = `${venta.cliente.nombre || ''} ${venta.cliente.apellido || ''}`.trim();
+      }
+      if (nombreCliente.toLowerCase().includes(terminoBusquedaLower)) return true;
+
+      // Buscar por documento de cliente (múltiples formatos posibles)
+      let documentoCliente = '';
+      if (venta.documento_cliente) {
+        documentoCliente = String(venta.documento_cliente);
+      } else if (venta.cliente_documento) {
+        documentoCliente = String(venta.cliente_documento);
+      } else if (venta.cliente && typeof venta.cliente === 'object') {
+        documentoCliente = String(venta.cliente.documento || venta.cliente.id || venta.cliente.documentocliente || '');
+      }
+      if (documentoCliente.toLowerCase().includes(terminoBusquedaLower)) return true;
+
+      // Buscar por fecha de venta (múltiples formatos)
+      if (venta.fechaventa) {
+        try {
+          const fechaOriginal = new Date(venta.fechaventa);
+          if (!isNaN(fechaOriginal.getTime())) {
+            // Formato dd/mm/yyyy
+            const fechaFormateada = fechaOriginal.toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            });
+            
+            // Formato yyyy-mm-dd
+            const fechaISO = fechaOriginal.toISOString().split('T')[0];
+            
+            // Formato mm/dd/yyyy
+            const fechaMMDDYYYY = fechaOriginal.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            });
+            
+            // Buscar en diferentes formatos de fecha
+            if (fechaFormateada.includes(terminoBusqueda) || 
+                fechaISO.includes(terminoBusqueda) || 
+                fechaMMDDYYYY.includes(terminoBusqueda) ||
+                fechaFormateada.replace(/\//g, '').includes(terminoBusqueda.replace(/\//g, '')) ||
+                fechaISO.replace(/-/g, '').includes(terminoBusqueda.replace(/-/g, ''))) {
+              return true;
+            }
+          }
+        } catch (error) {
+          console.log('Error procesando fecha:', error);
+        }
+      }
+
+      // Buscar por ID de venta
+      const idVenta = String(venta.idventas || '').toLowerCase();
+      if (idVenta.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por total de venta (sin formato de moneda)
+      const totalVenta = String(venta.total || '').replace(/[^\d]/g, '');
+      const terminoNumerico = terminoBusqueda.replace(/[^\d]/g, '');
+      if (totalVenta.includes(terminoNumerico)) return true;
+
+      return false;
     });
 
   // Handler para ver detalle de venta
@@ -521,8 +615,30 @@ const Ventas = () => {
               newSearchParams.set('page', '1');
               setSearchParams(newSearchParams);
             }}
-            placeholder="Buscar Venta"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por cliente, documento, fecha..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => {
+                setBusqueda('');
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.set('page', '1');
+                setSearchParams(newSearchParams);
+              }}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -543,6 +659,11 @@ const Ventas = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {ventasFiltradas.length} venta{ventasFiltradas.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -559,7 +680,12 @@ const Ventas = () => {
           <TableBody>
             {!loading && ventasFiltradas.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} align="center">No hay ventas registradas.</TableCell>
+                <TableCell colSpan={6} align="center">
+                  {busqueda ? 
+                    `No se encontraron ventas que coincidan con "${busqueda}"` : 
+                    'No hay ventas registradas.'
+                  }
+                </TableCell>
               </TableRow>
             )}
             {ventasFiltradas.map((venta, idx) => {

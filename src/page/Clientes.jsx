@@ -682,24 +682,53 @@ const Clientes = () => {
     });
   };
 
-  // Filtrado local EXACTAMENTE igual que en proveedores
+  // Filtrado local mejorado para clientes
   const clientesFiltrados = clientes.filter(cliente => {
-    if (!busqueda) return true;
+    // Si no hay búsqueda, mostrar todos los clientes
+    if (!busqueda || !busqueda.trim()) return true;
+    
     const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    // Validar que el cliente existe
+    if (!cliente) return false;
 
-    if (terminoBusquedaLower === 'activo') {
+    // Buscar por estado
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
       return cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true';
     }
-    if (terminoBusquedaLower === 'inactivo') {
+    if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
       return !(cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true');
     }
 
+    // Buscar por nombre completo
     const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.toLowerCase();
-    return (
-      nombreCompleto.includes(terminoBusquedaLower) ||
-      (cliente.email || '').toLowerCase().includes(terminoBusquedaLower) ||
-      (cliente.telefono || '').toLowerCase().includes(terminoBusquedaLower)
-    );
+    if (nombreCompleto.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por nombre individual
+    const nombre = String(cliente.nombre || '').toLowerCase();
+    if (nombre.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por apellido individual
+    const apellido = String(cliente.apellido || '').toLowerCase();
+    if (apellido.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por documento
+    const documento = String(cliente.id || cliente.documentocliente || '').toLowerCase();
+    if (documento.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por tipo de documento
+    const tipoDocumento = String(cliente.tipodocumento || '').toLowerCase();
+    if (tipoDocumento.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por email
+    const email = String(cliente.email || '').toLowerCase();
+    if (email.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por teléfono
+    const telefono = String(cliente.telefono || '').toLowerCase();
+    if (telefono.includes(terminoBusquedaLower)) return true;
+
+    return false;
   });
 
   return (
@@ -710,8 +739,30 @@ const Clientes = () => {
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar Cliente"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por nombre, documento, email..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => {
+                setBusqueda('');
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.set('page', '1');
+                setSearchParams(newSearchParams);
+              }}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -726,6 +777,11 @@ const Clientes = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {clientesFiltrados.length} cliente{clientesFiltrados.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -742,7 +798,12 @@ const Clientes = () => {
           <TableBody>
             {!loading && clientesFiltrados.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} align="center">No hay clientes registrados.</TableCell>
+                <TableCell colSpan={6} align="center">
+                  {busqueda ? 
+                    `No se encontraron clientes que coincidan con "${busqueda}"` : 
+                    'No hay clientes registrados.'
+                  }
+                </TableCell>
               </TableRow>
             )}
             {clientesFiltrados.map((cliente, idx) => {

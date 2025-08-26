@@ -151,20 +151,65 @@ const Proveedores = () => {
     setSearchParams(newSearchParams);
   };
 
+  // Filtrado local mejorado para proveedores
   const proveedoresFiltrados = proveedores.filter(proveedor => {
-    if (!busqueda) return true;
+    // Si no hay búsqueda, mostrar todos los proveedores
+    if (!busqueda || !busqueda.trim()) return true;
+    
     const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    // Validar que el proveedor existe
+    if (!proveedor) return false;
 
-    if (terminoBusquedaLower === 'activo') {
+    // Buscar por estado
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
       return proveedor.estado === true || proveedor.estado === 1 || proveedor.estado === 'true';
     }
-    if (terminoBusquedaLower === 'inactivo') {
+    if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
       return !(proveedor.estado === true || proveedor.estado === 1 || proveedor.estado === 'true');
     }
 
-    return (proveedor.nombre?.toLowerCase().includes(terminoBusquedaLower) ||
-            proveedor.email?.toLowerCase().includes(terminoBusquedaLower) ||
-            proveedor.telefono?.toLowerCase().includes(terminoBusquedaLower));
+    // Buscar por nombre
+    const nombre = String(proveedor.nombre || '').toLowerCase();
+    if (nombre.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por documento/NIT
+    const documento = String(proveedor.nitproveedor || '').toLowerCase();
+    if (documento.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por tipo de documento
+    const tipoDocumento = String(proveedor.tipodocumento || '').toLowerCase();
+    if (tipoDocumento.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por contacto
+    const contacto = String(proveedor.contacto || '').toLowerCase();
+    if (contacto.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por email
+    const email = String(proveedor.email || '').toLowerCase();
+    if (email.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por teléfono
+    const telefono = String(proveedor.telefono || '').toLowerCase();
+    if (telefono.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por municipio
+    const municipio = String(proveedor.municipio || '').toLowerCase();
+    if (municipio.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por barrio
+    const barrio = String(proveedor.barrio || '').toLowerCase();
+    if (barrio.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por dirección
+    const direccion = String(proveedor.direccion || '').toLowerCase();
+    if (direccion.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por complemento
+    const complemento = String(proveedor.complemento || '').toLowerCase();
+    if (complemento.includes(terminoBusquedaLower)) return true;
+
+    return false;
   });
 
   // Funciones de validación individuales
@@ -672,8 +717,30 @@ const Proveedores = () => {
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
-            placeholder="Buscar Proveedor"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Forzar la búsqueda al presionar Enter
+                console.log('Búsqueda con Enter:', busqueda);
+              }
+            }}
+            placeholder="Buscar por nombre, documento, email..."
           />
+          {busqueda && (
+            <Button
+              size="small"
+              onClick={() => {
+                setBusqueda('');
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.set('page', '1');
+                setSearchParams(newSearchParams);
+              }}
+              sx={{ mt: 1, fontSize: '0.75rem' }}
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -688,6 +755,11 @@ const Proveedores = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !error && busqueda && (
+          <Alert severity="info" sx={{ width: '100%' }}>
+            Se encontraron {proveedoresFiltrados.length} proveedor{proveedoresFiltrados.length !== 1 ? 'es' : ''} que coinciden con "{busqueda}"
+          </Alert>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
         <Table>
@@ -705,7 +777,12 @@ const Proveedores = () => {
           <TableBody>
             {!loading && proveedoresFiltrados.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={7} align="center">No hay proveedores registrados.</TableCell>
+                <TableCell colSpan={7} align="center">
+                  {busqueda ? 
+                    `No se encontraron proveedores que coincidan con "${busqueda}"` : 
+                    'No hay proveedores registrados.'
+                  }
+                </TableCell>
               </TableRow>
             )}
             {proveedoresFiltrados.map((proveedor, idx) => {
