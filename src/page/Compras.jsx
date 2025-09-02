@@ -136,7 +136,8 @@ const Compras = () => {
     try {
       // Usar getEstadoParam para asegurar el tipo correcto
       const estadoParam = getEstadoParam(estadoFiltro);
-      const result = await getCompras(currentPage, COMPRAS_POR_PAGINA, currentSearch, estadoParam);
+      // Solo obtener todas las compras sin búsqueda en API
+      const result = await getCompras(currentPage, 1000, '', estadoParam);
       if (result.error) {
         setError(result.detalles || 'Error al cargar compras.');
         setCompras([]);
@@ -146,16 +147,7 @@ const Compras = () => {
         }
       } else if (result.success && result.data) {
         setCompras(result.data.compras || []);
-        const totalPaginas = result.data.pages || 1;
-        setTotalPaginasAPI(totalPaginas);
-
-        if (result.data.page && result.data.page !== pagina) {
-          setPagina(result.data.page);
-        } else if (currentPage > totalPaginas && totalPaginas > 0) {
-          setPagina(totalPaginas);
-        } else if (currentPage !== pagina) {
-          setPagina(currentPage);
-        }
+        setTotalPaginasAPI(1); // Solo una página ya que cargamos todo
       } else {
         setCompras([]);
         setTotalPaginasAPI(1);
@@ -171,12 +163,14 @@ const Compras = () => {
   }, [setPagina, pagina]);
 
   useEffect(() => {
-    fetchCompras(pagina, busqueda, getEstadoParam(filtroEstado));
-  }, [fetchCompras, pagina, busqueda, filtroEstado]);
+    // Solo cargar datos una vez, sin búsqueda en API
+    fetchCompras(pagina, '', getEstadoParam(filtroEstado));
+  }, [fetchCompras, filtroEstado]);
 
   const handleChangePagina = (event, value) => {
     setPagina(value);
-    fetchCompras(value, busqueda, getEstadoParam(filtroEstado));
+    // Solo recargar datos sin búsqueda
+    fetchCompras(value, '', getEstadoParam(filtroEstado));
   };
 
   const handleSearchChange = (e) => {
@@ -723,7 +717,8 @@ const Compras = () => {
 
   const handleFiltroEstado = (nuevoEstado) => {
     setFiltroEstado(nuevoEstado);
-    fetchCompras(1, busqueda, getEstadoParam(nuevoEstado));
+    // Solo recargar datos sin búsqueda
+    fetchCompras(1, '', getEstadoParam(nuevoEstado));
   };
 
   // 1. Agrega un estado para controlar si ya se mostró el SweetAlert
@@ -751,8 +746,7 @@ const Compras = () => {
               size="small"
               onClick={() => {
                 setBusqueda('');
-                // Limpiar búsqueda y recargar datos
-                fetchCompras(1, '', getEstadoParam(filtroEstado));
+                // Solo limpiar búsqueda, no recargar datos
               }}
               sx={{ mt: 1, fontSize: '0.75rem' }}
             >

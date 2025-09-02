@@ -143,29 +143,22 @@ const Ventas = () => {
     return '';
   };
 
-  // Fetch ventas
+  // Fetch ventas - sin búsqueda en API
   const fetchVentas = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
       const estadoParam = getEstadoParamVentas(estadoFiltro);
-      const result = await getVentas(currentPage, VENTAS_POR_PAGINA, currentSearch, estadoParam);
+      // Solo obtener todas las ventas sin búsqueda en API
+      const result = await getVentas(currentPage, 1000, '', estadoParam);
       if (result.error) {
         setError(result.detalles || 'Error al cargar ventas.');
         setVentas([]);
         setTotalPaginasAPI(1);
       } else if (result.success && result.data) {
         const ventasBase = result.data.ventas || [];
-        // Debug: Log de la estructura de datos para verificar campos disponibles
-        if (ventasBase.length > 0) {
-          console.log('Estructura de venta ejemplo:', ventasBase[0]);
-          console.log('Campos disponibles:', Object.keys(ventasBase[0]));
-          console.log('Fecha de venta:', ventasBase[0].fechaventa);
-          console.log('Cliente:', ventasBase[0].cliente);
-        }
         setVentas(ventasBase);
-        const totalPaginas = result.data.pages || 1;
-        setTotalPaginasAPI(totalPaginas);
+        setTotalPaginasAPI(1); // Solo una página ya que cargamos todo
       } else {
         setVentas([]);
         setTotalPaginasAPI(1);
@@ -183,10 +176,12 @@ const Ventas = () => {
     const pageFromUrl = Number.parseInt(searchParams.get('page')) || 1;
     const searchFromUrl = searchParams.get('search') || '';
     setBusqueda(searchFromUrl);
-    fetchVentas(pageFromUrl, searchFromUrl, getEstadoParamVentas(filtroEstado));
-  }, [searchParams, fetchVentas, filtroEstado]);
+    // Solo cargar datos una vez, sin búsqueda en API
+    fetchVentas(pageFromUrl, '', getEstadoParamVentas(filtroEstado));
+  }, [fetchVentas, filtroEstado]);
 
   // Filtrado local mejorado para ventas
+  console.log('🔍 Búsqueda actual:', busqueda, 'Tipo:', typeof busqueda, 'Longitud:', busqueda?.length);
   const ventasFiltradas = ventas
     .filter(venta => {
       // Filtro por estado
@@ -220,49 +215,91 @@ const Ventas = () => {
         return venta.estado === 'PENDIENTE';
       }
 
-      // Buscar por nombre de cliente (múltiples formatos posibles)
+      // Buscar por nombre de cliente
       let nombreCliente = '';
       if (typeof venta.cliente === 'string') {
         nombreCliente = venta.cliente;
       } else if (venta.cliente && typeof venta.cliente === 'object') {
         nombreCliente = `${venta.cliente.nombre || ''} ${venta.cliente.apellido || ''}`.trim();
       }
-      if (nombreCliente.toLowerCase().includes(terminoBusquedaLower)) return true;
-
-      // Buscar por documento de cliente (múltiples formatos posibles)
-      let documentoCliente = '';
-      if (venta.documento_cliente) {
-        documentoCliente = String(venta.documento_cliente);
-      } else if (venta.cliente_documento) {
-        documentoCliente = String(venta.cliente_documento);
-      } else if (venta.cliente && typeof venta.cliente === 'object') {
-        documentoCliente = String(venta.cliente.documento || venta.cliente.id || venta.cliente.documentocliente || '');
+      
+      // Buscar en cliente_info si existe
+      if (venta.cliente_info && venta.cliente_info.nombre && venta.cliente_info.apellido) {
+        const nombreClienteInfo = `${venta.cliente_info.nombre} ${venta.cliente_info.apellido}`.trim();
+        if (nombreClienteInfo.toLowerCase().includes(terminoBusquedaLower)) {
+          return true;
+        }
       }
-      if (documentoCliente.toLowerCase().includes(terminoBusquedaLower)) return true;
+      
+      // Verificar si coincide con el nombre del cliente
+      if (nombreCliente && nombreCliente.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
+      }
+      
+      // Búsqueda por palabras individuales
+      if (terminoBusquedaLower.includes(' ') && nombreCliente) {
+        const palabrasBusqueda = terminoBusquedaLower.split(' ').filter(p => p.length > 2);
+        const palabrasCliente = nombreCliente.toLowerCase().split(' ');
+        
+        const todasLasPalabrasCoinciden = palabrasBusqueda.every(palabraBusqueda => 
+          palabrasCliente.some(palabraCliente => palabraCliente.includes(palabraBusqueda))
+        );
+        
+        if (todasLasPalabrasCoinciden) {
+          return true;
+        }
+      }
 
-      // Buscar por fecha de venta (múltiples formatos)
+      // Buscar por documento de cliente
+      const posiblesDocumentos = [
+        venta.documentocliente,
+        venta.documento_cliente,
+        venta.cliente_documento,
+        venta.id_cliente,
+        venta.cliente_id,
+        venta.documento,
+        venta.id,
+        venta.cliente_info?.documentocliente,
+        venta.cliente?.documento,
+        venta.cliente?.id,
+        venta.cliente?.documentocliente,
+        venta.cliente?.documento_cliente
+      ].filter(Boolean).map(String);
+      
+      // Buscar en todos los documentos posibles
+      for (const doc of posiblesDocumentos) {
+        if (doc.toLowerCase().includes(terminoBusquedaLower)) {
+          return true;
+        }
+      }
+      
+      // Búsqueda por números en el nombre del cliente
+      if (/^\d+$/.test(terminoBusqueda) && nombreCliente) {
+        const numerosEnNombre = nombreCliente.match(/\d+/g);
+        if (numerosEnNombre && numerosEnNombre.some(num => num.includes(terminoBusqueda))) {
+          return true;
+        }
+      }
+
+      // Buscar por fecha de venta
       if (venta.fechaventa) {
         try {
           const fechaOriginal = new Date(venta.fechaventa);
           if (!isNaN(fechaOriginal.getTime())) {
-            // Formato dd/mm/yyyy
             const fechaFormateada = fechaOriginal.toLocaleDateString('es-ES', {
               year: 'numeric',
               month: '2-digit',
               day: '2-digit'
             });
             
-            // Formato yyyy-mm-dd
             const fechaISO = fechaOriginal.toISOString().split('T')[0];
             
-            // Formato mm/dd/yyyy
             const fechaMMDDYYYY = fechaOriginal.toLocaleDateString('en-US', {
               year: 'numeric',
               month: '2-digit',
               day: '2-digit'
             });
             
-            // Buscar en diferentes formatos de fecha
             if (fechaFormateada.includes(terminoBusqueda) || 
                 fechaISO.includes(terminoBusqueda) || 
                 fechaMMDDYYYY.includes(terminoBusqueda) ||
@@ -272,15 +309,17 @@ const Ventas = () => {
             }
           }
         } catch (error) {
-          console.log('Error procesando fecha:', error);
+          // Silenciar errores de fecha
         }
       }
 
       // Buscar por ID de venta
       const idVenta = String(venta.idventas || '').toLowerCase();
-      if (idVenta.includes(terminoBusquedaLower)) return true;
+      if (idVenta.includes(terminoBusquedaLower)) {
+        return true;
+      }
 
-      // Buscar por total de venta (sin formato de moneda)
+      // Buscar por total de venta
       const totalVenta = String(venta.total || '').replace(/[^\d]/g, '');
       const terminoNumerico = terminoBusqueda.replace(/[^\d]/g, '');
       if (totalVenta.includes(terminoNumerico)) return true;
@@ -297,6 +336,10 @@ const Ventas = () => {
       const response = await getVentaById(idventas);
       if (response && response.data) {
         setVentaDetalle(response);
+        // Debug: mostrar información del cliente en el detalle
+        if (response.data.cliente) {
+          console.log('🔍 Detalle del cliente en venta', idventas, ':', response.data.cliente);
+        }
       } else {
         throw new Error('Formato de respuesta de API inesperado');
       }
@@ -570,7 +613,8 @@ const Ventas = () => {
 
   const handleFiltroEstado = (nuevoEstado) => {
     setFiltroEstado(nuevoEstado);
-    fetchVentas(1, busqueda, getEstadoParamVentas(nuevoEstado));
+    // Solo recargar datos sin búsqueda
+    fetchVentas(1, '', getEstadoParamVentas(nuevoEstado));
   };
 
   const handleDescargarPDF = async (idventas) => {
@@ -606,6 +650,7 @@ const Ventas = () => {
             onChange={e => {
               const newSearchTerm = e.target.value;
               setBusqueda(newSearchTerm);
+              // Solo actualizar URL, no hacer llamada a API
               const newSearchParams = new URLSearchParams(searchParams);
               if (newSearchTerm) {
                 newSearchParams.set('search', newSearchTerm);
@@ -629,6 +674,7 @@ const Ventas = () => {
               size="small"
               onClick={() => {
                 setBusqueda('');
+                // Solo limpiar búsqueda, no recargar datos
                 const newSearchParams = new URLSearchParams(searchParams);
                 newSearchParams.delete('search');
                 newSearchParams.set('page', '1');
@@ -672,6 +718,7 @@ const Ventas = () => {
               <TableCell><b>#</b></TableCell>
               <TableCell><b>Fecha</b></TableCell>
               <TableCell sx={{ width: 180 }}><b>Cliente</b></TableCell>
+              <TableCell sx={{ width: 120 }}><b>Documento</b></TableCell>
               <TableCell align="right" sx={{ width: 120 }}><b>Total</b></TableCell>
               <TableCell align="center"><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
@@ -680,7 +727,7 @@ const Ventas = () => {
           <TableBody>
             {!loading && ventasFiltradas.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   {busqueda ? 
                     `No se encontraron ventas que coincidan con "${busqueda}"` : 
                     'No hay ventas registradas.'
@@ -704,6 +751,23 @@ const Ventas = () => {
                   <TableCell>{(pagina - 1) * VENTAS_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{formatDate(venta.fechaventa)}</TableCell>
                   <TableCell sx={{ width: 180 }}>{clienteNombre}</TableCell>
+                                     <TableCell sx={{ width: 120 }}>
+                     {(() => {
+                       // Intentar obtener el documento del cliente de diferentes formas
+                       if (venta.documentocliente) return venta.documentocliente;
+                       if (venta.documento_cliente) return venta.documento_cliente;
+                       if (venta.cliente_documento) return venta.cliente_documento;
+                       if (venta.id_cliente) return venta.id_cliente;
+                       if (venta.cliente_id) return venta.cliente_id;
+                       if (venta.documento) return venta.documento;
+                       if (venta.id) return venta.id;
+                       if (venta.cliente_info && venta.cliente_info.documentocliente) return venta.cliente_info.documentocliente;
+                       if (venta.cliente && typeof venta.cliente === 'object') {
+                         return venta.cliente.documento || venta.cliente.id || venta.cliente.documentocliente || venta.cliente.documento_cliente || 'N/A';
+                       }
+                       return 'N/A';
+                     })()}
+                   </TableCell>
                   <TableCell align="right" sx={{ width: 120 }}>{formatCurrency(venta.total)}</TableCell>
                   <TableCell align="center">
                     {labelEstado && (
