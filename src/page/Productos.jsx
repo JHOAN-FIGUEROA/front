@@ -184,6 +184,87 @@ const Productos = () => {
     return false;
   });
 
+  // Función para obtener todos los productos sin paginación para búsqueda local
+  const [todosLosProductos, setTodosLosProductos] = useState([]);
+  const [loadingTodosProductos, setLoadingTodosProductos] = useState(false);
+
+  const cargarTodosLosProductos = async () => {
+    if (busqueda && busqueda.trim()) {
+      setLoadingTodosProductos(true);
+      try {
+        // Obtener todos los productos sin paginación para búsqueda local
+        const result = await getProductos(1, 1000, ''); // 1000 es un número grande para obtener todos
+        if (result.success && result.data) {
+          const todosProductos = result.data.data?.productos || [];
+          setTodosLosProductos(todosProductos);
+        }
+      } catch (err) {
+        console.error('Error al cargar todos los productos:', err);
+      } finally {
+        setLoadingTodosProductos(false);
+      }
+    } else {
+      setTodosLosProductos([]);
+    }
+  };
+
+  // Productos filtrados para mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const productosAMostrar = busqueda && busqueda.trim() ? 
+    todosLosProductos.filter(producto => {
+      if (!producto) return false;
+      
+      const terminoBusquedaLower = busqueda.toLowerCase().trim();
+      
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+        return producto.estado === true || producto.estado === 1 || producto.estado === 'true';
+      }
+      if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
+        return !(producto.estado === true || producto.estado === 1 || producto.estado === 'true');
+      }
+
+      // Buscar por nombre
+      const nombre = String(producto.nombre || '').toLowerCase();
+      if (nombre.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por código de producto
+      const codigo = String(producto.codigoproducto || '').toLowerCase();
+      if (codigo.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por ID de producto
+      const id = String(producto.idproducto || '').toLowerCase();
+      if (id.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por descripción
+      const descripcion = String(producto.detalleproducto || '').toLowerCase();
+      if (descripcion.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por precio de compra
+      const precioCompra = String(producto.preciocompra || '').toLowerCase();
+      if (precioCompra.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por precio de venta
+      const precioVenta = String(producto.precioventa || '').toLowerCase();
+      if (precioVenta.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por margen de ganancia
+      const margen = String(producto.margenganancia || '').toLowerCase();
+      if (margen.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por stock
+      const stock = String(producto.stock || '').toLowerCase();
+      if (stock.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por categoría
+      const categoria = categorias.find(cat => cat.idcategoria === producto.idcategoria);
+      if (categoria) {
+        const nombreCategoria = String(categoria.nombre || '').toLowerCase();
+        if (nombreCategoria.includes(terminoBusquedaLower)) return true;
+      }
+
+      return false;
+    }) : productosFiltrados;
+
   const fetchProductosCallback = useCallback(async (currentPage, currentSearch) => {
     setLoading(true);
     setError('');
@@ -231,6 +312,19 @@ const Productos = () => {
     fetchProductosCallback(pageFromUrl, searchFromUrl);
   }, [searchParams, fetchProductosCallback]);
 
+  // Cargar todos los productos cuando cambie la búsqueda para búsqueda local (con debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda && busqueda.trim()) {
+        cargarTodosLosProductos();
+      } else {
+        setTodosLosProductos([]);
+      }
+    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
+
   const handleChangePagina = (event, value) => {
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('page', value.toString());
@@ -240,6 +334,11 @@ const Productos = () => {
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
     setBusqueda(newSearchTerm);
+
+    // Limpiar productos de búsqueda local cuando cambie la búsqueda
+    if (newSearchTerm !== busqueda) {
+      setTodosLosProductos([]);
+    }
 
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSearchTerm) newSearchParams.set('search', newSearchTerm);
@@ -900,6 +999,7 @@ const Productos = () => {
               size="small"
               onClick={() => {
                 setBusqueda('');
+                setTodosLosProductos([]);
                 const newSearchParams = new URLSearchParams(searchParams);
                 newSearchParams.delete('search');
                 newSearchParams.set('page', '1');
@@ -924,11 +1024,11 @@ const Productos = () => {
       </Box>
       
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={28} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-        {!loading && !error && busqueda && (
+        {(loading || loadingTodosProductos) && <CircularProgress size={28} />}
+        {error && !loading && !loadingTodosProductos && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !loadingTodosProductos && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%' }}>
-            Se encontraron {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+            Se encontraron {productosAMostrar.length} producto{productosAMostrar.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
@@ -948,7 +1048,7 @@ const Productos = () => {
           </TableHead>
           
           <TableBody>
-            {!loading && productosFiltrados.length === 0 && !error && (
+            {!loading && !loadingTodosProductos && productosAMostrar.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={7} align="center"> 
                   {busqueda ? 
@@ -959,7 +1059,7 @@ const Productos = () => {
               </TableRow>
             )}
             
-            {productosFiltrados.map((producto, idx) => (
+            {productosAMostrar.map((producto, idx) => (
               <TableRow key={producto.idproducto || idx}>
                 <TableCell>{(pagina - 1) * PRODUCTOS_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{producto.nombre}</TableCell>
@@ -1029,7 +1129,7 @@ const Productos = () => {
         </Table>
       </TableContainer>
       
-      {!loading && totalPaginasAPI > 1 && (
+      {!loading && !busqueda && totalPaginasAPI > 1 && (
         <Stack direction="row" justifyContent="center" mt={3}>
           <Pagination
             count={totalPaginasAPI}

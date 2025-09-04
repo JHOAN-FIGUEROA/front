@@ -151,6 +151,30 @@ const Proveedores = () => {
     setSearchParams(newSearchParams);
   };
 
+  // Función para obtener todos los proveedores sin paginación para búsqueda local
+  const [todosLosProveedores, setTodosLosProveedores] = useState([]);
+  const [loadingTodosProveedores, setLoadingTodosProveedores] = useState(false);
+
+  const cargarTodosLosProveedores = async () => {
+    if (busqueda && busqueda.trim()) {
+      setLoadingTodosProveedores(true);
+      try {
+        // Obtener todos los proveedores sin paginación para búsqueda local
+        const result = await getProveedores(1, 1000, ''); // 1000 es un número grande para obtener todos
+        if (result.success && result.data) {
+          const todosProveedores = result.data.data?.proveedores || [];
+          setTodosLosProveedores(todosProveedores);
+        }
+      } catch (err) {
+        console.error('Error al cargar todos los proveedores:', err);
+      } finally {
+        setLoadingTodosProveedores(false);
+      }
+    } else {
+      setTodosLosProveedores([]);
+    }
+  };
+
   // Filtrado local mejorado para proveedores
   const proveedoresFiltrados = proveedores.filter(proveedor => {
     // Si no hay búsqueda, mostrar todos los proveedores
@@ -211,6 +235,64 @@ const Proveedores = () => {
 
     return false;
   });
+
+  // Proveedores filtrados para mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const proveedoresAMostrar = busqueda && busqueda.trim() ? 
+    todosLosProveedores.filter(proveedor => {
+      if (!proveedor) return false;
+      
+      const terminoBusquedaLower = busqueda.toLowerCase().trim();
+      
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+        return proveedor.estado === true || proveedor.estado === 1 || proveedor.estado === 'true';
+      }
+      if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
+        return !(proveedor.estado === true || proveedor.estado === 1 || proveedor.estado === 'true');
+      }
+
+      // Buscar por nombre
+      const nombre = String(proveedor.nombre || '').toLowerCase();
+      if (nombre.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por documento/NIT
+      const documento = String(proveedor.nitproveedor || '').toLowerCase();
+      if (documento.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por tipo de documento
+      const tipoDocumento = String(proveedor.tipodocumento || '').toLowerCase();
+      if (tipoDocumento.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por contacto
+      const contacto = String(proveedor.contacto || '').toLowerCase();
+      if (contacto.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por email
+      const email = String(proveedor.email || '').toLowerCase();
+      if (email.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por teléfono
+      const telefono = String(proveedor.telefono || '').toLowerCase();
+      if (telefono.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por municipio
+      const municipio = String(proveedor.municipio || '').toLowerCase();
+      if (municipio.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por barrio
+      const barrio = String(proveedor.barrio || '').toLowerCase();
+      if (barrio.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por dirección
+      const direccion = String(proveedor.direccion || '').toLowerCase();
+      if (direccion.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por complemento
+      const complemento = String(proveedor.complemento || '').toLowerCase();
+      if (complemento.includes(terminoBusquedaLower)) return true;
+
+      return false;
+    }) : proveedoresFiltrados;
 
   // Funciones de validación individuales
   const validateTipoDocumento = (tipoDocumento) => {

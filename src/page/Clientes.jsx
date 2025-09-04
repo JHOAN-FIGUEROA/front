@@ -147,6 +147,19 @@ const Clientes = () => {
     fetchClientes(pageFromUrl, searchFromUrl);
   }, [searchParams, fetchClientes]);
 
+  // Cargar todos los clientes cuando cambie la búsqueda para búsqueda local (con debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda && busqueda.trim()) {
+        cargarTodosLosClientes();
+      } else {
+        setTodosLosClientes([]);
+      }
+    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
+
   const handleChangePagina = (event, value) => {
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('page', value.toString());
@@ -156,6 +169,11 @@ const Clientes = () => {
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
     setBusqueda(newSearchTerm);
+
+    // Limpiar clientes de búsqueda local cuando cambie la búsqueda
+    if (newSearchTerm !== busqueda) {
+      setTodosLosClientes([]);
+    }
 
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSearchTerm) {
@@ -682,6 +700,30 @@ const Clientes = () => {
     });
   };
 
+  // Función para obtener todos los clientes sin paginación para búsqueda local
+  const [todosLosClientes, setTodosLosClientes] = useState([]);
+  const [loadingTodosClientes, setLoadingTodosClientes] = useState(false);
+
+  const cargarTodosLosClientes = async () => {
+    if (busqueda && busqueda.trim()) {
+      setLoadingTodosClientes(true);
+      try {
+        // Obtener todos los clientes sin paginación para búsqueda local
+        const result = await getClientes(1, 1000, ''); // 1000 es un número grande para obtener todos
+        if (result.success && result.data) {
+          const todosClientes = result.data.data?.clientes || [];
+          setTodosLosClientes(todosClientes);
+        }
+      } catch (err) {
+        console.error('Error al cargar todos los clientes:', err);
+      } finally {
+        setLoadingTodosClientes(false);
+      }
+    } else {
+      setTodosLosClientes([]);
+    }
+  };
+
   // Filtrado local mejorado para clientes
   const clientesFiltrados = clientes.filter(cliente => {
     // Si no hay búsqueda, mostrar todos los clientes
@@ -731,6 +773,52 @@ const Clientes = () => {
     return false;
   });
 
+  // Clientes filtrados para mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const clientesAMostrar = busqueda && busqueda.trim() ? 
+    todosLosClientes.filter(cliente => {
+      if (!cliente) return false;
+      
+      const terminoBusquedaLower = busqueda.toLowerCase().trim();
+      
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+        return cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true';
+      }
+      if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
+        return !(cliente.estado === true || cliente.estado === 1 || cliente.estado === 'true');
+      }
+
+      // Buscar por nombre completo
+      const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.toLowerCase();
+      if (nombreCompleto.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por nombre individual
+      const nombre = String(cliente.nombre || '').toLowerCase();
+      if (nombre.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por apellido individual
+      const apellido = String(cliente.apellido || '').toLowerCase();
+      if (apellido.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por documento
+      const documento = String(cliente.id || cliente.documentocliente || '').toLowerCase();
+      if (documento.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por tipo de documento
+      const tipoDocumento = String(cliente.tipodocumento || '').toLowerCase();
+      if (tipoDocumento.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por email
+      const email = String(cliente.email || '').toLowerCase();
+      if (email.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por teléfono
+      const telefono = String(cliente.telefono || '').toLowerCase();
+      if (telefono.includes(terminoBusquedaLower)) return true;
+
+      return false;
+    }) : clientesFiltrados;
+
   return (
   <Box p={3}>
       <Typography variant="h5" gutterBottom>Clientes Registrados</Typography>
@@ -753,6 +841,7 @@ const Clientes = () => {
               size="small"
               onClick={() => {
                 setBusqueda('');
+                setTodosLosClientes([]);
                 const newSearchParams = new URLSearchParams(searchParams);
                 newSearchParams.delete('search');
                 newSearchParams.set('page', '1');
@@ -775,11 +864,11 @@ const Clientes = () => {
         </Button>
       </Box>
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={28} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-        {!loading && !error && busqueda && (
+        {(loading || loadingTodosClientes) && <CircularProgress size={28} />}
+        {error && !loading && !loadingTodosClientes && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !loadingTodosClientes && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%' }}>
-            Se encontraron {clientesFiltrados.length} cliente{clientesFiltrados.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+            Se encontraron {clientesAMostrar.length} cliente{clientesAMostrar.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
@@ -796,7 +885,7 @@ const Clientes = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && clientesFiltrados.length === 0 && !error && (
+            {!loading && !loadingTodosClientes && clientesAMostrar.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   {busqueda ? 
@@ -806,7 +895,7 @@ const Clientes = () => {
                 </TableCell>
               </TableRow>
             )}
-            {clientesFiltrados.map((cliente, idx) => {
+            {clientesAMostrar.map((cliente, idx) => {
               const clienteActivo = cliente.estado === true || cliente.estado === 1 || cliente.estado === "true";
               const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
               
@@ -868,7 +957,7 @@ const Clientes = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      {!loading && totalPaginasAPI > 1 && (
+      {!loading && !busqueda && totalPaginasAPI > 1 && (
         <Box display="flex" justifyContent="center" mt={2}>
           <Pagination
             count={totalPaginasAPI}
