@@ -22,6 +22,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import Autocomplete from '@mui/material/Autocomplete';
+import { useSearchParams } from 'react-router-dom';
 
 const COMPRAS_POR_PAGINA = 5;
 
@@ -29,9 +30,11 @@ const Compras = () => {
   const [compras, setCompras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [pagina, setPagina] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [pagina, setPagina] = useState(parseInt(searchParams.get('page')) || 1);
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState(searchParams.get('search') || '');
+  const [searchParameter, setSearchParameter] = useState('nrodecompra');
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [compraDetalle, setCompraDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
@@ -123,6 +126,15 @@ const Compras = () => {
 
   const [filtroEstado, setFiltroEstado] = useState('');
 
+  // Estados para búsqueda por parámetros
+  const [parametrosBusqueda, setParametrosBusqueda] = useState({
+    nrodecompra: '',
+    fechadecompra: '',
+    nombreproveedor: '',
+    nitproveedor: '',
+    estado: ''
+  });
+
   // Función para traducir el filtro de estado a número
   const getEstadoParam = (estado) => {
     if (estado === 'activa') return 1;
@@ -130,24 +142,59 @@ const Compras = () => {
     return '';
   };
 
-  const fetchCompras = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
+  const fetchCompras = useCallback(async (currentPage, parametros = parametrosBusqueda, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
-      // Usar getEstadoParam para asegurar el tipo correcto
+      // Construir parámetros de búsqueda
+      const params = {
+        page: currentPage,
+        limit: COMPRAS_POR_PAGINA,
+        ...parametros
+      };
+
+      // Agregar filtro de estado si está seleccionado
       const estadoParam = getEstadoParam(estadoFiltro);
-      // Solo obtener todas las compras sin búsqueda en API
-      const result = await getCompras(currentPage, 1000, '', estadoParam);
+      if (estadoParam !== '') {
+        params.estado = estadoParam;
+      }
+
+      // Limpiar parámetros vacíos
+      Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+          delete params[key];
+        }
+      });
+
+      const result = await getCompras(params.page, params.limit, '', params.estado, {
+        nrodecompra: params.nrodecompra,
+        fechadecompra: params.fechadecompra,
+        nombreproveedor: params.nombreproveedor,
+        nitproveedor: params.nitproveedor
+      });
+      
       if (result.error) {
         setError(result.detalles || 'Error al cargar compras.');
         setCompras([]);
         setTotalPaginasAPI(1);
         if (currentPage > 1) {
-          setPagina(1);
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', '1');
+          setSearchParams(newSearchParams, { replace: true });
         }
       } else if (result.success && result.data) {
         setCompras(result.data.compras || []);
-        setTotalPaginasAPI(1); // Solo una página ya que cargamos todo
+        const totalPaginas = result.data.pages || 1;   // 👈 usamos "pages" del backend
+        setTotalPaginasAPI(totalPaginas);
+        if (currentPage > totalPaginas && totalPaginas > 0) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', totalPaginas.toString());
+          setSearchParams(newSearchParams, { replace: true });
+        } else if (currentPage !== (parseInt(searchParams.get('page')) || 1)) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('page', currentPage.toString());
+          setSearchParams(newSearchParams, { replace: true });
+        }
       } else {
         setCompras([]);
         setTotalPaginasAPI(1);
@@ -156,89 +203,70 @@ const Compras = () => {
       setError('Error inesperado al cargar compras: ' + (err.message || ''));
       setCompras([]);
       setTotalPaginasAPI(1);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
-  }, [setPagina, pagina]);
+  }, [searchParams, setSearchParams, filtroEstado, parametrosBusqueda]);
 
   useEffect(() => {
-    // Solo cargar datos una vez, sin búsqueda en API
-    fetchCompras(pagina, '', getEstadoParam(filtroEstado));
-  }, [fetchCompras, filtroEstado]);
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    const searchFromUrl = searchParams.get('search') || '';
+
+    if (pageFromUrl !== pagina) setPagina(pageFromUrl);
+    if (searchFromUrl !== busqueda) setBusqueda(searchFromUrl);
+    
+    fetchCompras(pageFromUrl, parametrosBusqueda, getEstadoParam(filtroEstado));
+  }, [searchParams, fetchCompras, filtroEstado]);
+
+  // Búsqueda con debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda && busqueda.trim()) {
+        // Construir parámetros de búsqueda según searchParameter
+        const termino = busqueda.trim();
+        const newParametros = {
+          nrodecompra: '',
+          fechadecompra: '',
+          nombreproveedor: '',
+          nitproveedor: '',
+          estado: ''
+        };
+        newParametros[searchParameter] = termino;
+        setParametrosBusqueda(newParametros);
+      } else {
+        // Limpiar búsqueda
+        setParametrosBusqueda({
+          nrodecompra: '',
+          fechadecompra: '',
+          nombreproveedor: '',
+          nitproveedor: '',
+          estado: ''
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda, searchParameter]);
 
   const handleChangePagina = (event, value) => {
-    setPagina(value);
-    // Solo recargar datos sin búsqueda
-    fetchCompras(value, '', getEstadoParam(filtroEstado));
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', value.toString());
+    setSearchParams(newSearchParams);
   };
 
   const handleSearchChange = (e) => {
-    setBusqueda(e.target.value);
+    const newSearchTerm = e.target.value;
+    setBusqueda(newSearchTerm);
+
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newSearchTerm) newSearchParams.set('search', newSearchTerm);
+    else newSearchParams.delete('search');
+    
+    newSearchParams.set('page', '1');
+    setSearchParams(newSearchParams);
   };
 
-  // Filtrado local mejorado para compras
-  const comprasFiltradas = compras
-    .filter(compra => {
-      // Filtro por estado
-      if (filtroEstado === 'activa') return compra.estado === 1;
-      if (filtroEstado === 'anulada') return compra.estado === 0;
-      return true;
-    })
-    .filter(compra => {
-      // Si no hay búsqueda, mostrar todas las compras
-      if (!busqueda || !busqueda.trim()) return true;
-      
-      const terminoBusquedaLower = busqueda.toLowerCase().trim();
-      
-      // Validar que la compra existe
-      if (!compra) return false;
-
-      // Buscar por estado
-      if (terminoBusquedaLower === 'activa' || terminoBusquedaLower === 'activo') {
-        return compra.estado === 1;
-      }
-      if (terminoBusquedaLower === 'anulada' || terminoBusquedaLower === 'anulado') {
-        return compra.estado === 0;
-      }
-
-      // Buscar por número de compra
-      const numeroCompra = String(compra.nrodecompra || '').toLowerCase();
-      if (numeroCompra.includes(terminoBusquedaLower)) return true;
-
-      // Buscar por ID de compra
-      const idCompra = String(compra.idcompras || '').toLowerCase();
-      if (idCompra.includes(terminoBusquedaLower)) return true;
-
-      // Buscar por nombre de proveedor
-      const proveedorNombre = String(compra.proveedor_nombre || '').toLowerCase();
-      if (proveedorNombre.includes(terminoBusquedaLower)) return true;
-
-      // Buscar por NIT de proveedor
-      const nitProveedor = String(compra.nitproveedor || '').toLowerCase();
-      if (nitProveedor.includes(terminoBusquedaLower)) return true;
-
-      // Buscar por fecha de compra (formato dd/mm/yyyy)
-      const fechaCompra = compra.fechadecompra;
-      if (fechaCompra) {
-        const fechaFormateada = new Date(fechaCompra).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).toLowerCase();
-        if (fechaFormateada.includes(terminoBusquedaLower)) return true;
-        
-        // También buscar por fecha en formato ISO
-        const fechaISO = fechaCompra.toLowerCase();
-        if (fechaISO.includes(terminoBusquedaLower)) return true;
-      }
-
-      // Buscar por total
-      const total = String(compra.total || '').toLowerCase();
-      if (total.includes(terminoBusquedaLower)) return true;
-
-      return false;
-    });
+  // Las compras ya vienen filtradas del API, no necesitamos filtrado local
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') {
@@ -316,7 +344,8 @@ const Compras = () => {
           popup.style.zIndex = 9999;
         }
       });
-      fetchCompras(pagina, busqueda, getEstadoParam(filtroEstado));
+              const currentPage = parseInt(searchParams.get('page')) || 1;
+              fetchCompras(currentPage, parametrosBusqueda, getEstadoParam(filtroEstado));
     }
   };
 
@@ -619,7 +648,8 @@ const Compras = () => {
             popup.style.zIndex = 9999;
           }
         });
-        fetchCompras(1, '', getEstadoParam(filtroEstado));
+        const currentPage = parseInt(searchParams.get('page')) || 1;
+        fetchCompras(currentPage, parametrosBusqueda, getEstadoParam(filtroEstado));
       }
     } catch (err) {
       // Capturar errores de duplicidad y otros errores del backend
@@ -717,8 +747,9 @@ const Compras = () => {
 
   const handleFiltroEstado = (nuevoEstado) => {
     setFiltroEstado(nuevoEstado);
-    // Solo recargar datos sin búsqueda
-    fetchCompras(1, '', getEstadoParam(nuevoEstado));
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', '1');
+    setSearchParams(newSearchParams);
   };
 
   // 1. Agrega un estado para controlar si ya se mostró el SweetAlert
@@ -728,7 +759,7 @@ const Compras = () => {
     <Box p={3}>
       <Typography variant="h5" gutterBottom>Compras Registradas</Typography>
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
-        <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 350 } }}>
+        <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 350 }, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Buscador
             value={busqueda}
             onChange={handleSearchChange}
@@ -739,14 +770,40 @@ const Compras = () => {
                 console.log('Búsqueda con Enter:', busqueda);
               }
             }}
-            placeholder="Buscar por proveedor, número, fecha..."
+            placeholder="Buscar..."
+            sx={{ flexGrow: 1 }}
           />
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel id="search-parameter-label">Parámetro</InputLabel>
+            <Select
+              labelId="search-parameter-label"
+              id="search-parameter-select"
+              value={searchParameter}
+              label="Parámetro"
+              onChange={(e) => setSearchParameter(e.target.value)}
+            >
+              <MenuItem value="nrodecompra">Número de Compra</MenuItem>
+              <MenuItem value="fechadecompra">Fecha de Compra</MenuItem>
+              <MenuItem value="nombreproveedor">Nombre Proveedor</MenuItem>
+              <MenuItem value="nitproveedor">NIT Proveedor</MenuItem>
+            </Select>
+          </FormControl>
           {busqueda && (
             <Button
               size="small"
               onClick={() => {
                 setBusqueda('');
-                // Solo limpiar búsqueda, no recargar datos
+                setParametrosBusqueda({
+                  nrodecompra: '',
+                  fechadecompra: '',
+                  nombreproveedor: '',
+                  nitproveedor: '',
+                  estado: ''
+                });
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.set('page', '1');
+                setSearchParams(newSearchParams);
               }}
               sx={{ mt: 1, fontSize: '0.75rem' }}
             >
@@ -775,7 +832,7 @@ const Compras = () => {
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
         {!loading && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%' }}>
-            Se encontraron {comprasFiltradas.length} compra{comprasFiltradas.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+            Búsqueda: "{busqueda}" - {compras.length} resultado{compras.length !== 1 ? 's' : ''} encontrado{compras.length !== 1 ? 's' : ''}
           </Alert>
         )}
       </Box>
@@ -793,7 +850,7 @@ const Compras = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && comprasFiltradas.length === 0 && !error && (
+            {!loading && compras.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   {busqueda ? 
@@ -803,7 +860,7 @@ const Compras = () => {
                 </TableCell>
               </TableRow>
             )}
-            {comprasFiltradas.map((compra, idx) => {
+            {compras.map((compra, idx) => {
               const compraActiva = compra.estado === 1;
               return (
                 <TableRow key={idx}>

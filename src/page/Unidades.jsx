@@ -164,6 +164,19 @@ const Unidades = () => {
     fetchUnidades(pagina);
   }, [pagina, fetchUnidades]);
 
+  // Cargar todas las unidades cuando cambie la búsqueda para búsqueda local (con debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda && busqueda.trim()) {
+        cargarTodasLasUnidades();
+      } else {
+        setTodasLasUnidades([]);
+      }
+    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
+
   useEffect(() => {
     if (crearOpen) {
       getProductos(1, 100).then(res => {
@@ -185,6 +198,11 @@ const Unidades = () => {
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
     setBusqueda(newSearchTerm);
+
+    // Limpiar unidades de búsqueda local cuando cambie la búsqueda
+    if (newSearchTerm !== busqueda) {
+      setTodasLasUnidades([]);
+    }
     
     // Resetear a la primera página cuando se busca
     if (pagina !== 1) {
@@ -200,6 +218,30 @@ const Unidades = () => {
       return;
     }
     setSnackbar({ open: false, message: '', severity: 'info' });
+  };
+
+  // Función para obtener todas las unidades sin paginación para búsqueda local
+  const [todasLasUnidades, setTodasLasUnidades] = useState([]);
+  const [loadingTodasUnidades, setLoadingTodasUnidades] = useState(false);
+
+  const cargarTodasLasUnidades = async () => {
+    if (busqueda && busqueda.trim()) {
+      setLoadingTodasUnidades(true);
+      try {
+        // Obtener todas las unidades sin paginación para búsqueda local
+        const result = await getUnidades(1, 1000); // 1000 es un número grande para obtener todas
+        if (result.success && result.data) {
+          const todasUnidades = result.data.unidades || [];
+          setTodasLasUnidades(todasUnidades);
+        }
+      } catch (err) {
+        console.error('Error al cargar todas las unidades:', err);
+      } finally {
+        setLoadingTodasUnidades(false);
+      }
+    } else {
+      setTodasLasUnidades([]);
+    }
   };
 
   // Filtrado local mejorado
@@ -242,6 +284,44 @@ const Unidades = () => {
 
     return false;
   });
+
+  // Unidades filtradas para mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const unidadesAMostrar = busqueda && busqueda.trim() ? 
+    todasLasUnidades.filter(unidad => {
+      if (!unidad) return false;
+      
+      const terminoBusquedaLower = busqueda.toLowerCase().trim();
+      
+      // Buscar por estado
+      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+        return unidad.estado === true || unidad.estado === 1 || unidad.estado === 'true';
+      }
+      if (terminoBusquedaLower === 'inactivo' || terminoBusquedaLower === 'inactiva') {
+        return !(unidad.estado === true || unidad.estado === 1 || unidad.estado === 'true');
+      }
+
+      // Buscar por nombre de unidad
+      const nombreUnidad = String(unidad.nombre || '').toLowerCase();
+      if (nombreUnidad.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por nombre de producto
+      const nombreProducto = String(unidad.producto_nombre || unidad.producto?.nombre || '').toLowerCase();
+      if (nombreProducto.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por factor de conversión
+      const factorConversion = String(unidad.factor_conversion || '').toLowerCase();
+      if (factorConversion.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por código de barras
+      const codigoBarras = String(unidad.codigobarras || '').toLowerCase();
+      if (codigoBarras.includes(terminoBusquedaLower)) return true;
+
+      // Buscar por ID de producto
+      const idProducto = String(unidad.producto_idproducto || '').toLowerCase();
+      if (idProducto.includes(terminoBusquedaLower)) return true;
+
+      return false;
+    }) : unidadesFiltradas;
 
   // Validaciones
   const validateNombre = (nombre) => {
@@ -509,7 +589,10 @@ const Unidades = () => {
           {busqueda && (
             <Button
               size="small"
-              onClick={() => setBusqueda('')}
+              onClick={() => {
+                setBusqueda('');
+                setTodasLasUnidades([]);
+              }}
               sx={{ mt: 1, fontSize: '0.75rem' }}
             >
               Limpiar búsqueda
@@ -536,9 +619,11 @@ const Unidades = () => {
       <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
         {loading && <CircularProgress size={28} />}
         {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-        {!loading && !error && busqueda && (
+        {(loading || loadingTodasUnidades) && <CircularProgress size={28} />}
+        {error && !loading && !loadingTodasUnidades && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !loadingTodasUnidades && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%' }}>
-            Se encontraron {unidadesFiltradas.length} unidad{unidadesFiltradas.length !== 1 ? 'es' : ''} que coinciden con "{busqueda}"
+            Se encontraron {unidadesAMostrar.length} unidad{unidadesAMostrar.length !== 1 ? 'es' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
@@ -554,7 +639,7 @@ const Unidades = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && unidadesFiltradas.length === 0 && !error && (
+            {!loading && !loadingTodasUnidades && unidadesAMostrar.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   {busqueda ? 
@@ -564,7 +649,7 @@ const Unidades = () => {
                 </TableCell>
               </TableRow>
             )}
-            {unidadesFiltradas.map((unidad, idx) => (
+            {unidadesAMostrar.map((unidad, idx) => (
               <TableRow key={unidad.id || idx}>
                 <TableCell>{(pagina - 1) * UNIDADES_POR_PAGINA + idx + 1}</TableCell>
                 <TableCell>{unidad.nombre}</TableCell>
@@ -585,7 +670,7 @@ const Unidades = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      {!loading && totalPaginasAPI > 1 && (
+      {!loading && !busqueda && totalPaginasAPI > 1 && (
         <Box display="flex" justifyContent="center" mt={2}>
           <Pagination
             count={totalPaginasAPI}

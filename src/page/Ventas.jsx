@@ -143,25 +143,46 @@ const Ventas = () => {
     return '';
   };
 
-  // Fetch ventas - sin búsqueda en API
+  // Fetch ventas - con paginación del API cuando no hay búsqueda
   const fetchVentas = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
       const estadoParam = getEstadoParamVentas(estadoFiltro);
-      // Solo obtener todas las ventas sin búsqueda en API
-      const result = await getVentas(currentPage, 1000, '', estadoParam);
-      if (result.error) {
-        setError(result.detalles || 'Error al cargar ventas.');
-        setVentas([]);
-        setTotalPaginasAPI(1);
-      } else if (result.success && result.data) {
-        const ventasBase = result.data.ventas || [];
-        setVentas(ventasBase);
-        setTotalPaginasAPI(1); // Solo una página ya que cargamos todo
+      
+      if (currentSearch && currentSearch.trim()) {
+        // Si hay búsqueda, traer todas las ventas para filtrado local
+        const result = await getVentas(currentPage, 1000, currentSearch, estadoParam);
+        if (result.error) {
+          setError(result.detalles || 'Error al cargar ventas.');
+          setVentas([]);
+          setTotalPaginasAPI(1);
+        } else if (result.success && result.data) {
+          const ventasBase = result.data.ventas || [];
+          setVentas(ventasBase);
+          setTotalPaginasAPI(1); // Solo una página ya que cargamos todo para búsqueda
+        } else {
+          setVentas([]);
+          setTotalPaginasAPI(1);
+        }
       } else {
-        setVentas([]);
-        setTotalPaginasAPI(1);
+        // Si no hay búsqueda, usar paginación del API
+        const result = await getVentas(currentPage, VENTAS_POR_PAGINA, '', estadoParam);
+        if (result.error) {
+          setError(result.detalles || 'Error al cargar ventas.');
+          setVentas([]);
+          setTotalPaginasAPI(1);
+        } else if (result.success && result.data) {
+          const ventasBase = result.data.ventas || [];
+          setVentas(ventasBase);
+          // Usar el total de páginas del API
+          const totalVentas = result.data.total || ventasBase.length;
+          const totalPaginas = Math.ceil(totalVentas / VENTAS_POR_PAGINA);
+          setTotalPaginasAPI(totalPaginas);
+        } else {
+          setVentas([]);
+          setTotalPaginasAPI(1);
+        }
       }
     } catch (err) {
       setError('Error inesperado al cargar ventas: ' + (err.message || ''));
@@ -176,9 +197,26 @@ const Ventas = () => {
     const pageFromUrl = Number.parseInt(searchParams.get('page')) || 1;
     const searchFromUrl = searchParams.get('search') || '';
     setBusqueda(searchFromUrl);
-    // Solo cargar datos una vez, sin búsqueda en API
-    fetchVentas(pageFromUrl, '', getEstadoParamVentas(filtroEstado));
+    // Cargar datos con búsqueda si existe
+    fetchVentas(pageFromUrl, searchFromUrl, getEstadoParamVentas(filtroEstado));
   }, [fetchVentas, filtroEstado]);
+
+  // Efecto para manejar cambios en la búsqueda
+  useEffect(() => {
+    if (busqueda !== searchParams.get('search')) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      if (busqueda) {
+        newSearchParams.set('search', busqueda);
+      } else {
+        newSearchParams.delete('search');
+      }
+      newSearchParams.set('page', '1');
+      setSearchParams(newSearchParams);
+      
+      // Recargar datos con la nueva búsqueda
+      fetchVentas(1, busqueda, getEstadoParamVentas(filtroEstado));
+    }
+  }, [busqueda, searchParams, setSearchParams, fetchVentas, filtroEstado]);
 
   // Filtrado local mejorado para ventas
   console.log('🔍 Búsqueda actual:', busqueda, 'Tipo:', typeof busqueda, 'Longitud:', busqueda?.length);
@@ -326,6 +364,16 @@ const Ventas = () => {
 
       return false;
     });
+
+  // Calcular paginación local para los resultados filtrados
+  const totalPaginasLocal = Math.ceil(ventasFiltradas.length / VENTAS_POR_PAGINA);
+  const ventasPaginadas = ventasFiltradas.slice(
+    (pagina - 1) * VENTAS_POR_PAGINA,
+    pagina * VENTAS_POR_PAGINA
+  );
+
+  // Actualizar total de páginas según si hay búsqueda o no
+  const totalPaginasFinal = busqueda ? totalPaginasLocal : totalPaginasAPI;
 
   // Handler para ver detalle de venta
   const handleVerDetalleVenta = async (idventas) => {
@@ -641,10 +689,10 @@ const Ventas = () => {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" gutterBottom>Ventas Registradas</Typography>
-      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
-        <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 350 } }}>
+    <Box p={2}>
+      <Typography variant="h5" gutterBottom sx={{ mb: 1 }}>Ventas Registradas</Typography>
+      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={1} gap={1}>
+        <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 300 } }}>
           <Buscador
             value={busqueda}
             onChange={e => {
@@ -680,7 +728,7 @@ const Ventas = () => {
                 newSearchParams.set('page', '1');
                 setSearchParams(newSearchParams);
               }}
-              sx={{ mt: 1, fontSize: '0.75rem' }}
+              sx={{ mt: 0.5, fontSize: '0.75rem' }}
             >
               Limpiar búsqueda
             </Button>
@@ -690,44 +738,44 @@ const Ventas = () => {
           variant="contained"
           color="success"
           onClick={handleCrearOpen}
-          sx={{ minWidth: 140, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
+          sx={{ minWidth: 120, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}
           startIcon={<AddIcon />}
         >
           Nueva Venta
         </Button>
       </Box>
-      <Box display="flex" justifyContent="center" gap={2} my={2}>
-        <Button variant={filtroEstado === 'pendiente' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('pendiente')}>Pedidos</Button>
-        <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('completada')}>Completadas</Button>
-        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
-        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
+      <Box display="flex" justifyContent="center" gap={1} my={1}>
+        <Button variant={filtroEstado === 'pendiente' ? 'contained' : 'outlined'} size="small" onClick={() => handleFiltroEstado('pendiente')}>Pedidos</Button>
+        <Button variant={filtroEstado === 'completada' ? 'contained' : 'outlined'} size="small" onClick={() => handleFiltroEstado('completada')}>Completadas</Button>
+        <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} size="small" onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
+        <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} size="small" onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
-      <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={28} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+      <Box mb={1} height={32} display="flex" alignItems="center" justifyContent="center">
+        {loading && <CircularProgress size={24} />}
+        {error && !loading && <Alert severity="error" sx={{ width: '100%', py: 0.5 }}>{error}</Alert>}
         {!loading && !error && busqueda && (
-          <Alert severity="info" sx={{ width: '100%' }}>
+          <Alert severity="info" sx={{ width: '100%', py: 0.5 }}>
             Se encontraron {ventasFiltradas.length} venta{ventasFiltradas.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
-      <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
-        <Table>
+      <TableContainer component={Paper} sx={{ boxShadow: 1, mb: 1 }}>
+        <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell><b>#</b></TableCell>
-              <TableCell><b>Fecha</b></TableCell>
-              <TableCell sx={{ width: 180 }}><b>Cliente</b></TableCell>
-              <TableCell sx={{ width: 120 }}><b>Documento</b></TableCell>
-              <TableCell align="right" sx={{ width: 120 }}><b>Total</b></TableCell>
-              <TableCell align="center"><b>Estado</b></TableCell>
-              <TableCell align="center"><b>Acciones</b></TableCell>
+              <TableCell sx={{ py: 1 }}><b>#</b></TableCell>
+              <TableCell sx={{ py: 1 }}><b>Fecha</b></TableCell>
+              <TableCell sx={{ width: 160, py: 1 }}><b>Cliente</b></TableCell>
+              <TableCell sx={{ width: 100, py: 1 }}><b>Documento</b></TableCell>
+              <TableCell align="right" sx={{ width: 100, py: 1 }}><b>Total</b></TableCell>
+              <TableCell align="center" sx={{ py: 1 }}><b>Estado</b></TableCell>
+              <TableCell align="center" sx={{ py: 1 }}><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && ventasFiltradas.length === 0 && !error && (
+            {!loading && ventasPaginadas.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={7} align="center" sx={{ py: 2 }}>
                   {busqueda ? 
                     `No se encontraron ventas que coincidan con "${busqueda}"` : 
                     'No hay ventas registradas.'
@@ -735,7 +783,7 @@ const Ventas = () => {
                 </TableCell>
               </TableRow>
             )}
-            {ventasFiltradas.map((venta, idx) => {
+            {ventasPaginadas.map((venta, idx) => {
               const clienteNombre = venta.cliente || '';
               const estado = venta.estado || 'ACTIVA';
               let colorEstado = 'default';
@@ -747,29 +795,29 @@ const Ventas = () => {
               else if (estado === 'CONFIRMADA') { colorEstado = 'info'; iconEstado = <CheckCircleIcon />; }
               else { colorEstado = 'default'; iconEstado = null; }
               return (
-                <TableRow key={venta.idventas}>
-                  <TableCell>{(pagina - 1) * VENTAS_POR_PAGINA + idx + 1}</TableCell>
-                  <TableCell>{formatDate(venta.fechaventa)}</TableCell>
-                  <TableCell sx={{ width: 180 }}>{clienteNombre}</TableCell>
-                                     <TableCell sx={{ width: 120 }}>
-                     {(() => {
-                       // Intentar obtener el documento del cliente de diferentes formas
-                       if (venta.documentocliente) return venta.documentocliente;
-                       if (venta.documento_cliente) return venta.documento_cliente;
-                       if (venta.cliente_documento) return venta.cliente_documento;
-                       if (venta.id_cliente) return venta.id_cliente;
-                       if (venta.cliente_id) return venta.cliente_id;
-                       if (venta.documento) return venta.documento;
-                       if (venta.id) return venta.id;
-                       if (venta.cliente_info && venta.cliente_info.documentocliente) return venta.cliente_info.documentocliente;
-                       if (venta.cliente && typeof venta.cliente === 'object') {
-                         return venta.cliente.documento || venta.cliente.id || venta.cliente.documentocliente || venta.cliente.documento_cliente || 'N/A';
-                       }
-                       return 'N/A';
-                     })()}
-                   </TableCell>
-                  <TableCell align="right" sx={{ width: 120 }}>{formatCurrency(venta.total)}</TableCell>
-                  <TableCell align="center">
+                <TableRow key={venta.idventas} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
+                  <TableCell sx={{ py: 1 }}>{(pagina - 1) * VENTAS_POR_PAGINA + idx + 1}</TableCell>
+                  <TableCell sx={{ py: 1 }}>{formatDate(venta.fechaventa)}</TableCell>
+                  <TableCell sx={{ width: 160, py: 1 }}>{clienteNombre}</TableCell>
+                  <TableCell sx={{ width: 100, py: 1 }}>
+                    {(() => {
+                      // Intentar obtener el documento del cliente de diferentes formas
+                      if (venta.documentocliente) return venta.documentocliente;
+                      if (venta.documento_cliente) return venta.documento_cliente;
+                      if (venta.cliente_documento) return venta.cliente_documento;
+                      if (venta.id_cliente) return venta.id_cliente;
+                      if (venta.cliente_id) return venta.cliente_id;
+                      if (venta.documento) return venta.documento;
+                      if (venta.id) return venta.id;
+                      if (venta.cliente_info && venta.cliente_info.documentocliente) return venta.cliente_info.documentocliente;
+                      if (venta.cliente && typeof venta.cliente === 'object') {
+                        return venta.cliente.documento || venta.cliente.id || venta.cliente.documentocliente || venta.cliente.documento_cliente || 'N/A';
+                      }
+                      return 'N/A';
+                    })()}
+                  </TableCell>
+                  <TableCell align="right" sx={{ width: 100, py: 1 }}>{formatCurrency(venta.total)}</TableCell>
+                  <TableCell align="center" sx={{ py: 1 }}>
                     {labelEstado && (
                       <Chip 
                         label={labelEstado}
@@ -780,7 +828,7 @@ const Ventas = () => {
                       />
                     )}
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={{ py: 1 }}>
                     <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                       <Tooltip title="Ver Detalle"><span>
                         <IconButton 
@@ -880,19 +928,26 @@ const Ventas = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      {!loading && totalPaginasAPI > 1 && (
-        <Box display="flex" justifyContent="center" mt={2}>
+      {/* Paginación más visible y compacta */}
+      {!loading && totalPaginasFinal > 1 && (
+        <Box display="flex" justifyContent="center" mt={1} mb={1} p={1} sx={{ backgroundColor: '#f8f9fa', borderRadius: 1 }}>
           <Pagination
-            count={totalPaginasAPI}
+            count={totalPaginasFinal}
             page={pagina}
             onChange={(e, value) => {
               const newSearchParams = new URLSearchParams(searchParams);
               newSearchParams.set('page', value.toString());
               setSearchParams(newSearchParams);
+              
+              // Si no hay búsqueda, recargar datos del API con la nueva página
+              if (!busqueda) {
+                fetchVentas(value, '', getEstadoParamVentas(filtroEstado));
+              }
             }}
             color="primary"
             showFirstButton 
             showLastButton
+            size="small"
           />
         </Box>
       )}

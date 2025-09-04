@@ -876,10 +876,34 @@ export const getDashboardStats = async () => {
 };
 
 // Compras ====================================================================
-export const getCompras = async (page = 1, limit = 5, searchTerm = '', estado) => {
+export const getCompras = async (page = 1, limit = 5, searchTerm = '', estado, parametrosAdicionales = {}) => {
   try {
-    const params = { page, limit, search: searchTerm };
-    if (estado !== undefined && estado !== '') params.estado = estado;
+    const params = { page, limit };
+    
+    // Si hay searchTerm, mantener compatibilidad con búsqueda anterior
+    if (searchTerm) {
+      params.search = searchTerm;
+    }
+    
+    // Agregar filtro de estado si está definido
+    if (estado !== undefined && estado !== '') {
+      params.estado = estado;
+    }
+    
+    // Agregar parámetros adicionales de búsqueda específica
+    if (parametrosAdicionales.nrodecompra) {
+      params.nrodecompra = parametrosAdicionales.nrodecompra;
+    }
+    if (parametrosAdicionales.fechadecompra) {
+      params.fechadecompra = parametrosAdicionales.fechadecompra;
+    }
+    if (parametrosAdicionales.nombreproveedor) {
+      params.nombreproveedor = parametrosAdicionales.nombreproveedor;
+    }
+    if (parametrosAdicionales.nitproveedor) {
+      params.nitproveedor = parametrosAdicionales.nitproveedor;
+    }
+    
     const response = await api.get('/api/compras', { params });
     return { success: true, data: response.data.data };
   } catch (error) {
