@@ -867,7 +867,7 @@ const Compras = () => {
                   <TableCell>{(pagina - 1) * COMPRAS_POR_PAGINA + idx + 1}</TableCell>
                   <TableCell>{compra.nrodecompra}</TableCell>
                   <TableCell>{formatDate(compra.fechadecompra)}</TableCell>
-                  <TableCell>{compra.proveedor_nombre}</TableCell>
+                  <TableCell>{compra.nitproveedor_proveedor?.nombre || compra.proveedor_info?.nombre || ''}</TableCell>
                   <TableCell align="right">{formatCurrency(compra.total)}</TableCell>
                   <TableCell align="center">
                     <Chip 
@@ -977,7 +977,7 @@ const Compras = () => {
                     <Typography variant="subtitle1" color="text.secondary">ID Compra</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>{compraDetalle.compra?.idcompras}</Typography>
                     <Typography variant="subtitle1" color="text.secondary">Proveedor</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{compraDetalle.compra?.proveedor_nombre}</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{compraDetalle.compra?.nitproveedor_proveedor?.nombre || compraDetalle.compra?.proveedor_info?.nombre || ''}</Typography>
                   </Paper>
                 </Grid>
                 {/* Fechas */}
