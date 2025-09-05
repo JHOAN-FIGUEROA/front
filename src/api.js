@@ -726,7 +726,7 @@ export const getCategoriasActivas = async () => {
 // Unidades ===================================================================
 export const getUnidades = async (page = 1, limit = 5) => {
   try {
-    const response = await api.get('/api/unidades', { params: { pagina: page, limit } });
+    const response = await api.get('/api/unidades', { params: { page, limit } });
     return { success: true, data: response.data.data };
   } catch (error) {
     if (error.response) {
