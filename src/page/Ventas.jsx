@@ -135,6 +135,12 @@ const Ventas = () => {
   // Agrega un estado para el filtro de estado de ventas
   const [filtroEstado, setFiltroEstado] = useState('');
 
+  // Estados para búsqueda local
+  const [todasLasVentas, setTodasLasVentas] = useState([]);
+  const [loadingTodasVentas, setLoadingTodasVentas] = useState(false);
+  const [buscando, setBuscando] = useState(false);
+  const abortControllerRef = useRef(null);
+
   // Función para traducir el filtro de estado a lo que espera el backend
   const getEstadoParamVentas = (estado) => {
     if (estado === 'anulada') return 'ANULADA';
@@ -144,45 +150,28 @@ const Ventas = () => {
   };
 
   // Fetch ventas - con paginación del API cuando no hay búsqueda
-  const fetchVentas = useCallback(async (currentPage, currentSearch, estadoFiltro = filtroEstado) => {
+  const fetchVentas = useCallback(async (currentPage, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
       const estadoParam = getEstadoParamVentas(estadoFiltro);
       
-      if (currentSearch && currentSearch.trim()) {
-        // Si hay búsqueda, traer todas las ventas para filtrado local
-        const result = await getVentas(currentPage, 1000, currentSearch, estadoParam);
-        if (result.error) {
-          setError(result.detalles || 'Error al cargar ventas.');
-          setVentas([]);
-          setTotalPaginasAPI(1);
-        } else if (result.success && result.data) {
-          const ventasBase = result.data.ventas || [];
-          setVentas(ventasBase);
-          setTotalPaginasAPI(1); // Solo una página ya que cargamos todo para búsqueda
-        } else {
-          setVentas([]);
-          setTotalPaginasAPI(1);
-        }
+      // Si no hay búsqueda, usar paginación del API
+      const result = await getVentas(currentPage, VENTAS_POR_PAGINA, '', estadoParam);
+      if (result.error) {
+        setError(result.detalles || 'Error al cargar ventas.');
+        setVentas([]);
+        setTotalPaginasAPI(1);
+      } else if (result.success && result.data) {
+        const ventasBase = result.data.ventas || [];
+        setVentas(ventasBase);
+        // Usar el total de páginas del API
+        const totalVentas = result.data.total || ventasBase.length;
+        const totalPaginas = Math.ceil(totalVentas / VENTAS_POR_PAGINA);
+        setTotalPaginasAPI(totalPaginas);
       } else {
-        // Si no hay búsqueda, usar paginación del API
-        const result = await getVentas(currentPage, VENTAS_POR_PAGINA, '', estadoParam);
-        if (result.error) {
-          setError(result.detalles || 'Error al cargar ventas.');
-          setVentas([]);
-          setTotalPaginasAPI(1);
-        } else if (result.success && result.data) {
-          const ventasBase = result.data.ventas || [];
-          setVentas(ventasBase);
-          // Usar el total de páginas del API
-          const totalVentas = result.data.total || ventasBase.length;
-          const totalPaginas = Math.ceil(totalVentas / VENTAS_POR_PAGINA);
-          setTotalPaginasAPI(totalPaginas);
-        } else {
-          setVentas([]);
-          setTotalPaginasAPI(1);
-        }
+        setVentas([]);
+        setTotalPaginasAPI(1);
       }
     } catch (err) {
       setError('Error inesperado al cargar ventas: ' + (err.message || ''));
@@ -196,184 +185,217 @@ const Ventas = () => {
   useEffect(() => {
     const pageFromUrl = Number.parseInt(searchParams.get('page')) || 1;
     const searchFromUrl = searchParams.get('search') || '';
-    setBusqueda(searchFromUrl);
-    // Cargar datos con búsqueda si existe
-    fetchVentas(pageFromUrl, searchFromUrl, getEstadoParamVentas(filtroEstado));
-  }, [fetchVentas, filtroEstado]);
-
-  // Efecto para manejar cambios en la búsqueda
-  useEffect(() => {
-    if (busqueda !== searchParams.get('search')) {
-      const newSearchParams = new URLSearchParams(searchParams);
-      if (busqueda) {
-        newSearchParams.set('search', busqueda);
-      } else {
-        newSearchParams.delete('search');
-      }
-      newSearchParams.set('page', '1');
-      setSearchParams(newSearchParams);
-      
-      // Recargar datos con la nueva búsqueda
-      fetchVentas(1, busqueda, getEstadoParamVentas(filtroEstado));
+    
+    // Solo actualizar busqueda si es diferente del estado actual
+    if (searchFromUrl !== busqueda) {
+      setBusqueda(searchFromUrl);
     }
-  }, [busqueda, searchParams, setSearchParams, fetchVentas, filtroEstado]);
+    
+    // Solo cargar desde API si no hay búsqueda
+    if (!searchFromUrl || !searchFromUrl.trim()) {
+      fetchVentas(pageFromUrl, getEstadoParamVentas(filtroEstado));
+    }
+  }, [searchParams, fetchVentas, filtroEstado]);
 
-  // Filtrado local mejorado para ventas
-  console.log('🔍 Búsqueda actual:', busqueda, 'Tipo:', typeof busqueda, 'Longitud:', busqueda?.length);
-  const ventasFiltradas = ventas
-    .filter(venta => {
-      // Filtro por estado
-      if (filtroEstado === 'activa') return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
-      if (filtroEstado === 'anulada') return venta.estado === 'ANULADA';
-      if (filtroEstado === 'completada') return venta.estado === 'COMPLETADA';
-      if (filtroEstado === 'pendiente') return venta.estado === 'PENDIENTE';
+
+  // Función para cargar todas las ventas para búsqueda local
+  const cargarTodasLasVentas = async () => {
+    if (busqueda && busqueda.trim()) {
+      // Cancelar llamada anterior si existe
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Crear nuevo AbortController
+      abortControllerRef.current = new AbortController();
+      
+      setLoadingTodasVentas(true);
+      setBuscando(true);
+      try {
+        // Obtener todas las ventas sin paginación para búsqueda local
+        const result = await getVentas(1, 1000, '', getEstadoParamVentas(filtroEstado));
+        if (result.success && result.data) {
+          const todasVentas = result.data.ventas || [];
+          setTodasLasVentas(todasVentas);
+        }
+      } catch (err) {
+        // Solo mostrar error si no fue cancelado
+        if (err.name !== 'AbortError') {
+          console.error('Error al cargar todas las ventas:', err);
+        }
+      } finally {
+        setLoadingTodasVentas(false);
+        setBuscando(false);
+      }
+    } else {
+      setTodasLasVentas([]);
+      setBuscando(false);
+    }
+  };
+
+  // Búsqueda con debounce más rápido
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda && busqueda.trim()) {
+        cargarTodasLasVentas();
+      } else {
+        setTodasLasVentas([]);
+      }
+    }, 200); // Reducido a 200ms para máxima responsividad
+
+    return () => {
+      clearTimeout(timeoutId);
+      // Cancelar llamada pendiente si existe
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [busqueda, filtroEstado]);
+
+  // Filtrado local de ventas
+  const ventasFiltradas = (todasLasVentas || []).filter(venta => {
+    if (!busqueda || !busqueda.trim()) return true;
+    
+    const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    
+    // Validar que la venta existe
+    if (!venta) return false;
+
+    // Buscar por estado
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+      return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
+    }
+    if (terminoBusquedaLower === 'anulada' || terminoBusquedaLower === 'anulado') {
+      return venta.estado === 'ANULADA';
+    }
+    if (terminoBusquedaLower === 'completada' || terminoBusquedaLower === 'completado') {
+      return venta.estado === 'COMPLETADA';
+    }
+    if (terminoBusquedaLower === 'pendiente' || terminoBusquedaLower === 'pedido') {
+      return venta.estado === 'PENDIENTE';
+    }
+
+    // Buscar por nombre de cliente - múltiples formatos
+    let nombreCliente = '';
+    if (typeof venta.cliente === 'string') {
+      nombreCliente = venta.cliente;
+    } else if (venta.cliente && typeof venta.cliente === 'object') {
+      nombreCliente = `${venta.cliente.nombre || ''} ${venta.cliente.apellido || ''}`.trim();
+    }
+    
+    // Debug: mostrar estructura de datos del cliente
+    if (busqueda.toLowerCase().includes('aracelly') || busqueda.toLowerCase().includes('test')) {
+      console.log('🔍 Debug cliente:', {
+        busqueda: busqueda,
+        venta: venta,
+        cliente: venta.cliente,
+        cliente_info: venta.cliente_info,
+        nombreCliente: nombreCliente
+      });
+    }
+    
+    // Buscar en cliente_info si existe
+    if (venta.cliente_info && venta.cliente_info.nombre && venta.cliente_info.apellido) {
+      const nombreClienteInfo = `${venta.cliente_info.nombre} ${venta.cliente_info.apellido}`.trim();
+      if (nombreClienteInfo.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
+      }
+    }
+    
+    // Verificar si coincide con el nombre del cliente
+    if (nombreCliente && nombreCliente.toLowerCase().includes(terminoBusquedaLower)) {
+      if (busqueda.toLowerCase().includes('aracelly') || busqueda.toLowerCase().includes('test')) {
+        console.log('✅ Encontrado por nombreCliente:', nombreCliente);
+      }
       return true;
-    })
-    .filter(venta => {
-      // Si no hay búsqueda, mostrar todas las ventas
-      if (!busqueda || !busqueda.trim()) return true;
-      
-      const terminoBusqueda = busqueda.trim();
-      const terminoBusquedaLower = terminoBusqueda.toLowerCase();
-      
-      // Validar que la venta existe
-      if (!venta) return false;
-
-      // Buscar por estado
-      if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
-        return venta.estado === 'ACTIVA' || venta.estado === 'COMPLETADA';
-      }
-      if (terminoBusquedaLower === 'anulada' || terminoBusquedaLower === 'anulado') {
-        return venta.estado === 'ANULADA';
-      }
-      if (terminoBusquedaLower === 'completada' || terminoBusquedaLower === 'completado') {
-        return venta.estado === 'COMPLETADA';
-      }
-      if (terminoBusquedaLower === 'pendiente' || terminoBusquedaLower === 'pedido') {
-        return venta.estado === 'PENDIENTE';
-      }
-
-      // Buscar por nombre de cliente
-      let nombreCliente = '';
-      if (typeof venta.cliente === 'string') {
-        nombreCliente = venta.cliente;
-      } else if (venta.cliente && typeof venta.cliente === 'object') {
-        nombreCliente = `${venta.cliente.nombre || ''} ${venta.cliente.apellido || ''}`.trim();
-      }
-      
-      // Buscar en cliente_info si existe
-      if (venta.cliente_info && venta.cliente_info.nombre && venta.cliente_info.apellido) {
-        const nombreClienteInfo = `${venta.cliente_info.nombre} ${venta.cliente_info.apellido}`.trim();
-        if (nombreClienteInfo.toLowerCase().includes(terminoBusquedaLower)) {
-          return true;
-        }
-      }
-      
-      // Verificar si coincide con el nombre del cliente
-      if (nombreCliente && nombreCliente.toLowerCase().includes(terminoBusquedaLower)) {
+    }
+    
+    // Buscar también en campos individuales del cliente
+    if (venta.cliente && typeof venta.cliente === 'object') {
+      if (venta.cliente.nombre && venta.cliente.nombre.toLowerCase().includes(terminoBusquedaLower)) {
         return true;
       }
-      
-      // Búsqueda por palabras individuales
-      if (terminoBusquedaLower.includes(' ') && nombreCliente) {
-        const palabrasBusqueda = terminoBusquedaLower.split(' ').filter(p => p.length > 2);
-        const palabrasCliente = nombreCliente.toLowerCase().split(' ');
-        
-        const todasLasPalabrasCoinciden = palabrasBusqueda.every(palabraBusqueda => 
-          palabrasCliente.some(palabraCliente => palabraCliente.includes(palabraBusqueda))
-        );
-        
-        if (todasLasPalabrasCoinciden) {
-          return true;
-        }
+      if (venta.cliente.apellido && venta.cliente.apellido.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
       }
+    }
+    
+    // Buscar en cliente_info campos individuales
+    if (venta.cliente_info) {
+      if (venta.cliente_info.nombre && venta.cliente_info.nombre.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
+      }
+      if (venta.cliente_info.apellido && venta.cliente_info.apellido.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
+      }
+    }
 
-      // Buscar por documento de cliente
-      const posiblesDocumentos = [
-        venta.documentocliente,
-        venta.documento_cliente,
-        venta.cliente_documento,
-        venta.id_cliente,
-        venta.cliente_id,
-        venta.documento,
-        venta.id,
-        venta.cliente_info?.documentocliente,
-        venta.cliente?.documento,
-        venta.cliente?.id,
-        venta.cliente?.documentocliente,
-        venta.cliente?.documento_cliente
-      ].filter(Boolean).map(String);
-      
-      // Buscar en todos los documentos posibles
-      for (const doc of posiblesDocumentos) {
-        if (doc.toLowerCase().includes(terminoBusquedaLower)) {
-          return true;
-        }
+    // Buscar por documento de cliente
+    const posiblesDocumentos = [
+      venta.documentocliente,
+      venta.documento_cliente,
+      venta.cliente_documento,
+      venta.id_cliente,
+      venta.cliente_id,
+      venta.documento,
+      venta.id,
+      venta.cliente_info?.documentocliente,
+      venta.cliente?.documento,
+      venta.cliente?.id,
+      venta.cliente?.documentocliente,
+      venta.cliente?.documento_cliente
+    ].filter(Boolean).map(String);
+    
+    // Buscar en todos los documentos posibles
+    for (const doc of posiblesDocumentos) {
+      if (doc.toLowerCase().includes(terminoBusquedaLower)) {
+        return true;
       }
-      
-      // Búsqueda por números en el nombre del cliente
-      if (/^\d+$/.test(terminoBusqueda) && nombreCliente) {
-        const numerosEnNombre = nombreCliente.match(/\d+/g);
-        if (numerosEnNombre && numerosEnNombre.some(num => num.includes(terminoBusqueda))) {
-          return true;
-        }
-      }
+    }
 
-      // Buscar por fecha de venta
-      if (venta.fechaventa) {
-        try {
-          const fechaOriginal = new Date(venta.fechaventa);
-          if (!isNaN(fechaOriginal.getTime())) {
-            const fechaFormateada = fechaOriginal.toLocaleDateString('es-ES', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            });
-            
-            const fechaISO = fechaOriginal.toISOString().split('T')[0];
-            
-            const fechaMMDDYYYY = fechaOriginal.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            });
-            
-            if (fechaFormateada.includes(terminoBusqueda) || 
-                fechaISO.includes(terminoBusqueda) || 
-                fechaMMDDYYYY.includes(terminoBusqueda) ||
-                fechaFormateada.replace(/\//g, '').includes(terminoBusqueda.replace(/\//g, '')) ||
-                fechaISO.replace(/-/g, '').includes(terminoBusqueda.replace(/-/g, ''))) {
-              return true;
-            }
+    // Buscar por fecha de venta
+    if (venta.fechaventa) {
+      try {
+        const fechaOriginal = new Date(venta.fechaventa);
+        if (!isNaN(fechaOriginal.getTime())) {
+          const fechaFormateada = fechaOriginal.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+          
+          const fechaISO = fechaOriginal.toISOString().split('T')[0];
+          
+          if (fechaFormateada.includes(terminoBusquedaLower) || 
+              fechaISO.includes(terminoBusquedaLower) ||
+              fechaFormateada.replace(/\//g, '').includes(terminoBusquedaLower.replace(/\//g, '')) ||
+              fechaISO.replace(/-/g, '').includes(terminoBusquedaLower.replace(/-/g, ''))) {
+            return true;
           }
-        } catch (error) {
-          // Silenciar errores de fecha
         }
+      } catch (error) {
+        // Silenciar errores de fecha
       }
+    }
 
-      // Buscar por ID de venta
-      const idVenta = String(venta.idventas || '').toLowerCase();
-      if (idVenta.includes(terminoBusquedaLower)) {
-        return true;
-      }
+    // Buscar por total de venta
+    const totalVenta = String(venta.total || '').replace(/[^\d]/g, '');
+    const terminoNumerico = terminoBusquedaLower.replace(/[^\d]/g, '');
+    if (totalVenta.includes(terminoNumerico)) return true;
 
-      // Buscar por total de venta
-      const totalVenta = String(venta.total || '').replace(/[^\d]/g, '');
-      const terminoNumerico = terminoBusqueda.replace(/[^\d]/g, '');
-      if (totalVenta.includes(terminoNumerico)) return true;
+    // Debug: si no se encontró nada
+    if (busqueda.toLowerCase().includes('aracelly') || busqueda.toLowerCase().includes('test')) {
+      console.log('❌ No encontrado para:', busqueda, 'en venta:', venta);
+    }
+    
+    return false;
+  });
 
-      return false;
-    });
 
-  // Calcular paginación local para los resultados filtrados
-  const totalPaginasLocal = Math.ceil(ventasFiltradas.length / VENTAS_POR_PAGINA);
-  const ventasPaginadas = ventasFiltradas.slice(
-    (pagina - 1) * VENTAS_POR_PAGINA,
-    pagina * VENTAS_POR_PAGINA
-  );
+  // Ventas a mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const ventasAMostrar = busqueda && busqueda.trim() ? (ventasFiltradas || []) : (ventas || []);
 
-  // Actualizar total de páginas según si hay búsqueda o no
-  const totalPaginasFinal = busqueda ? totalPaginasLocal : totalPaginasAPI;
 
   // Handler para ver detalle de venta
   const handleVerDetalleVenta = async (idventas) => {
@@ -638,7 +660,7 @@ const Ventas = () => {
             window.URL.revokeObjectURL(url);
           }
         }
-        fetchVentas(1, '');
+        fetchVentas(1);
       }
     } catch (err) {
       setCrearLoading(false);
@@ -661,8 +683,12 @@ const Ventas = () => {
 
   const handleFiltroEstado = (nuevoEstado) => {
     setFiltroEstado(nuevoEstado);
-    // Solo recargar datos sin búsqueda
-    fetchVentas(1, '', getEstadoParamVentas(nuevoEstado));
+    setPagina(1);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('page', '1');
+    setSearchParams(newSearchParams);
+    // Llamar directamente a la API con el nuevo filtro
+    fetchVentas(1, getEstadoParamVentas(nuevoEstado));
   };
 
   const handleDescargarPDF = async (idventas) => {
@@ -697,8 +723,16 @@ const Ventas = () => {
             value={busqueda}
             onChange={e => {
               const newSearchTerm = e.target.value;
+              
+              // Cancelar llamada anterior si existe
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
+              
+              // Actualizar estado primero
               setBusqueda(newSearchTerm);
-              // Solo actualizar URL, no hacer llamada a API
+              
+              // Actualizar URL después
               const newSearchParams = new URLSearchParams(searchParams);
               if (newSearchTerm) {
                 newSearchParams.set('search', newSearchTerm);
@@ -708,6 +742,17 @@ const Ventas = () => {
               newSearchParams.set('page', '1');
               setSearchParams(newSearchParams);
             }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                },
+                '&.Mui-focused': {
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
+                }
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -715,13 +760,19 @@ const Ventas = () => {
                 console.log('Búsqueda con Enter:', busqueda);
               }
             }}
-            placeholder="Buscar por cliente, documento, fecha..."
+            placeholder="Buscar por fecha, cliente, documento, total, estado..."
           />
           {busqueda && (
             <Button
               size="small"
               onClick={() => {
+                // Cancelar llamada anterior si existe
+                if (abortControllerRef.current) {
+                  abortControllerRef.current.abort();
+                }
+                
                 setBusqueda('');
+                setTodasLasVentas([]);
                 // Solo limpiar búsqueda, no recargar datos
                 const newSearchParams = new URLSearchParams(searchParams);
                 newSearchParams.delete('search');
@@ -751,31 +802,45 @@ const Ventas = () => {
         <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} size="small" onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
       <Box mb={1} height={32} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={24} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%', py: 0.5 }}>{error}</Alert>}
-        {!loading && !error && busqueda && (
+        {(loading || loadingTodasVentas) && (
+          <Box display="flex" alignItems="center" gap={1}>
+            <CircularProgress size={20} />
+            <Typography variant="body2" color="text.secondary">
+              {buscando ? 'Buscando...' : 'Cargando...'}
+            </Typography>
+          </Box>
+        )}
+        {error && !loading && !loadingTodasVentas && <Alert severity="error" sx={{ width: '100%', py: 0.5 }}>{error}</Alert>}
+        {!loading && !loadingTodasVentas && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%', py: 0.5 }}>
-            Se encontraron {ventasFiltradas.length} venta{ventasFiltradas.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
+            Se encontraron {ventasAMostrar.length} venta{ventasAMostrar.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
-      <TableContainer component={Paper} sx={{ boxShadow: 1, mb: 1 }}>
-        <Table size="small">
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          boxShadow: 2,
+          maxHeight: busqueda && busqueda.trim() ? '60vh' : 'auto',
+          overflowY: busqueda && busqueda.trim() ? 'auto' : 'visible'
+        }}
+      >
+        <Table stickyHeader={busqueda && busqueda.trim()}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ py: 1 }}><b>#</b></TableCell>
-              <TableCell sx={{ py: 1 }}><b>Fecha</b></TableCell>
-              <TableCell sx={{ width: 160, py: 1 }}><b>Cliente</b></TableCell>
-              <TableCell sx={{ width: 100, py: 1 }}><b>Documento</b></TableCell>
-              <TableCell align="right" sx={{ width: 100, py: 1 }}><b>Total</b></TableCell>
-              <TableCell align="center" sx={{ py: 1 }}><b>Estado</b></TableCell>
-              <TableCell align="center" sx={{ py: 1 }}><b>Acciones</b></TableCell>
+              <TableCell><b>#</b></TableCell>
+              <TableCell><b>Fecha</b></TableCell>
+              <TableCell sx={{ width: 140 }}><b>Cliente</b></TableCell>
+              <TableCell sx={{ width: 90 }}><b>Documento</b></TableCell>
+              <TableCell align="right" sx={{ width: 90 }}><b>Total</b></TableCell>
+              <TableCell align="center"><b>Estado</b></TableCell>
+              <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && ventasPaginadas.length === 0 && !error && (
+            {!loading && !loadingTodasVentas && ventasAMostrar.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 2 }}>
+                <TableCell colSpan={7} align="center">
                   {busqueda ? 
                     `No se encontraron ventas que coincidan con "${busqueda}"` : 
                     'No hay ventas registradas.'
@@ -783,7 +848,7 @@ const Ventas = () => {
                 </TableCell>
               </TableRow>
             )}
-            {ventasPaginadas.map((venta, idx) => {
+            {ventasAMostrar.map((venta, idx) => {
               const clienteNombre = venta.cliente || '';
               const estado = venta.estado || 'ACTIVA';
               let colorEstado = 'default';
@@ -796,10 +861,10 @@ const Ventas = () => {
               else { colorEstado = 'default'; iconEstado = null; }
               return (
                 <TableRow key={venta.idventas} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
-                  <TableCell sx={{ py: 1 }}>{(pagina - 1) * VENTAS_POR_PAGINA + idx + 1}</TableCell>
-                  <TableCell sx={{ py: 1 }}>{formatDate(venta.fechaventa)}</TableCell>
-                  <TableCell sx={{ width: 160, py: 1 }}>{clienteNombre}</TableCell>
-                  <TableCell sx={{ width: 100, py: 1 }}>
+                  <TableCell>{idx + 1}</TableCell>
+                  <TableCell>{formatDate(venta.fechaventa)}</TableCell>
+                  <TableCell sx={{ width: 140 }}>{clienteNombre}</TableCell>
+                  <TableCell sx={{ width: 90 }}>
                     {(() => {
                       // Intentar obtener el documento del cliente de diferentes formas
                       if (venta.documentocliente) return venta.documentocliente;
@@ -816,8 +881,8 @@ const Ventas = () => {
                       return 'N/A';
                     })()}
                   </TableCell>
-                  <TableCell align="right" sx={{ width: 100, py: 1 }}>{formatCurrency(venta.total)}</TableCell>
-                  <TableCell align="center" sx={{ py: 1 }}>
+                  <TableCell align="right" sx={{ width: 90 }}>{formatCurrency(venta.total)}</TableCell>
+                  <TableCell align="center">
                     {labelEstado && (
                       <Chip 
                         label={labelEstado}
@@ -828,7 +893,7 @@ const Ventas = () => {
                       />
                     )}
                   </TableCell>
-                  <TableCell align="center" sx={{ py: 1 }}>
+                  <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                       <Tooltip title="Ver Detalle"><span>
                         <IconButton 
@@ -904,7 +969,7 @@ const Ventas = () => {
                                       popup: 'swal2-success-popup'
                                     }
                                   });
-                                  fetchVentas(pagina, busqueda);
+                                  fetchVentas(pagina);
                                 } else {
                                   Swal.fire({
                                     icon: 'error',
@@ -929,10 +994,10 @@ const Ventas = () => {
         </Table>
       </TableContainer>
       {/* Paginación más visible y compacta */}
-      {!loading && totalPaginasFinal > 1 && (
+      {!loading && !busqueda && totalPaginasAPI > 1 && (
         <Box display="flex" justifyContent="center" mt={1} mb={1} p={1} sx={{ backgroundColor: '#f8f9fa', borderRadius: 1 }}>
           <Pagination
-            count={totalPaginasFinal}
+            count={totalPaginasAPI}
             page={pagina}
             onChange={(e, value) => {
               const newSearchParams = new URLSearchParams(searchParams);
@@ -941,7 +1006,7 @@ const Ventas = () => {
               
               // Si no hay búsqueda, recargar datos del API con la nueva página
               if (!busqueda) {
-                fetchVentas(value, '', getEstadoParamVentas(filtroEstado));
+                fetchVentas(value, getEstadoParamVentas(filtroEstado));
               }
             }}
             color="primary"
@@ -1151,7 +1216,7 @@ const Ventas = () => {
                   customClass: { popup: 'animated fadeInDown' }
                 });
                 openSnackbar('Venta anulada correctamente', 'success');
-                fetchVentas(pagina, busqueda);
+                fetchVentas(pagina);
               }
             }}
             color="error" 
@@ -1385,73 +1450,6 @@ const Ventas = () => {
             onChange={(e) => setProductosBusqueda(e.target.value)}
             placeholder="Buscar producto por nombre o código..."
             sx={{ width: '100%', minWidth: 250, mb: 2, mt: 2 }}
-            onKeyDown={async (e) => {
-              if (e.key === 'Enter' && productosBusqueda.trim() !== '') {
-                const res = await buscarUnidadPorCodigo(productosBusqueda.trim(), true);
-                if (res.success && res.data && res.data.data) {
-                  const unidad = res.data.data;
-                  const producto = unidad.producto;
-                  if (!producto) {
-                    Swal.fire({ icon: 'error', title: 'Producto no encontrado', text: 'No se encontró el producto para este código.' });
-                    return;
-                  }
-                  // Validar stock antes de agregar
-                  let yaExiste = false;
-                  let stockDisponible = producto.stock;
-                  setCrearForm(prev => {
-                    let cantidadActual = 0;
-                    const productos = prev.productos.map(p => {
-                      if (p.idproducto === producto.idproducto && p.idpresentacion === unidad.idpresentacion) {
-                        yaExiste = true;
-                        cantidadActual = Number(p.cantidad) || 0;
-                        return {
-                          ...p,
-                          cantidad: cantidadActual + 1,
-                        };
-                      }
-                      return p;
-                    });
-                    const cantidadTotal = yaExiste ? cantidadActual + 1 : 1;
-                    if (cantidadTotal > stockDisponible) {
-                      Swal.fire({ icon: 'error', title: 'Stock insuficiente', text: `No hay suficiente stock para agregar este producto. Stock disponible: ${stockDisponible}` });
-                      return prev;
-                    }
-                    if (!yaExiste) {
-                      productos.push({
-                        idproducto: producto.idproducto,
-                        nombre: producto.nombre,
-                        codigoproducto: producto.codigoproducto || '',
-                        idpresentacion: unidad.idpresentacion,
-                        presentacion_nombre: unidad.nombre,
-                        factor_conversion: parseFloat(unidad.factor_conversion),
-                        cantidad: 1,
-                        precioventa: Number(producto.precioventa) || 0,
-                        stock_presentacion: unidad.stock !== undefined ? unidad.stock : (unidad.stock_presentacion !== undefined ? unidad.stock_presentacion : 0),
-                      });
-                    }
-                    Swal.fire({
-                      position: 'top',
-                      icon: 'success',
-                      title: `${producto.nombre} (${unidad.nombre}) agregado a la venta`,
-                      showConfirmButton: false,
-                      timer: 1200,
-                      width: 350,
-                      toast: true,
-                      background: '#f6fff6',
-                      customClass: {
-                        popup: 'swal2-toast',
-                        title: 'swal2-title-custom',
-                      },
-                    });
-                    setProductosBusqueda('');
-                    return { ...prev, productos };
-                  });
-                  return;
-                } else {
-                  Swal.fire({ icon: 'error', title: 'No encontrado', text: res.detalles || 'No se encontró la presentación para este código.' });
-                }
-              }
-            }}
           />
           <TableContainer component={Paper} sx={{ maxHeight: 400, mt: 2, overflowX: { xs: 'auto', sm: 'visible' } }}>
             <Table stickyHeader>

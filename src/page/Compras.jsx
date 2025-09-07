@@ -34,7 +34,6 @@ const Compras = () => {
   const [pagina, setPagina] = useState(parseInt(searchParams.get('page')) || 1);
   const [totalPaginasAPI, setTotalPaginasAPI] = useState(1);
   const [busqueda, setBusqueda] = useState(searchParams.get('search') || '');
-  const [searchParameter, setSearchParameter] = useState('nrodecompra');
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [compraDetalle, setCompraDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
@@ -126,14 +125,9 @@ const Compras = () => {
 
   const [filtroEstado, setFiltroEstado] = useState('');
 
-  // Estados para búsqueda por parámetros
-  const [parametrosBusqueda, setParametrosBusqueda] = useState({
-    nrodecompra: '',
-    fechadecompra: '',
-    nombreproveedor: '',
-    nitproveedor: '',
-    estado: ''
-  });
+  // Estados para búsqueda local
+  const [todasLasCompras, setTodasLasCompras] = useState([]);
+  const [loadingTodasCompras, setLoadingTodasCompras] = useState(false);
 
   // Función para traducir el filtro de estado a número
   const getEstadoParam = (estado) => {
@@ -142,15 +136,14 @@ const Compras = () => {
     return '';
   };
 
-  const fetchCompras = useCallback(async (currentPage, parametros = parametrosBusqueda, estadoFiltro = filtroEstado) => {
+  const fetchCompras = useCallback(async (currentPage, estadoFiltro = filtroEstado) => {
     setLoading(true);
     setError('');
     try {
       // Construir parámetros de búsqueda
       const params = {
         page: currentPage,
-        limit: COMPRAS_POR_PAGINA,
-        ...parametros
+        limit: COMPRAS_POR_PAGINA
       };
 
       // Agregar filtro de estado si está seleccionado
@@ -159,19 +152,7 @@ const Compras = () => {
         params.estado = estadoParam;
       }
 
-      // Limpiar parámetros vacíos
-      Object.keys(params).forEach(key => {
-        if (params[key] === '' || params[key] === null || params[key] === undefined) {
-          delete params[key];
-        }
-      });
-
-      const result = await getCompras(params.page, params.limit, '', params.estado, {
-        nrodecompra: params.nrodecompra,
-        fechadecompra: params.fechadecompra,
-        nombreproveedor: params.nombreproveedor,
-        nitproveedor: params.nitproveedor
-      });
+      const result = await getCompras(params.page, params.limit, '', params.estado, {});
       
       if (result.error) {
         setError(result.detalles || 'Error al cargar compras.');
@@ -184,7 +165,7 @@ const Compras = () => {
         }
       } else if (result.success && result.data) {
         setCompras(result.data.compras || []);
-        const totalPaginas = result.data.pages || 1;   // 👈 usamos "pages" del backend
+        const totalPaginas = result.data.pages || 1;
         setTotalPaginasAPI(totalPaginas);
         if (currentPage > totalPaginas && totalPaginas > 0) {
           const newSearchParams = new URLSearchParams(searchParams);
@@ -206,7 +187,7 @@ const Compras = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchParams, setSearchParams, filtroEstado, parametrosBusqueda]);
+  }, [searchParams, setSearchParams, filtroEstado]);
 
   useEffect(() => {
     const pageFromUrl = parseInt(searchParams.get('page')) || 1;
@@ -215,38 +196,45 @@ const Compras = () => {
     if (pageFromUrl !== pagina) setPagina(pageFromUrl);
     if (searchFromUrl !== busqueda) setBusqueda(searchFromUrl);
     
-    fetchCompras(pageFromUrl, parametrosBusqueda, getEstadoParam(filtroEstado));
-  }, [searchParams, fetchCompras, filtroEstado]);
+    // Solo cargar desde API si no hay búsqueda
+    if (!busqueda || !busqueda.trim()) {
+      fetchCompras(pageFromUrl, getEstadoParam(filtroEstado));
+    }
+  }, [searchParams, fetchCompras, filtroEstado, busqueda]);
+
+  // Función para cargar todas las compras para búsqueda local
+  const cargarTodasLasCompras = async () => {
+    if (busqueda && busqueda.trim()) {
+      setLoadingTodasCompras(true);
+      try {
+        // Obtener todas las compras sin paginación para búsqueda local
+        const result = await getCompras(1, 1000, '', getEstadoParam(filtroEstado), {});
+        if (result.success && result.data) {
+          const todasCompras = result.data.compras || [];
+          setTodasLasCompras(todasCompras);
+        }
+      } catch (err) {
+        console.error('Error al cargar todas las compras:', err);
+      } finally {
+        setLoadingTodasCompras(false);
+      }
+    } else {
+      setTodasLasCompras([]);
+    }
+  };
 
   // Búsqueda con debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (busqueda && busqueda.trim()) {
-        // Construir parámetros de búsqueda según searchParameter
-        const termino = busqueda.trim();
-        const newParametros = {
-          nrodecompra: '',
-          fechadecompra: '',
-          nombreproveedor: '',
-          nitproveedor: '',
-          estado: ''
-        };
-        newParametros[searchParameter] = termino;
-        setParametrosBusqueda(newParametros);
+        cargarTodasLasCompras();
       } else {
-        // Limpiar búsqueda
-        setParametrosBusqueda({
-          nrodecompra: '',
-          fechadecompra: '',
-          nombreproveedor: '',
-          nitproveedor: '',
-          estado: ''
-        });
+        setTodasLasCompras([]);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [busqueda, searchParameter]);
+  }, [busqueda, filtroEstado]);
 
   const handleChangePagina = (event, value) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -264,9 +252,55 @@ const Compras = () => {
     
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
+    
+    // Limpiar compras de búsqueda local cuando cambie la búsqueda
+    if (newSearchTerm !== busqueda) {
+      setTodasLasCompras([]);
+    }
   };
 
-  // Las compras ya vienen filtradas del API, no necesitamos filtrado local
+  // Filtrado local de compras
+  const comprasFiltradas = todasLasCompras.filter(compra => {
+    if (!busqueda || !busqueda.trim()) return true;
+    
+    const terminoBusquedaLower = busqueda.toLowerCase().trim();
+    
+    // Validar que la compra existe
+    if (!compra) return false;
+
+    // Buscar por estado
+    if (terminoBusquedaLower === 'activo' || terminoBusquedaLower === 'activa') {
+      return compra.estado === 1 || compra.estado === true;
+    }
+    if (terminoBusquedaLower === 'anulado' || terminoBusquedaLower === 'anulada') {
+      return compra.estado === 0 || compra.estado === false;
+    }
+
+    // Buscar por número de compra
+    const numeroCompra = String(compra.nrodecompra || '').toLowerCase();
+    if (numeroCompra.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por fecha (formato YYYY-MM-DD o DD/MM/YYYY)
+    const fechaCompra = String(compra.fechadecompra || '').toLowerCase();
+    if (fechaCompra.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por nombre de proveedor
+    const nombreProveedor = String(compra.nitproveedor_proveedor?.nombre || compra.proveedor_info?.nombre || '').toLowerCase();
+    if (nombreProveedor.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por NIT de proveedor
+    const nitProveedor = String(compra.nitproveedor || '').toLowerCase();
+    if (nitProveedor.includes(terminoBusquedaLower)) return true;
+
+    // Buscar por total (convertir a string para búsqueda)
+    const total = String(compra.total || '').toLowerCase();
+    if (total.includes(terminoBusquedaLower)) return true;
+
+    return false;
+  });
+
+  // Compras a mostrar (priorizar búsqueda local si hay término de búsqueda)
+  const comprasAMostrar = busqueda && busqueda.trim() ? comprasFiltradas : compras;
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') {
@@ -345,7 +379,7 @@ const Compras = () => {
         }
       });
               const currentPage = parseInt(searchParams.get('page')) || 1;
-              fetchCompras(currentPage, parametrosBusqueda, getEstadoParam(filtroEstado));
+              fetchCompras(currentPage, getEstadoParam(filtroEstado));
     }
   };
 
@@ -649,7 +683,7 @@ const Compras = () => {
           }
         });
         const currentPage = parseInt(searchParams.get('page')) || 1;
-        fetchCompras(currentPage, parametrosBusqueda, getEstadoParam(filtroEstado));
+        fetchCompras(currentPage, getEstadoParam(filtroEstado));
       }
     } catch (err) {
       // Capturar errores de duplicidad y otros errores del backend
@@ -747,16 +781,19 @@ const Compras = () => {
 
   const handleFiltroEstado = (nuevoEstado) => {
     setFiltroEstado(nuevoEstado);
+    setPagina(1);
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
+    // Llamar directamente a la API con el nuevo filtro
+    fetchCompras(1, getEstadoParam(nuevoEstado));
   };
 
   // 1. Agrega un estado para controlar si ya se mostró el SweetAlert
   const [alertaNoProducto, setAlertaNoProducto] = useState(false);
 
   return (
-    <Box p={3}>
+    <Box sx={{ p: '10px' }}>
       <Typography variant="h5" gutterBottom>Compras Registradas</Typography>
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" mb={2} gap={2}>
         <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 350 }, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -770,36 +807,15 @@ const Compras = () => {
                 console.log('Búsqueda con Enter:', busqueda);
               }
             }}
-            placeholder="Buscar..."
+            placeholder="Buscar por número, fecha, proveedor, total, estado..."
             sx={{ flexGrow: 1 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel id="search-parameter-label">Parámetro</InputLabel>
-            <Select
-              labelId="search-parameter-label"
-              id="search-parameter-select"
-              value={searchParameter}
-              label="Parámetro"
-              onChange={(e) => setSearchParameter(e.target.value)}
-            >
-              <MenuItem value="nrodecompra">Número de Compra</MenuItem>
-              <MenuItem value="fechadecompra">Fecha de Compra</MenuItem>
-              <MenuItem value="nombreproveedor">Nombre Proveedor</MenuItem>
-              <MenuItem value="nitproveedor">NIT Proveedor</MenuItem>
-            </Select>
-          </FormControl>
           {busqueda && (
             <Button
               size="small"
               onClick={() => {
                 setBusqueda('');
-                setParametrosBusqueda({
-                  nrodecompra: '',
-                  fechadecompra: '',
-                  nombreproveedor: '',
-                  nitproveedor: '',
-                  estado: ''
-                });
+                setTodasLasCompras([]);
                 const newSearchParams = new URLSearchParams(searchParams);
                 newSearchParams.delete('search');
                 newSearchParams.set('page', '1');
@@ -822,35 +838,42 @@ const Compras = () => {
         </Button>
       </Box>
       {/* Filtros de compras */}
-      <Box display="flex" justifyContent="center" gap={2} my={2}>
+      <Box display="flex" justifyContent="center" gap={2} my={1}>
         <Button variant={filtroEstado === 'activa' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('activa')}>Activas</Button>
         <Button variant={filtroEstado === 'anulada' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('anulada')}>Anuladas</Button>
         <Button variant={filtroEstado === '' ? 'contained' : 'outlined'} onClick={() => handleFiltroEstado('')}>Todas</Button>
       </Box>
-      <Box mb={2} height={40} display="flex" alignItems="center" justifyContent="center">
-        {loading && <CircularProgress size={28} />}
-        {error && !loading && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-        {!loading && !error && busqueda && (
+      <Box mb={0.5} height={30} display="flex" alignItems="center" justifyContent="center">
+        {(loading || loadingTodasCompras) && <CircularProgress size={28} />}
+        {error && !loading && !loadingTodasCompras && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+        {!loading && !loadingTodasCompras && !error && busqueda && (
           <Alert severity="info" sx={{ width: '100%' }}>
-            Búsqueda: "{busqueda}" - {compras.length} resultado{compras.length !== 1 ? 's' : ''} encontrado{compras.length !== 1 ? 's' : ''}
+            Se encontraron {comprasAMostrar.length} compra{comprasAMostrar.length !== 1 ? 's' : ''} que coinciden con "{busqueda}"
           </Alert>
         )}
       </Box>
-      <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
-        <Table>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          boxShadow: 2,
+          maxHeight: busqueda && busqueda.trim() ? '60vh' : 'auto',
+          overflowY: busqueda && busqueda.trim() ? 'auto' : 'visible'
+        }}
+      >
+        <Table stickyHeader={busqueda && busqueda.trim()}>
           <TableHead>
             <TableRow>
               <TableCell><b>#</b></TableCell>
-              <TableCell><b>N° Compra</b></TableCell>
+              <TableCell sx={{ width: 100 }}><b>N° Compra</b></TableCell>
               <TableCell><b>Fecha</b></TableCell>
-              <TableCell><b>Proveedor</b></TableCell>
-              <TableCell align="right"><b>Total</b></TableCell>
+              <TableCell sx={{ width: 140 }}><b>Proveedor</b></TableCell>
+              <TableCell align="right" sx={{ width: 90 }}><b>Total</b></TableCell>
               <TableCell align="center"><b>Estado</b></TableCell>
               <TableCell align="center"><b>Acciones</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && compras.length === 0 && !error && (
+            {!loading && !loadingTodasCompras && comprasAMostrar.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   {busqueda ? 
@@ -860,15 +883,15 @@ const Compras = () => {
                 </TableCell>
               </TableRow>
             )}
-            {compras.map((compra, idx) => {
+            {comprasAMostrar.map((compra, idx) => {
               const compraActiva = compra.estado === 1;
               return (
                 <TableRow key={idx}>
                   <TableCell>{(pagina - 1) * COMPRAS_POR_PAGINA + idx + 1}</TableCell>
-                  <TableCell>{compra.nrodecompra}</TableCell>
+                  <TableCell sx={{ width: 100 }}>{compra.nrodecompra}</TableCell>
                   <TableCell>{formatDate(compra.fechadecompra)}</TableCell>
-                  <TableCell>{compra.nitproveedor_proveedor?.nombre || compra.proveedor_info?.nombre || ''}</TableCell>
-                  <TableCell align="right">{formatCurrency(compra.total)}</TableCell>
+                  <TableCell sx={{ width: 140 }}>{compra.nitproveedor_proveedor?.nombre || compra.proveedor_info?.nombre || ''}</TableCell>
+                  <TableCell align="right" sx={{ width: 90 }}>{formatCurrency(compra.total)}</TableCell>
                   <TableCell align="center">
                     <Chip 
                       label={compraActiva ? "Activa" : "Anulada"} 
@@ -921,7 +944,7 @@ const Compras = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      {!loading && totalPaginasAPI > 1 && (
+      {!loading && !busqueda && totalPaginasAPI > 1 && (
         <Box display="flex" justifyContent="center" mt={2}>
           <Pagination
             count={totalPaginasAPI}
