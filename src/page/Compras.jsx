@@ -198,7 +198,7 @@ const Compras = () => {
     
     // Solo cargar desde API si no hay búsqueda
     if (!busqueda || !busqueda.trim()) {
-      fetchCompras(pageFromUrl, getEstadoParam(filtroEstado));
+      fetchCompras(pageFromUrl, filtroEstado);
     }
   }, [searchParams, fetchCompras, filtroEstado, busqueda]);
 
@@ -379,7 +379,7 @@ const Compras = () => {
         }
       });
               const currentPage = parseInt(searchParams.get('page')) || 1;
-              fetchCompras(currentPage, getEstadoParam(filtroEstado));
+              fetchCompras(currentPage, filtroEstado);
     }
   };
 
@@ -683,7 +683,7 @@ const Compras = () => {
           }
         });
         const currentPage = parseInt(searchParams.get('page')) || 1;
-        fetchCompras(currentPage, getEstadoParam(filtroEstado));
+        fetchCompras(currentPage, filtroEstado);
       }
     } catch (err) {
       // Capturar errores de duplicidad y otros errores del backend
@@ -786,7 +786,7 @@ const Compras = () => {
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
     // Llamar directamente a la API con el nuevo filtro
-    fetchCompras(1, getEstadoParam(nuevoEstado));
+    fetchCompras(1, nuevoEstado);
   };
 
   // 1. Agrega un estado para controlar si ya se mostró el SweetAlert

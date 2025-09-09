@@ -193,7 +193,7 @@ const Ventas = () => {
     
     // Solo cargar desde API si no hay búsqueda
     if (!searchFromUrl || !searchFromUrl.trim()) {
-      fetchVentas(pageFromUrl, getEstadoParamVentas(filtroEstado));
+      fetchVentas(pageFromUrl, filtroEstado);
     }
   }, [searchParams, fetchVentas, filtroEstado]);
 
@@ -688,7 +688,7 @@ const Ventas = () => {
     newSearchParams.set('page', '1');
     setSearchParams(newSearchParams);
     // Llamar directamente a la API con el nuevo filtro
-    fetchVentas(1, getEstadoParamVentas(nuevoEstado));
+    fetchVentas(1, nuevoEstado);
   };
 
   const handleDescargarPDF = async (idventas) => {
@@ -1006,7 +1006,7 @@ const Ventas = () => {
               
               // Si no hay búsqueda, recargar datos del API con la nueva página
               if (!busqueda) {
-                fetchVentas(value, getEstadoParamVentas(filtroEstado));
+                fetchVentas(value, filtroEstado);
               }
             }}
             color="primary"
