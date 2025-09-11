@@ -1305,12 +1305,12 @@ const Compras = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Producto</TableCell>
-                        <TableCell>Presentación</TableCell>
-                        <TableCell align="center">Cantidad</TableCell>
-                        <TableCell align="right">Precio Unitario</TableCell>
-                        <TableCell align="right">Subtotal</TableCell>
-                        <TableCell align="center">{/* Eliminar */}</TableCell>
+                        <TableCell sx={{ width: '25%', maxWidth: 120 }}>Producto</TableCell>
+                        <TableCell sx={{ width: '20%', maxWidth: 100 }}>Presentación</TableCell>
+                        <TableCell align="center" sx={{ width: '12%', minWidth: 80 }}>Cantidad</TableCell>
+                        <TableCell align="right" sx={{ width: '18%', minWidth: 90 }}>Precio Unitario</TableCell>
+                        <TableCell align="right" sx={{ width: '20%', minWidth: 90 }}>Subtotal</TableCell>
+                        <TableCell align="center" sx={{ width: '5%', minWidth: 50 }}>{/* Eliminar */}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1332,8 +1332,23 @@ const Compras = () => {
                           const subtotal = cantidadPresentaciones * precioPresentacion;
                           return (
                             <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
-                              <TableCell>{prod.nombre}</TableCell>
-                              <TableCell>
+                              <TableCell 
+                                sx={{ 
+                                  maxWidth: 120, 
+                                  overflow: 'hidden', 
+                                  textOverflow: 'ellipsis', 
+                                  whiteSpace: 'nowrap' 
+                                }}
+                                title={prod.nombre}
+                              >
+                                {prod.nombre}
+                              </TableCell>
+                              <TableCell 
+                                sx={{ 
+                                  maxWidth: 100, 
+                                  overflow: 'hidden'
+                                }}
+                              >
                                 <FormControl fullWidth size="small">
                                   <Select
                                     value={prod.idpresentacion}

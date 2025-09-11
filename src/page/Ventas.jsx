@@ -1367,11 +1367,11 @@ const Ventas = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Producto</TableCell>
-                    <TableCell>Presentación</TableCell>
-                    <TableCell align="center">Cantidad</TableCell>
-                    <TableCell align="right">Subtotal</TableCell>
-                    <TableCell align="center">{/* Columna para eliminar */}</TableCell>
+                    <TableCell sx={{ width: '35%', maxWidth: 150 }}>Producto</TableCell>
+                    <TableCell sx={{ width: '25%', maxWidth: 120 }}>Presentación</TableCell>
+                    <TableCell align="center" sx={{ width: '15%', minWidth: 80 }}>Cantidad</TableCell>
+                    <TableCell align="right" sx={{ width: '20%', minWidth: 90 }}>Subtotal</TableCell>
+                    <TableCell align="center" sx={{ width: '5%', minWidth: 50 }}>{/* Columna para eliminar */}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -1391,9 +1391,57 @@ const Ventas = () => {
                       const subtotal = (Number(prod.cantidad) || 0) * factor * prod.precioventa;
                       return (
                         <TableRow key={prod.idproducto + '-' + prod.idpresentacion}>
-                          <TableCell>{prod.nombre}</TableCell>
-                          <TableCell>{presentacion?.nombre || ''}</TableCell>
-                          <TableCell align="center">{prod.cantidad}</TableCell>
+                          <TableCell 
+                            sx={{ 
+                              maxWidth: 150, 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap' 
+                            }}
+                            title={prod.nombre}
+                          >
+                            {prod.nombre}
+                          </TableCell>
+                          <TableCell 
+                            sx={{ 
+                              maxWidth: 120, 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap' 
+                            }}
+                            title={presentacion?.nombre || ''}
+                          >
+                            {presentacion?.nombre || ''}
+                          </TableCell>
+                          <TableCell align="center">
+                            <TextField
+                              type="number"
+                              value={prod.cantidad}
+                              onChange={(e) => {
+                                const nuevaCantidad = Math.max(1, Number(e.target.value) || 1);
+                                const stockDisponible = presentacion?.stock !== undefined ? presentacion.stock : 999;
+                                const maxCantidad = Math.floor(stockDisponible / factor);
+                                if (nuevaCantidad > maxCantidad) {
+                                  Swal.fire({ 
+                                    icon: 'warning', 
+                                    title: 'Stock insuficiente', 
+                                    text: `Máximo permitido: ${maxCantidad}`,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                  });
+                                  return;
+                                }
+                                handleProductoChange(prod.idproducto, prod.idpresentacion, 'cantidad', nuevaCantidad);
+                              }}
+                              size="small"
+                              sx={{ width: 80 }}
+                              inputProps={{ 
+                                min: 1, 
+                                style: { textAlign: 'center' },
+                                max: Math.floor((presentacion?.stock !== undefined ? presentacion.stock : 999) / factor)
+                              }}
+                            />
+                          </TableCell>
                           <TableCell align="right">{formatCurrency(subtotal)}</TableCell>
                           <TableCell align="center">
                             <IconButton
